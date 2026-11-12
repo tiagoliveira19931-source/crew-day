@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.1";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.2";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -902,7 +902,9 @@ function rpList(txt){
   return out;
 }
 function rpKindOf(t){t=String(t||"");const R=[[/\b(home\s+standby|HSBY|SBY)\b/i,"standby"],[/\b(airport\s+standby|ASBY)\b/i,"asby"],[/\b(airport\s+duty|ADTY)\b/i,"adty"],[/\b(training|TRNG|TRG|SIM|CRMS?|recurrent)\b/i,"training"],[/\b(day\s+off|OFF|rest\s+day)\b/i,"off"],[/\b(annual\s+leave|leave|LVE)\b/i,"leave"],[/\bVTO\b/i,"vto"],[/\b(sick|SCK)\b/i,"sick"],[/\b(DUTY|flying|flights?)\b/i,"flying"]];
-  let best=null,pos=1e9;R.forEach(([re,k])=>{const m=t.match(re);if(m&&m.index<pos){pos=m.index;best=k}});return best}
+  // a specific type (standby, training, off…) wins over the general word DUTY
+  let best=null,pos=1e9;R.forEach(([re,k])=>{if(k==="flying")return;const m=t.match(re);if(m&&m.index<pos){pos=m.index;best=k}});
+  if(!best&&R[R.length-1][0].test(t))best="flying";return best}
 function IATA_OK(a){return typeof IATA==="undefined"||!!IATA[a]||(typeof ICAO!=="undefined"&&!!ICAO[a])||/^(STN|LTN|LGW|LHR|MAN|BHX|EMA|LBA|NCL|GLA|EDI|BRS|BFS)$/.test(a)}
 // Calendar view: "November 2026" then day numbers and codes (OFF, HSBY, VTO, TRNG, L, DUTY, or a number of flights).
 function rpCal(txt){
@@ -2994,7 +2996,8 @@ function toolOn(x){if(x[0]==="backup"&&!IS_PWA)return false;return !x[2]||on(x[2
 function viewMore(){
   const t=TOOLS.find(x=>x[0]===S.moreView&&toolOn(x));
   if(!t)return `<header><h1>More</h1><p class="sub">Set things up here and the main tabs keep themselves up to date.</p></header>
-    <div class="tiles">${TOOLS.filter(toolOn).map(x=>`<button class="tile" data-more="${x[0]}"><b>${x[1]}</b><span>${esc(x[4]())}</span></button>`).join("")}</div>`;
+    <div class="tiles">${TOOLS.filter(toolOn).map(x=>`<button class="tile" data-more="${x[0]}"><b>${x[1]}</b><span>${esc(x[4]())}</span></button>`).join("")}</div>
+    <p class="note" style="text-align:center;margin:16px 0 0">Crew Day ${esc(window.CREWDAY_VERSION?"version "+window.CREWDAY_VERSION:"preview")}</p>`;
   return `<button class="back" data-more="">‹ More</button><header><h1>${t[1]}</h1>${t[3]?`<p class="sub">${t[3]}</p>`:""}</header>${t[5]()}`;
 }
 
