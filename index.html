@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.12.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.16.0";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -741,8 +741,9 @@ function cleanSectors(a){return (Array.isArray(a)?a:[]).slice(0,10).map(x=>({flt
 function opMins(x){return x.typ&&x.typ!=="op"?0:blockMins(x)}
 function blockMins(x){if(!x.dep||!x.arr)return 0;const [a,b]=x.dep.split(":").map(Number),[c,d]=x.arr.split(":").map(Number);let m=(c*60+d)-(a*60+b);if(m<0)m+=1440;return m}
 function destFromSectors(sec){const t=(sec||[]).map(x=>x.to).find(c=>c&&!BASE_CODES.includes(c));return t?cityFrom(t):""}
-function mergeRoster(days,src){rosterBackup=JSON.parse(JSON.stringify(S.roster));let n=0;days.forEach(e=>{if(!validDay(e))return;const sec=cleanSectors(e.sectors);S.roster[e.date]={kind:e.kind,report:cleanTime(e.report),off:cleanTime(e.off),dest:cityFrom(e.dest)||destFromSectors(sec),note:String(e.note||"").slice(0,120),src,sectors:sec};n++});
-  const cut=addDays(today(),-120);Object.keys(S.roster).forEach(d=>{if(d<cut)delete S.roster[d]});return n}
+function mergeRoster(days,src){rosterBackup=JSON.parse(JSON.stringify(S.roster));let n=0;days.forEach(e=>{if(!validDay(e))return;const sec=cleanSectors(e.sectors);learnFlights(sec,e.date);S.roster[e.date]={kind:e.kind,report:cleanTime(e.report),off:cleanTime(e.off),dest:cityFrom(e.dest)||destFromSectors(sec),note:String(e.note||"").slice(0,120),src,sectors:sec};n++});
+  const cut=addDays(today(),-120);Object.keys(S.roster).forEach(d=>{if(d<cut)delete S.roster[d]});syncToday();return n}
+function syncToday(){const t=today(),r=S.roster[t];if(r&&isDutyK(r.kind)&&r.report&&!S.standby.calledAt&&!(S.ft&&S.ft.start&&!S.ft.stop))useDay(t)}
 /* calendar file (.ics) import: groups each day's events into one roster day */
 function parseICS(text){
   const lines=text.replace(/\r\n[ \t]/g,"").replace(/\n[ \t]/g,"").split(/\r?\n/),events=[];let cur=null;
@@ -801,12 +802,171 @@ function rosterFields(e,sel){
     ${secs.map((x,i)=>`<div class="seccard">
       <div class="seg" role="tablist" aria-label="Sector type">${[["op","Operating"],["dh","Deadhead"],["gt","Ground transfer"]].map(t=>`<button role="tab" aria-selected="${(x.typ||"op")===t[0]}" data-sectyp="${i}:${t[0]}" data-secday="${sel}">${t[1]}</button>`).join("")}</div>
       <div class="row2"><div class="field"><label for="sc-flt-${i}">${x.typ==="gt"?"Transport (optional)":"Flight number"}</label><input id="sc-flt-${i}" type="text" value="${esc(x.flt)}" placeholder="${S.profile.airline==="Jet2"?"LS123":"FR8123"}" autocapitalize="characters"></div><div class="field"><label for="sc-reg-${i}">${x.typ==="gt"?"Vehicle / notes":"Aircraft reg"}</label><input id="sc-reg-${i}" type="text" value="${esc(x.reg||"")}" placeholder="e.g. EI-DCL" autocapitalize="characters"></div></div>
+      <p class="note" id="sc-fn-${i}" style="margin:0" ${x.guess?"":"hidden"}>${x.guess?`Return flight number guessed as ${esc(x.flt)}${(S.flights||{})[x.flt]?" and filled from last time":""}. Check it.`:""}</p>
       <div class="row2"><div class="field"><label for="sc-from-${i}">From</label><input id="sc-from-${i}" type="text" value="${esc(x.from)}" placeholder="STN" maxlength="3" autocapitalize="characters"></div><div class="field"><label for="sc-to-${i}">To</label><input id="sc-to-${i}" type="text" value="${esc(x.to)}" placeholder="AGP" maxlength="3" autocapitalize="characters"></div></div>
       <div class="row2"><div class="field"><label for="sc-dep-${i}">Departs${RZ()?" (Z)":""}</label><input id="sc-dep-${i}" type="time" value="${esc(x.dep)}"></div><div class="field"><label for="sc-arr-${i}">Arrives${RZ()?" (Z)":""}</label><input id="sc-arr-${i}" type="time" value="${esc(x.arr)}"></div></div>
       <div class="links" style="font-size:13px">${x.dep&&x.arr?`<span class="note" style="margin:0">Block ${fmtMins(blockMins(x))}</span>`:""}${x.flt?`<a href="https://www.google.com/search?q=${encodeURIComponent(x.flt+" flight")}" target="_blank" rel="noopener">Look up ${esc(x.flt)} times ↗</a><a href="${fr24Flight(x.flt)}" target="_blank" rel="noopener">Track flight ↗</a>`:""}${x.reg?`<a href="https://www.flightradar24.com/data/aircraft/${encodeURIComponent(x.reg.toLowerCase())}" target="_blank" rel="noopener">Track ${esc(x.reg)} ↗</a>`:""}<button class="linkbtn" data-delsec="${i}" data-secday="${sel}">Remove</button></div>
     </div>`).join("")}
     <p class="note" style="margin:0">${secs.length?"Scheduled times give the planned block. Actual off and on blocks go in on Trip on the day.":"Add each flight for FTL, flight hours and sector pay."}</p></div>`;
 }
+
+// Flight number auto-fill: learns from flights already entered, plus an online route lookup.
+const ICAO_AL={FR:"RYR",RK:"RUK",LS:"EXS",U2:"EZY",W6:"WZZ",BA:"BAW",EI:"EIN",VY:"VLG"};
+function learnFlights(secs,date){S.flights=S.flights||{};(secs||[]).forEach(x=>{const f=cleanFlt(x.flt);if(!f||x.typ==="gt"||!x.from||!x.to)return;const o=S.flights[f]||{};S.flights[f]={from:x.from,to:x.to,dep:x.dep||o.dep||"",arr:x.arr||o.arr||"",d:date||o.d||"",n:(o.n||0)+1}});
+  const k=Object.keys(S.flights);if(k.length>400)k.sort((a,b)=>(S.flights[a].d||"").localeCompare(S.flights[b].d||"")).slice(0,k.length-400).forEach(x=>delete S.flights[x])}
+function fltNote(i,html){const el=$("#sc-fn-"+i);if(el){el.innerHTML=html;el.hidden=!html}}
+function fltSet(i,id,v,force){const el=$("#sc-"+id+"-"+i);if(el&&v&&(force||!el.value)){el.value=v;return 1}return 0}
+const fltLook={};
+function fltFill(i){
+  const f=cleanFlt(($("#sc-flt-"+i)||{}).value);if(!f){fltNote(i,"");return}
+  const m=(S.flights||{})[f],key=(S.me.flightKey||"").trim(),day=($("[data-addsec]")||{dataset:{}}).dataset.addsec||selDay||today();
+  if(m){let n=fltSet(i,"from",m.from)+fltSet(i,"to",m.to)+fltSet(i,"dep",m.dep)+fltSet(i,"arr",m.arr);
+    fltNote(i,n?`Filled from your ${esc(f)}${m.d?" on "+esc(fmtDate(m.d,{day:"numeric",month:"short"})):""}. ${key?"Checking the current schedule…":"Check the times, schedules change by season."}`:"");if(!key||navigator.onLine===false)return}
+  if(key&&navigator.onLine!==false){if(!m)fltNote(i,"Looking up "+esc(f)+"…");
+    alSched(f,key,day).then(o=>{if(cleanFlt(($("#sc-flt-"+i)||{}).value)!==f)return;
+      if(o&&o.r){const z=RZ(),n=fltSet(i,"from",o.r.dep_iata,!!m)+fltSet(i,"to",o.r.arr_iata,!!m)+fltSet(i,"dep",z?o.r.dep_time_utc:o.r.dep_time,true)+fltSet(i,"arr",z?o.r.arr_time_utc:o.r.arr_time,true);
+        fltNote(i,`${esc(o.r.dep_iata)} → ${esc(o.r.arr_iata)} ${esc(z?o.r.dep_time_utc:o.r.dep_time)}–${esc(z?o.r.arr_time_utc:o.r.arr_time)}${z?"Z":" local"} from the AirLabs schedule${o.days?" ("+esc(o.days)+")":""}. Check it against your roster.`);return}
+      if(o&&o.err){fltNote(i,esc(o.err)+(m?" Kept the times from last time.":""));return}
+      if(m)fltNote(i,`Filled from your ${esc(f)}${m.d?" on "+esc(fmtDate(m.d,{day:"numeric",month:"short"})):""}. ${esc(f)} isn't in the online schedule for that day, so check the times.`);
+      else adsbLook(i,f)});
+    return}
+  if(m)return;
+  adsbLook(i,f)}
+const alCache={};
+function alSched(f,key,day){
+  const p=alCache[f]||(alCache[f]=fetch("https://airlabs.co/api/v9/routes?flight_iata="+encodeURIComponent(f)+"&api_key="+encodeURIComponent(key)).then(r=>r.json()).catch(()=>({error:{message:"offline"}})));
+  return p.then(j=>{if(j&&j.error){delete alCache[f];const msg=String(j.error.message||j.error.code||"");return {err:/key|auth|unknown_api_key|wrong/i.test(msg)?"The flight lookup key wasn't accepted. Check it in Profile.":/limit|quota/i.test(msg)?"This month's free lookups are used up.":"Couldn't reach the flight schedule right now."}}
+    const rs=(j&&j.response)||[];if(!rs.length)return null;
+    const wd=["sun","mon","tue","wed","thu","fri","sat"][new Date(day+"T12:00:00").getDay()];
+    const r=rs.find(x=>(x.days||[]).map(d=>String(d).toLowerCase().slice(0,3)).includes(wd))||rs[0];
+    const T=v=>cleanTime(String(v||"").trim().slice(-5));["dep_time","dep_time_utc","arr_time","arr_time_utc"].forEach(k=>r[k]=T(r[k]));r.dep_iata=String(r.dep_iata||"").toUpperCase().slice(0,3);r.arr_iata=String(r.arr_iata||"").toUpperCase().slice(0,3);
+    return {r,days:(r.days||[]).length&&(r.days||[]).length<7?(r.days||[]).map(d=>String(d).slice(0,1).toUpperCase()+String(d).slice(1,3)).join(" "):((r.days||[]).length===7?"daily":"")}});
+}
+function adsbLook(i,f){
+  const mm=f.match(/^([A-Z]{2,3}?)(\d+[A-Z]?)$/);if(!mm||navigator.onLine===false){fltNote(i,"");return}
+  const tries=[f];if(ICAO_AL[mm[1]])tries.push(ICAO_AL[mm[1]]+mm[2]);
+  fltNote(i,"Looking up the route…");
+  const go=async()=>{for(const t of tries){try{const r=fltLook[t]||(fltLook[t]=fetch("https://api.adsbdb.com/v0/callsign/"+t).then(x=>x.ok?x.json():null).catch(()=>null));const j=await r;const fr=j&&j.response&&j.response.flightroute;if(fr&&fr.origin&&fr.destination&&fr.origin.iata_code)return fr}catch(e){}}return null};
+  go().then(fr=>{if(cleanFlt(($("#sc-flt-"+i)||{}).value)!==f)return;
+    if(!fr){fltNote(i,`Couldn't find ${esc(f)} automatically. Type the route once and the app remembers it next time.`);return}
+    const n=fltSet(i,"from",fr.origin.iata_code)+fltSet(i,"to",fr.destination.iata_code);
+    fltNote(i,n?`Route ${esc(fr.origin.iata_code)} → ${esc(fr.destination.iata_code)} found online (community data, check it). Add the times; they'll be remembered.`:"")});
+}
+function nextFlt(f){const m=cleanFlt(f).match(/^([A-Z]{2,3}?)(\d+)$/);if(!m)return "";const n=String(+m[2]+1);return m[1]+(n.length<m[2].length?n.padStart(m[2].length,"0"):n)}
+// Reads roster text copied from a crew app screenshot (Google Lens / iPhone Live Text). Works offline.
+const RP_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+const RP_KIND={OFF:"off",DO:"off",HSBY:"standby",SBY:"standby",HS:"standby",ASBY:"asby",ADTY:"adty",TRNG:"training",TRG:"training",SIM:"training",L:"leave",AL:"leave",LVE:"leave",VTO:"vto",SICK:"sick",SCK:"sick",DUTY:"flying",FLY:"flying"};
+function rpPad(n){return String(n).padStart(2,"0")}
+function rpYear(m,y){if(y)return y<100?2000+y:y;const t=new Date(),cy=t.getFullYear(),cm=t.getMonth()+1;return m<cm-6?cy+1:m>cm+6?cy-1:cy}
+function rpNorm(txt){return String(txt||"").replace(/\r/g,"").replace(/[✈✈️🛫🛬]/g," ").replace(/[|•·]/g," ").replace(/(\d)\s*[.:]\s*(\d\d)(?!\d)/g,"$1:$2")}
+// List view: "12 Nov 26, Thu" headed blocks with Z times, airports, flight numbers and registrations.
+function rpList(txt){
+  const t=rpNorm(txt),re=/\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*,?\s*(\d{2,4})?\b/gi;
+  const heads=[];let m;while((m=re.exec(t))){heads.push({i:m.index,end:re.lastIndex,date:rpYear(RP_MON[m[2].toLowerCase().slice(0,3)],m[3]?+m[3]:0)+"-"+rpPad(RP_MON[m[2].toLowerCase().slice(0,3)])+"-"+rpPad(+m[1])})}
+  const out=[];
+  heads.forEach((h,k)=>{
+    const before=t.slice(k?heads[k-1].end:0,h.i),body=t.slice(h.end,k+1<heads.length?heads[k+1].i:t.length);
+    // the block's type label sits just above the date (e.g. "DUTY  FLIGHT TIME: 8H 45M")
+    const lab=(before.match(/\b(DUTY|HSBY|SBY|ASBY|ADTY|TRNG|TRG|SIM|OFF|VTO|SICK|LVE|AL)\b(?![\s\S]*\b(DUTY|HSBY|SBY|ASBY|ADTY|TRNG|TRG|SIM|OFF|VTO|SICK|LVE|AL)\b)/i)||[])[1];
+    const times=[];const tr=/\b([01]?\d|2[0-3]):([0-5]\d)\b(\s*(LT|L\b|LCL))?/gi;let x;while((x=tr.exec(body))){if(!x[4])times.push(rpPad(+x[1])+":"+x[2])}
+    const flts=(body.match(/\b(FR|RK|LS|EXS|RYR|RUK|U2|EZY|BA|W6)\s?\d{1,4}[A-Z]?\b/gi)||[]).map(f=>f.toUpperCase().replace(/\s/g,""));
+    const aps=(body.replace(/\b(CHECK|IN|OUT|LT|DUTY|FLIGHT|TIME|MORE|ACTIONS|OFF|HSBY|ASBY|TRNG|VTO|SBY|UTC|THU|FRI|SAT|SUN|MON|TUE|WED)\b/gi," ").match(/\b[A-Z]{3}\b/g)||[]).filter(a=>!/^(FR|RK|LS|EXS|RYR|RUK|EZY)/.test(a)||a.length===3).filter(a=>IATA_OK(a));
+    const regs=(body.match(/\b(9H[A-Z]{3}|EI[A-Z]{3}|G[A-Z]{4}|SP[A-Z]{3}|OE[A-Z]{3}|9H-[A-Z]{3}|EI-[A-Z]{3}|G-[A-Z]{4})\b/g)||[]).map(r=>r.replace("-",""));
+    const kind=lab?(RP_KIND[lab.toUpperCase()]||"flying"):(flts.length?"flying":"");
+    if(!kind)return;
+    const e={date:h.date,kind,report:"",off:"",sectors:[]};
+    if(kind==="flying"&&flts.length){
+      const n=flts.length,ci=/CHECK\s*IN/i.test(body),co=/CHECK\s*OUT/i.test(body);
+      let T=times.slice();if(ci)e.report=T.shift()||"";if(co&&T.length>2*n)e.off=T.pop()||"";
+      // row order (dep,arr,dep,arr) or column order (deps… then arrs…): pick the one that runs forward in time
+      const mins=s=>{const [a,b]=s.split(":").map(Number);return a*60+b};
+      const fwd=arr=>{let ok=0;for(let i=0;i+1<arr.length;i++){const d=(mins(arr[i+1])-mins(arr[i])+1440)%1440;if(d>0&&d<10*60)ok++}return ok};
+      let row=[],col=[];for(let i=0;i<n;i++){row.push(T[2*i],T[2*i+1])}
+      // column reading puts check-out among the departures
+      let C=times.slice();if(ci)C.shift();const left=C.slice(0,n+(co?1:0)),right=C.slice(n+(co?1:0));
+      for(let i=0;i<n;i++)col.push(left[i],right[i]);
+      const useCol=co&&C.length>=2*n+1&&fwd([e.report].concat(col,[left[n]]).filter(Boolean))>fwd([e.report].concat(row,[e.off]).filter(Boolean));
+      const P=useCol?col:row;if(useCol){e.off=left[n]||"";}
+      // airports: row reading = [ci, f1,t1, f2,t2, …, co]; column = [ci, f1, f2, …, co, t1, t2, …]
+      let A=aps.slice();if(ci&&A.length>2*n)A.shift();
+      const ar=[],ac=[];for(let i=0;i<n;i++){ar.push([A[2*i],A[2*i+1]])}
+      const L=A.slice(0,n),R=A.slice(n+(co?1:0));for(let i=0;i<n;i++)ac.push([L[i],R[i]]);
+      const chain=s=>s.reduce((ok,p,i)=>ok+(i&&s[i-1][1]===p[0]?1:0)+(p[0]&&p[1]&&p[0]!==p[1]?1:0),0);
+      const AP=chain(ac)>chain(ar)?ac:ar;
+      for(let i=0;i<n;i++)e.sectors.push({flt:flts[i],from:(AP[i]||[])[0]||"",to:(AP[i]||[])[1]||"",dep:P[2*i]||"",arr:P[2*i+1]||"",reg:regs[i]||regs[0]||""});
+    }else{e.report=times[0]||"";e.off=times.length>1?times[times.length-1]:""}
+    out.push(e);
+  });
+  return out;
+}
+function IATA_OK(a){return typeof IATA==="undefined"||!!IATA[a]||(typeof ICAO!=="undefined"&&!!ICAO[a])||/^(STN|LTN|LGW|LHR|MAN|BHX|EMA|LBA|NCL|GLA|EDI|BRS|BFS)$/.test(a)}
+// Calendar view: "November 2026" then day numbers and codes (OFF, HSBY, VTO, TRNG, L, DUTY, or a number of flights).
+function rpCal(txt){
+  const t=rpNorm(txt),tok=t.split(/\s+/).filter(Boolean),out=[];
+  const MN=["january","february","march","april","may","june","july","august","september","october","november","december"];
+  let y=0,mo=0,next=1,pend=[],lastDay=false;
+  for(let i=0;i<tok.length;i++){
+    const w=tok[i],lw=w.toLowerCase().replace(/[^a-z]/g,"");
+    const mi=MN.indexOf(lw);if(mi>=0&&/^\d{4}$/.test(tok[i+1]||"")){mo=mi+1;y=+tok[i+1];i++;next=1;pend=[];lastDay=false;continue}
+    if(!mo)continue;
+    if(/^(mon|tue|wed|thu|fri|sat|sun)$/i.test(w)){lastDay=false;continue}
+    const n=/^\d{1,2}$/.test(w)?+w:null,code=w.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(n!==null&&n===next&&(!pend.length||lastDay)){pend.push(n);next++;lastDay=true;continue}
+    let kind=null;
+    if(n!==null&&n>=1&&n<=8)kind="flying";else if(RP_KIND[code])kind=RP_KIND[code];
+    if(kind&&pend.length){const d=pend.shift();out.push({date:y+"-"+rpPad(mo)+"-"+rpPad(d),kind,report:"",off:"",sectors:[],n:kind==="flying"&&n?n:0});lastDay=false;continue}
+    lastDay=false;
+  }
+  return out;
+}
+function rpParse(txt){const L=rpList(txt),C=rpCal(txt);return {list:L,cal:C}}
+
+function z2roster(date,t){if(!t||RZ())return t;const d=new Date(date+"T"+t+":00Z");return hm(d)}
+
+// Roster changes: compare a new import with what was saved before.
+function rpDiff(date,o,n){
+  if(!o||!n)return [];const z=RZ()?"Z":"",out=[];
+  if(o.kind!==n.kind){out.push(`${KIND_NAME[o.kind]||o.kind} → ${KIND_NAME[n.kind]||n.kind}`);return out}
+  if(n.kind!=="flying"||!(n.sectors||[]).length||!(o.sectors||[]).length)return out;
+  if(o.report&&n.report&&o.report!==n.report)out.push(`Report ${o.report}${z} → ${n.report}${z}`);
+  if(o.off&&n.off&&o.off!==n.off)out.push(`Off duty ${o.off}${z} → ${n.off}${z}`);
+  const os=o.sectors,ns=n.sectors;
+  if(os.length!==ns.length)out.push(`${os.length} → ${ns.length} flights`);
+  ns.forEach((x,i)=>{const y=os[i];if(!y)return;
+    if(y.flt!==x.flt||y.to!==x.to)out.push(`${y.flt||"Flight"} ${y.from}→${y.to} is now ${x.flt} ${x.from}→${x.to}`);
+    else if(y.dep!==x.dep||y.arr!==x.arr)out.push(`${x.flt} now ${x.dep}–${x.arr}${z} (was ${y.dep}–${y.arr}${z})`);
+    else if(y.reg&&x.reg&&y.reg!==x.reg)out.push(`${x.flt} aircraft ${y.reg} → ${x.reg}`)});
+  return out;
+}
+function changesNote(scope){
+  const c=S.rosterChanges;if(!c||!c.items||!c.items.length||c.seen)return "";
+  const t=today(),items=c.items.filter(x=>x.date>=t).filter(x=>scope!=="today"||x.date<=addDays(t,3));if(!items.length)return "";
+  return `<section class="card" style="border-color:var(--accent);background:var(--accent-soft)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Roster changes</h2><button class="linkbtn" data-chseen="1">Got it</button></div>
+    <div>${items.map(x=>`<div class="ex"><b>${esc(fmtDate(x.date,{weekday:"short",day:"numeric",month:"short"}))}</b>${x.ch.map(y=>`<span class="note" style="margin:0">${esc(y)}</span>`).join("")}</div>`).join("")}</div>
+    <p class="note" style="margin:4px 0 0">Found when you last brought in your roster. Check them against your official roster.</p></section>`;
+}
+function rpApply(txt){
+  const L=rpList(txt),C=rpCal(txt);if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
+  rosterBackup=JSON.parse(JSON.stringify(S.roster));let nc=0,nl=0;const OLD=rosterBackup;
+  C.forEach(e=>{const cur=S.roster[e.date];
+    if(cur&&cur.kind===e.kind&&(cur.report||(cur.sectors||[]).length))return;
+    const o={kind:e.kind,report:"",off:"",dest:"",note:e.n?e.n+" flights":"",src:"paste",sectors:[]};
+    if(e.kind==="standby"){o.report=l2r(e.date,S.standby.start);o.off=l2r(e.date,S.standby.end);o.note="Usual standby times, check them"}
+    S.roster[e.date]=o;nc++});
+  L.forEach(e=>{const sec=cleanSectors(e.sectors.map(x=>Object.assign({},x,{dep:z2roster(e.date,x.dep),arr:z2roster(e.date,x.arr)})));learnFlights(sec,e.date);
+    S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report)),off:cleanTime(z2roster(e.date,e.off)),dest:destFromSectors(sec),note:"",src:"paste",sectors:sec};nl++});
+  const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
+  const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
+  if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
+  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} dut${nl===1?"y":"ies"} with flights and times`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
+}
+function pasteImportHTML(){return `<div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
+    <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
+    <details><summary class="note"><b>How to copy your roster text (no screenshots needed)</b></summary><div class="note" style="margin:6px 0">
+      <p style="margin:4px 0"><b>Pixel:</b> open your roster app on the Calendar screen. Swipe up from the bottom and hold to see your open apps, then tap <b>Select</b> under the roster app (or long-press its text). Tap <b>Select all</b> → <b>Copy</b>, and paste here. Nothing is saved to your photos.</p>
+      <p style="margin:4px 0">Or use <b>Circle to Search</b>: long-press the bottom bar, then <b>Select text</b> or circle the roster → <b>Copy</b>.</p>
+      <p style="margin:4px 0"><b>iPhone:</b> take a screenshot and tap the small preview. Long-press the text → <b>Select All</b> → <b>Copy</b>. Then tap <b>Done</b> → <b>Delete Screenshot</b>.</p>
+      <p style="margin:4px 0">You can paste the Calendar screen and several Roster screens one after another into the box, then tap Read once. Everything is read on this phone; nothing is sent anywhere.</p></div></details>`}
 function readDayForm(d){const cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual",sectors:[]};
   const r=$("#rw-r"),o=$("#rw-o"),de=$("#rw-d"),n=$("#rw-n"),l=$("#rw-l");if(r)cur.report=cleanTime(r.value);if(o)cur.off=cleanTime(o.value);if(de)cur.dest=cityFrom(de.value);if(n)cur.note=n.value.trim().slice(0,120);if(l)cur.loc=l.value.trim().slice(0,80);
   const sec=[];for(let i=0;i<10;i++){const f=$("#sc-flt-"+i);if(!f)break;const old=(cur.sectors||[])[i]||{};sec.push(Object.assign({},old,{flt:old.typ==="gt"?f.value.slice(0,8):f.value,reg:($("#sc-reg-"+i)||{}).value||old.reg||"",from:$("#sc-from-"+i).value,to:$("#sc-to-"+i).value,dep:$("#sc-dep-"+i).value,arr:$("#sc-arr-"+i).value}))}
@@ -857,12 +1017,14 @@ function viewWeek(){
     <div class="btns"><button class="primary" data-saveday="${sel}">Save day</button>${e?`<button data-clearday="${sel}">Clear day</button>`:""}<button data-copyday="${sel}">Copy to next day</button></div>
   </section>
   <datalist id="citylist">${CITIES.map(c=>`<option value="${esc(c.name)}">`).join("")}</datalist>
+  ${changesNote("all")}
   <section class="card">
     <h2>Bring in your roster</h2>
     ${sampleNS?`
     <div class="field"><label for="rost-t">Paste your roster</label><textarea id="rost-t" rows="5" placeholder="Copy your roster from your crew app or PDF and paste it here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     ${sampleImages?`<div class="field"><label for="rost-img">Or a screenshot or photo of it</label><input id="rost-img" type="file" accept="image/jpeg,image/png,image/webp"></div>`:""}
     <div class="btns"><button class="primary" id="readroster" ${rosterBusy?"disabled":""}>${rosterBusy?"Reading…":"Read my roster"}</button>${rosterBusy?`<button id="stoproster">Stop</button>`:""}</div>`:""}
+    ${sampleNS?"":pasteImportHTML()}
     <div class="field"><label for="ics">Calendar file from your roster app (.ics)</label><input id="ics" type="file" accept=".ics,text/calendar"></div>
     <p class="note" id="rostmsg" role="status">${esc(rosterMsg||"Many roster apps can export your roster as a calendar file. Or tap any day above and write it in.")}</p>
     ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
@@ -900,6 +1062,7 @@ function viewWeekList(){
       </div>`}).join("")}
   </section>
   <datalist id="citylist">${CITIES.map(c=>`<option value="${esc(c.name)}">`).join("")}</datalist>
+  ${changesNote("all")}
   <section class="card">
     <h2>Bring in your roster</h2>
     ${sampleNS?`
@@ -907,6 +1070,7 @@ function viewWeekList(){
     ${sampleImages?`<div class="field"><label for="rost-img">Or a screenshot or photo of it</label><input id="rost-img" type="file" accept="image/jpeg,image/png,image/webp"></div>`:""}
     <div class="btns"><button class="primary" id="readroster" ${rosterBusy?"disabled":""}>${rosterBusy?"Reading…":"Read my roster"}</button>${rosterBusy?`<button id="stoproster">Stop</button>`:""}</div>
     <p class="note">Claude reads it and fills in your days. Uses your Claude account and asks your permission the first time.</p>`:""}
+    ${sampleNS?"":pasteImportHTML()}
     <div class="field"><label for="ics">Calendar file from your roster app (.ics)</label><input id="ics" type="file" accept=".ics,text/calendar"></div>
     <p class="note" id="rostmsg" role="status">${esc(rosterMsg||"Many roster apps can export your roster as a calendar file. You can also add or edit any day by hand above.")}</p>
     ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
@@ -1885,7 +2049,7 @@ function wxDayBody(date,city,leave,land){
 }
 function landTime(x,rep){const r=x.date&&S.roster[x.date],sec=((x.sectors)||(r&&r.sectors)||[]).filter(z=>z.arr);if(!sec.length)return new Date(rep.getTime()+3.5*3600000);let d=r2lDT(x.date||today(),sec[0].arr);while(d<rep)d=new Date(d.getTime()+86400000);return d}
 function todayAlerts(p){
-  const out=[],t=today(),ep=currentSick();
+  const out=[],t=today(),ep=currentSick();{const cn=changesNote("today");if(cn)out.push(cn)}
   if(ep&&on("more_sick")){const onS=t>=ep.from&&t<=ep.to,checked=!!(ep.rosterOk||{})[t];
     if(onS)out.push(`<section class="card" style="border-color:var(--danger)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>Off sick until ${esc(fmtDate(ep.to,{weekday:"short",day:"numeric",month:"short"}))}</h2><button data-goto="more:sick">Open</button></div>
       <label class="chk ${checked?"done":""}" style="border:0"><input type="checkbox" ${checked?"checked":""} data-skday="${t}"><span>I've checked my roster today and it shows me as sick</span></label>
@@ -2289,7 +2453,6 @@ function viewTrip(){
   ${showFt?flightTimerCard():""}
   ${clock}
   ${on("trip_flights")&&sec.length?fold("flights","My flights",tripFlightsBody,ph==="duty",sec.length+" sector"+(sec.length===1?"":"s")):""}
-  ${on("live")?fold("live","Live flights and gates",()=>liveBodyTrip(first),true,first?esc(first.flt):""):""}
   ${on("weather")?fold("wxtoday","Weather today",()=>wxDayBody(today(),dutyCity(S.duty)||S.trip.city).html+`<p class="note" style="margin:0">Tomorrow's weather is on Plan.</p>`,false,""):""}
   ${S.profile.role==="pilot"&&on("pilot")?fold("pilot","Pilot briefing",pilotBody,false,"Wind and runways"):""}
   ${on("more_water")?fold("water","Water",waterBody,true,w.ml+" / "+w.goal+" ml"):""}
@@ -2497,6 +2660,7 @@ function profileFields(){
     <div class="row"><div class="field"><label for="pr-n">Your name</label><input id="pr-n" type="text" autocomplete="name" value="${esc(S.me.name)}" data-k="me.name"></div>
     <div class="field"><label for="pr-s">${idLabel()}</label><input id="pr-s" type="text" value="${esc(S.me.staffNo)}" data-k="me.staffNo"></div></div>
     <div class="row2"><div class="field"><label for="pr-cc">Crew control phone</label><input id="pr-cc" type="tel" autocomplete="off" value="${esc(S.me.ccPhone||"")}" data-k="me.ccPhone" placeholder="e.g. +44 ..."></div><div class="field"><label for="pr-wa">Crew control WhatsApp (optional)</label><input id="pr-wa" type="tel" autocomplete="off" value="${esc(S.me.ccWa||"")}" data-k="me.ccWa" placeholder="Same or another number"></div></div>
+    <div class="field"><label for="pr-fk">Flight lookup key (optional)</label><input id="pr-fk" type="password" autocomplete="off" spellcheck="false" value="${esc(S.me.flightKey||"")}" data-k="me.flightKey" placeholder="Paste your free AirLabs key"><span class="note" style="margin:0">With a key, typing a flight number on the roster fills the route and scheduled times (in Zulu). Get a free key at <a href="https://airlabs.co/signup" target="_blank" rel="noopener">airlabs.co</a> ↗, then copy it from your AirLabs account page. It stays on this phone.</span></div>
     <div class="field"><span class="label">Grooming extras</span><div class="seg" role="tablist" aria-label="Grooming extras">${[["f","Female crew"],["m","Male crew"],["","None"]].map(g=>`<button role="tab" aria-selected="${(S.profile.gender||"")===g[0]}" data-gender="${g[0]}">${g[1]}</button>`).join("")}</div>
     <span class="note" style="margin:0">${S.profile.gender==="f"?"Adds time for hair and makeup, tights and makeup to your kit and evening prep, and tights reminders.":S.profile.gender==="m"?"Adds time to shave, and shaving and shoe care to your kit and evening prep.":"Pick one to add the matching grooming times, kit and reminders."}</span></div>`;
 }
@@ -2765,7 +2929,7 @@ function viewPerks(){
 const TOGGLES=[
   ["Main tabs",[["tab_trip","Trip"],["tab_plan","Plan"],["tab_me","Me"]]],
   ["Today",[["core","Before you leave"],["travel","Getting there"],["late","Running late"]]],
-  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["live","Live flights and gates"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","Aviation news"]]],
+  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","Aviation news"]]],
   ["Plan",[["planday","Tonight and sleep"],["evening","Evening prep and grooming"],["kitcheck","Kit check"],["packing","Packing"],["weather","Weather"],["todo","To do"],["food","Food and meals"]]],
   ["Me",[["more_wellbeing","Mood and energy"],["me_selfcare","My routine"],["me_fitness","Fitness"]]],
   ["More",[["tool_roster","Roster"],["tool_money","Money"],["more_hours","FTL and hours"],["more_notes","Layover"],["kitlist","Grooming and kit"],["more_care","Uniform care"],["perks","Crew discounts"]]],
@@ -3023,8 +3187,9 @@ document.addEventListener("click",e=>{
   if(b.dataset.copyday){const d=b.dataset.copyday,nx=addDays(d,1),src=S.roster[d];if(!src)return;S.roster[nx]=JSON.parse(JSON.stringify(src));selDay=nx;render();save();return}
   if(b.dataset.editday){editDay=editDay===b.dataset.editday?null:b.dataset.editday;render();return}
   if(b.dataset.canceledit){editDay=null;render();return}
-  if(b.dataset.saveday){const d=b.dataset.saveday,kSel=$("#rw-k"),cur=readDayForm(d);if(kSel)cur.kind=kSel.value;S.roster[d]=cur;editDay=null;render();save();return}
-  if(b.dataset.addsec){const d=b.dataset.addsec,cur=readDayForm(d);cur.kind=cur.kind||"flying";cur.sectors=cur.sectors||[];if(cur.sectors.length<10){const last=cur.sectors[cur.sectors.length-1];cur.sectors.push({flt:"",from:last?last.to:(S.profile.base||"STN"),to:last?last.from:"",dep:"",arr:""})}S.roster[d]=cur;selDay=d;render();save();const nx=$("#sc-flt-"+(cur.sectors.length-1));if(nx)nx.focus();return}
+  if(b.dataset.saveday){const d=b.dataset.saveday,kSel=$("#rw-k"),cur=readDayForm(d);if(kSel)cur.kind=kSel.value;(cur.sectors||[]).forEach(x=>delete x.guess);learnFlights(cur.sectors,d);S.roster[d]=cur;editDay=null;render();save();return}
+  if(b.dataset.addsec){const d=b.dataset.addsec,cur=readDayForm(d);cur.kind=cur.kind||"flying";cur.sectors=cur.sectors||[];if(cur.sectors.length<10){const last=cur.sectors[cur.sectors.length-1],nf=last&&last.typ!=="gt"?nextFlt(last.flt):"",mem=nf&&(S.flights||{})[nf],ok=mem&&last&&mem.from===last.to;learnFlights(cur.sectors,d);
+      cur.sectors.push(ok?{flt:nf,from:mem.from,to:mem.to,dep:mem.dep,arr:mem.arr,guess:1}:{flt:nf,from:last?last.to:(S.profile.base||"STN"),to:last?last.from:"",dep:"",arr:"",guess:nf?1:0})}S.roster[d]=cur;selDay=d;render();save();const nx=$("#sc-flt-"+(cur.sectors.length-1));if(nx)nx.focus();return}
   if(b.dataset.sectyp){const [i,ty]=b.dataset.sectyp.split(":"),d=b.dataset.secday||selDay||today(),cur=readDayForm(d);if(cur.sectors[+i])cur.sectors[+i].typ=ty;S.roster[d]=cur;render();save();return}
   if(b.dataset.delsec){const d=selDay||today(),cur=readDayForm(d);cur.sectors.splice(+b.dataset.delsec,1);S.roster[d]=cur;render();save();return}
   if(b.dataset.clearday){delete S.roster[b.dataset.clearday];editDay=null;render();save();return}
@@ -3072,6 +3237,8 @@ document.addEventListener("click",e=>{
   if(b.dataset.tpick){const [d,rk,t]=b.dataset.tpick.split("|");S.tpick=Object.assign({},S.tpick||{});S.tpick[d+"|"+rk]=t;Object.keys(S.tpick).forEach(k=>{if(k.slice(0,10)<today())delete S.tpick[k]});render();save();return}
   if(b.dataset.ccmsg){ccOpen=ccOpen===b.dataset.ccmsg?"":b.dataset.ccmsg;render();return}
   if(b.dataset.cccopy){const t=ccText(ccOpen),el=$("#cctext");Promise.resolve().then(()=>navigator.clipboard.writeText(t)).then(()=>{if(el)el.textContent=t+" (Copied)"},()=>{});return}
+  if(b.dataset.chseen){if(S.rosterChanges)S.rosterChanges.seen=true;render();save();return}
+  if(b.id==="pasteroster"){const ta=$("#rost-p");rosterMsg=rpApply(ta?ta.value:"");render();save();return}
   if(b.dataset.dl){dlFetch(b.dataset.dl,b.dataset.dlc,true);return}
   if(b.dataset.coago!==undefined){S.standby.calledAt=new Date(Date.now()-(+b.dataset.coago)*60000).toISOString();render();save();return}
   if(b.id==="sball"){sbShowAll=!sbShowAll;render();return}
@@ -3194,6 +3361,7 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 });
 document.addEventListener("change",e=>{
   const el=e.target;
+  if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
   if(el.id==="sb-al"){S.standby.startAlarm=el.checked;render();save();return}
   if(el.id==="lo-city"){S.layoverCity=el.value;render();save();return}
   if(el.dataset.tog){if(el.checked)delete S.hide[el.dataset.tog];else S.hide[el.dataset.tog]=true;render();save();return}
