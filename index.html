@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.8";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.0";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -285,6 +285,7 @@ nav button[aria-current="page"]{color:var(--accent)}
 .jvm-zoom-btn.jvm-zoomin{top:10px}.jvm-zoom-btn.jvm-zoomout{top:48px}
 textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.blkgrid{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 10px;align-items:center;margin:8px 0}.blkgrid label{font-size:13px;font-weight:600;color:var(--muted)}.blkgrid input{min-width:0}
 </style>
 
 <div class="app">
@@ -361,7 +362,7 @@ const DEFAULT={
   bills:[],
   diet:[],
   trip:{country:"Spain",city:""},
-  pay:{payType:"sector",basic:0,sectorPay:0,sectors:0,dutyRate:0,dutyHours:0,flightRate:0,flightHours:0,allowances:0,pension:5,month:""},
+  pay:{payType:"sector",basic:0,sectorPay:0,sectors:0,dutyRate:0,dutyHours:0,flightRate:0,flightHours:0,allowances:0,pension:5,month:"",dayMethod:"365",dayRate:0,sickPay:"ssp",unpaidDays:0},
   expenses:[],
   payslips:[],
   profile:{airline:"Ryanair",base:"STN"},
@@ -569,7 +570,7 @@ function plan(x){
 }
 function leaveWhy(p){if(!p||!p.parts)return "";
   if(p.skipped){const k=p.skipped,w=RNAME[k.rk]||k.rk,c=k.o.chosen;return `<p class="note" style="margin:0;padding:10px 12px;border:1px solid var(--danger);border-radius:12px;color:var(--ink)"><b>No good ${esc(w)} in your timetable.</b> ${k.none?`None gets you there in time.`:`The last one before report is ${esc(c.t)}, which would get you there ${hmDur(k.wait)} early, so your timetable is probably missing the later ones.`} Times below are for the car. <button class="linkbtn" data-goto="plan">Add the later ${esc(w==="bus"?"buses":w+"s")} or pick one in Plan</button></p>`}
-  if(p.tr&&p.tr.chosen){const c=p.tr.chosen;return `<p class="note" style="margin:-4px 0 0">${esc(RNAME[p.tr.rk]||"")} ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}const q=p.parts,tot=Math.round((p.rep-p.leave)/60000);
+  if(p.tr&&p.tr.chosen){const c=p.tr.chosen;return `<p class="note" style="margin:-4px 0 0">${p.tr.rk==="bus"?"Bus":"Train"} ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}const q=p.parts,tot=Math.round((p.rep-p.leave)/60000);
   const bits=[q.journey?"journey "+q.journey:"",q.buffer?"buffer "+q.buffer:"",q.weather?"weather "+q.weather:"",q.peak?"rush hour "+q.peak:""].filter(Boolean).join(" + ");
   const big=tot>180;return `<p class="note" style="margin:${big?"0":"-4px 0 0"};${big?"padding:10px 12px;border:1px solid var(--danger);border-radius:12px;color:var(--ink)":""}">${big?"<b>Check your travel time:</b> ":""}Leave by is ${hmDur(tot)} before report${bits?" ("+esc(bits)+" min)":""}. <button class="linkbtn" data-goto="today:travel|${esc(phaseOf())}">Change it</button></p>`}
 const hm=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
@@ -1138,7 +1139,7 @@ function sickMessages(ep){
   const duty=missed?` my ${missed[1].kind==="standby"?"standby":"duty"} on ${fmtDate(missed[0],{weekday:"long",day:"numeric",month:"long"})}${missed[1].report?" (report "+missed[1].report+")":""}`:" my duties";
   const range=fmtDate(ep.from,{day:"numeric",month:"long"})+(ep.to!==ep.from?" to "+fmtDate(ep.to,{day:"numeric",month:"long"}):"");
   return {
-    callIn:`Hi crewing, this is ${who}. I'm unwell and won't be fit to operate${duty}. I expect to be off until ${fmtDate(ep.to,{weekday:"long",day:"numeric",month:"long"})}. I'll keep you updated${ep.type==="fitnote"?" and send my fit note":""}. Thank you.`,
+    callIn:`Hi crewing, this is ${who}. I'm unwell${ep.reason?" ("+ep.reason+")":""} and won't be fit to operate${duty}. I expect to be off until ${fmtDate(ep.to,{weekday:"long",day:"numeric",month:"long"})}. I'll keep you updated${ep.type==="fitnote"?" and send my fit note":""}. Thank you.`,
     note:`Hi, please find attached my ${ep.type==="fitnote"?"fit note":"self-certification"} covering ${range}. ${who}. Thank you.`
   };
 }
@@ -1157,6 +1158,7 @@ function viewSick(){
     <div class="row"><div class="field"><label for="sk-from">First sick day</label><input id="sk-from" type="date" value="${t}"></div><div class="field"><label for="sk-to">Expect to be off until</label><input id="sk-to" type="date" value="${t}"></div></div>
     <div class="field"><label for="sk-type">Covered by</label><select id="sk-type"><option value="self">Self-certification (up to 7 days)</option><option value="fitnote">Fit note from a doctor</option></select></div>
     ${assetsNS?`<div class="field"><label for="sk-file">Fit note (PDF or photo, optional)</label><input id="sk-file" type="file" accept="application/pdf,image/*"></div>`:`<p class="note">Keep your fit note safe: this version can't store files.</p>`}
+    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="80" placeholder="e.g. migraine, stomach bug" value=""><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
     <div class="btns"><button class="primary" id="addsick">Record sick leave</button></div>
     <p class="note" id="sickmsg" role="status">Your sick days are private to you.</p>
   </section>
@@ -1205,6 +1207,7 @@ function viewSick(){
     <h2>Change your dates</h2>
     <div class="row"><div class="field"><label for="sk-from">First sick day</label><input id="sk-from" type="date" value="${esc(ep.from)}"></div><div class="field"><label for="sk-to">Off until</label><input id="sk-to" type="date" value="${esc(ep.to)}"></div></div>
     <div class="field"><label for="sk-type">Covered by</label><select id="sk-type"><option value="self" ${ep.type==="self"?"selected":""}>Self-certification</option><option value="fitnote" ${ep.type==="fitnote"?"selected":""}>Fit note</option></select></div>
+    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="80" placeholder="e.g. migraine, stomach bug" value="${esc(ep.reason||"")}"><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
     <div class="btns"><button class="primary" id="updsick">Update</button><button id="endsick">I'm better: back tomorrow</button><button class="ghost" data-delsick="${ep.id}">${pendingDel===ep.id?"Tap to delete":"Delete"}</button></div>
     <p class="note">Changing dates updates your roster. Deleting puts your roster back how it was.</p>
   </section>
@@ -1270,10 +1273,29 @@ function viewBackup(){
 }
 
 /* ---------- Aviation news (links: live headlines need a news feed in the full app) ---------- */
+// Headlines saved for offline reading (fetched through rss2json, which allows apps to read news feeds)
+const NEWS_FEEDS=[["Simple Flying","https://simpleflying.com/feed/"],["AeroTime","https://www.aerotime.aero/feed"],["Aviation Week","https://aviationweek.com/awn/rss.xml"]];
+let newsBusy=false;
+function newsFetch(force){
+  if(newsBusy||navigator.onLine===false)return;const c=S.newsCache;if(!force&&c&&Date.now()-c.at<3*3600000)return;
+  newsBusy=true;if(force)render();
+  const strip=h=>{const d=document.createElement("div");d.innerHTML=String(h||"");return (d.textContent||"").replace(/\s+/g," ").trim()};
+  Promise.allSettled(NEWS_FEEDS.map(([n,u])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,10).map(x=>({src:n,t:strip(x.title).slice(0,200),d:strip(x.description||x.content).slice(0,600),u:String(x.link||""),dt:String(x.pubDate||"")})))))
+  .then(rs=>{const items=rs.filter(r=>r.status==="fulfilled").flatMap(r=>r.value).filter(x=>x.t&&/^https:\/\//.test(x.u));
+    newsBusy=false;if(items.length){items.sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));S.newsCache={at:Date.now(),items:items.slice(0,30)};save()}else if(force){S.newsCache=Object.assign({},S.newsCache||{items:[]},{err:Date.now()})}render()});
+}
+function newsSaved(){
+  newsFetch(false);const c=S.newsCache,items=(c&&c.items)||[];
+  const ago=c&&c.at?Math.round((Date.now()-c.at)/60000):null;
+  return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Latest headlines</h2><button class="pick" id="newsrf" ${newsBusy?"disabled":""}>${newsBusy?"Loading…":"Refresh"}</button></div>
+    ${items.length?`<div>${items.map(x=>`<details class="ex"><summary><b>${esc(x.t)}</b><span class="note" style="display:block">${esc(x.src)}${x.dt?" · "+esc(x.dt.slice(0,16)):""}</span></summary>${x.d?`<p class="note" style="margin:6px 0">${esc(x.d)}</p>`:""}<a href="${esc(x.u)}" target="_blank" rel="noopener" class="linkbtn">Read the full article ↗</a></details>`).join("")}</div>
+    <p class="note" style="margin:6px 0 0">Saved ${ago<1?"just now":ago<60?ago+" min ago":Math.round(ago/60)+"h ago"} so you can read the headlines and summaries offline. Full articles need signal.</p>`
+    :`<p class="note" style="margin:0">${c&&c.err?"Couldn't load the headlines. ":""}Open this page once with signal and the latest headlines are saved for reading offline${IS_PWA?"":" (works in the installed app)"}.</p>`}</section>`;
+}
 function viewNews(){
   const L=(n,u,d)=>`<a class="newsl" href="${u}" target="_blank" rel="noopener"><b>${esc(n)} ↗</b><span class="note">${esc(d)}</span></a>`;
   const airline=S.profile.airline==="Ryanair"?L("Ryanair newsroom","https://corporate.ryanair.com/news/","Company announcements and results"):S.profile.airline==="Jet2"?L("Jet2 plc news","https://www.jet2plc.com/","Company announcements and results"):"";
-  return `<section class="card">
+  return `${newsSaved()}<section class="card">
     <h2>Industry news</h2>
     <div class="newsgrid">
       ${L("Simple Flying","https://simpleflying.com/","Airlines, aircraft and routes")}
@@ -1524,13 +1546,27 @@ function estimate(){
   const P=S.pay,comm=monthComm();
   const t=P.payType,use=x=>t===x||t==="mix";
   const variable=(use("sector")?(+P.sectorPay||0)*(+P.sectors||0):0)+(use("duty")?(+P.dutyRate||0)*(+P.dutyHours||0):0)+(use("flight")?(+P.flightRate||0)*(+P.flightHours||0):0);
-  const gross=(+P.basic||0)/12+variable+(+P.allowances||0)+comm;
+  const D=deductions(variable);
+  const gross=Math.max(0,(+P.basic||0)/12+variable+(+P.allowances||0)+comm-D.vto-D.unpaid-D.sick+D.ssp);
   const pension=gross*(+P.pension||0)/100;
   const A=gross*12,PA=12570,BR=37700,HR=125140;
   const taxable=Math.max(0,(A-pension*12)-PA);
   const tax=(Math.min(taxable,BR)*0.20+Math.max(0,Math.min(taxable,HR-PA)-BR)*0.40+Math.max(0,taxable-(HR-PA))*0.45)/12;
   const ni=(Math.max(0,Math.min(A,50270)-PA)*0.08+Math.max(0,A-50270)*0.02)/12;
-  return {comm,gross,pension,tax,ni,net:gross-pension-tax-ni};
+  return {comm,gross,pension,tax,ni,net:gross-pension-tax-ni,D};
+}
+// money lost for VTO, unpaid leave and sick days this month (rough: airlines' rules differ)
+const SSP_WEEK=123.25; // from 6 April 2026, paid from day one, capped at 80% of average weekly earnings
+function deductions(variable){
+  const P=S.pay,ym=today().slice(0,7),basic=+P.basic||0;
+  const dr=P.dayMethod==="custom"?(+P.dayRate||0):basic/(P.dayMethod==="260"?260:365);
+  const vtoN=Object.keys(S.roster).filter(d=>d.startsWith(ym)&&S.roster[d].kind==="vto").length;
+  const sickSet=new Set();(S.sick||[]).forEach(e=>sickDays(e).forEach(d=>{if(d.startsWith(ym))sickSet.add(d)}));Object.keys(S.roster).forEach(d=>{if(d.startsWith(ym)&&S.roster[d].kind==="sick")sickSet.add(d)});
+  const sickN=sickSet.size,unpaidN=Math.max(0,+P.unpaidDays||0);
+  const sp=P.sickPay||"ssp",wk=(basic/12+(variable||0)+(+P.allowances||0))*12/52;
+  const sick=sp==="full"?0:sp==="half"?sickN*dr*0.5:sickN*dr;
+  const ssp=sp==="ssp"?sickN*Math.min(SSP_WEEK,wk*0.8)/7:0;
+  return {dr,vtoN,sickN,unpaidN,vto:vtoN*dr,unpaid:unpaidN*dr,sick,ssp};
 }
 const MONEY_VIEWS_ALL=[["pay","Pay"],["bills","Bills"],["sales","Sales"],["expenses","Expenses"],["savings","Savings"]];
 function moneyViews(){return MONEY_VIEWS_ALL.filter(m=>m[0]==="pay"||on("m_"+m[0]))}
@@ -1623,8 +1659,21 @@ function viewPay(){
     <div class="row">${f("p-pen","Pension (% of pay)","pension","0.5")}<div class="field"><label>Sales commission</label><input class="num" type="text" readonly value="${money(E.comm)}" aria-label="Sales commission this month, from your sales log"><span class="note">From your Sales log</span></div></div>
   </section>
   <section class="card">
+    <h2>Days off pay</h2>
+    <p class="note" style="margin:0">This month from your roster: <b>${E.D.vtoN} VTO day${E.D.vtoN===1?"":"s"}</b> and <b>${E.D.sickN} sick day${E.D.sickN===1?"":"s"}</b>.</p>
+    <div class="row"><div class="field"><label for="p-dm">Day's pay worked out as</label><select id="p-dm" data-k="pay.dayMethod">${[["365","Salary ÷ 365 (calendar days)"],["260","Salary ÷ 260 (working days)"],["custom","My own day rate"]].map(o=>`<option value="${o[0]}" ${P.dayMethod===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
+    ${P.dayMethod==="custom"?f("p-dr2","Day rate (£)","dayRate","0.01"):`<div class="field"><label>Day rate</label><input class="num" type="text" readonly value="${money(E.D.dr)}" aria-label="Day rate"></div>`}</div>
+    <div class="row"><div class="field"><label for="p-sp">When you're sick you get</label><select id="p-sp" data-k="pay.sickPay">${[["full","Full pay (company sick pay)"],["half","Half pay"],["ssp","Statutory Sick Pay only"],["none","Nothing"]].map(o=>`<option value="${o[0]}" ${(P.sickPay||"ssp")===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
+    ${f("p-ud","Unpaid leave days this month","unpaidDays","1")}</div>
+    <p class="note" style="margin:0">VTO and unpaid leave take a day's basic pay each; you also don't earn sector or hours pay for them. Check your contract for your airline's exact rules.</p>
+  </section>
+  <section class="card">
     <h2>Breakdown</h2>
     <table><tbody>
+      ${E.D.vto?`<tr><td>VTO (${E.D.vtoN} day${E.D.vtoN===1?"":"s"})</td><td class="r m">−${money(E.D.vto)}</td></tr>`:""}
+      ${E.D.unpaid?`<tr><td>Unpaid leave (${E.D.unpaidN} day${E.D.unpaidN===1?"":"s"})</td><td class="r m">−${money(E.D.unpaid)}</td></tr>`:""}
+      ${E.D.sick?`<tr><td>Sick days (${E.D.sickN})</td><td class="r m">−${money(E.D.sick)}</td></tr>`:""}
+      ${E.D.ssp?`<tr><td>Statutory Sick Pay</td><td class="r m">+${money(E.D.ssp)}</td></tr>`:""}
       <tr><td>Gross pay</td><td class="r m">${money(E.gross)}</td></tr>
       <tr><td>Pension</td><td class="r m">−${money(E.pension)}</td></tr>
       <tr><td>Income tax</td><td class="r m">−${money(E.tax)}</td></tr>
@@ -1785,7 +1834,8 @@ function coreBody(){
 }
 function travelBody(){
   const d=S.duty,q=encodeURIComponent(placeOf(d)),B=BASES[S.profile.base]||BASES.STN;
-  return `<div class="links">
+  const ch=isDutyK(d.kind||"flying")?travelChoice(d,plan()):"";
+  return `${ch}${ch?"":`<p class="note" style="margin:0">Add your train or bus times in More › Profile › Getting to work and the app compares them with driving and advises which to take.</p>`}<div class="links">
       <a href="https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=${useT(d.date)?"transit":"driving"}" target="_blank" rel="noopener">${useT(d.date)?"Next trains and buses":"Live traffic"} ↗</a>
       <a href="https://www.nationalrail.co.uk/" target="_blank" rel="noopener">National Rail ↗</a>
       ${B.links.map(l=>`<a href="${l[1]}" target="_blank" rel="noopener">${esc(l[0])} ↗</a>`).join("")}
@@ -1978,7 +2028,7 @@ function wxGet(lat,lon){
   if(c&&(c.data||c.fail)&&Date.now()-c.at<(c.fail?10:90)*60000)return c.data||null;
   if(c&&c.busy)return c.data||null;
   WX[key]={at:Date.now(),busy:true,data:c&&c.data};
-  try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&hourly=precipitation_probability,precipitation,temperature_2m,wind_gusts_10m,wind_speed_10m,wind_direction_10m,weather_code&timezone=UTC&forecast_days=3")
+  try{fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&hourly=precipitation_probability,precipitation,temperature_2m,wind_gusts_10m,wind_speed_10m,wind_direction_10m,weather_code,visibility,cloud_cover_low,dew_point_2m,pressure_msl,freezing_level_height,cape&timezone=UTC&forecast_days=3")
     .then(r=>r.ok?r.json():Promise.reject()).then(j=>{WX[key]={at:Date.now(),data:j.hourly};render()})
     .catch(()=>{WX[key]={at:Date.now(),fail:true,data:c&&c.data}})}catch(e){WX[key]={at:Date.now(),fail:true}}
   return c&&c.data||null;
@@ -2212,7 +2262,14 @@ function viewToday(){
 /* ---------- TRIP: on duty and away ---------- */
 const TIMER_PRESETS=[["15 min",15],["20 min",20],["30 min",30],["45 min",45],["60 min",60]];
 let audioCtx=null;
-function beep(){try{if(!audioCtx)return;const a=audioCtx;[0,.45,.9].forEach(t=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.0001,a.currentTime+t);g.gain.exponentialRampToValueAtTime(.35,a.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t+.35);o.start(a.currentTime+t);o.stop(a.currentTime+t+.37)})}catch(e){}
+function audioOn(){try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(A)audioCtx=new A()}if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(e){}}
+// phones only allow sound after a tap, so wake the speaker on every tap
+document.addEventListener("pointerdown",audioOn,{capture:true,passive:true});
+let wakeLock=null;
+async function keepAwake(on){try{if(on&&!wakeLock&&navigator.wakeLock&&document.visibilityState==="visible"){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null})}else if(!on&&wakeLock){wakeLock.release();wakeLock=null}}catch(e){wakeLock=null}}
+function timerNotify(t){try{if(!("Notification" in window)||Notification.permission!=="granted")return;const body=(t.label||"Timer")+" is done";
+  if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification("Crew Day",{body,tag:"tm-"+t.id,vibrate:[300,150,300,150,300],requireInteraction:true})).catch(()=>{try{new Notification("Crew Day",{body})}catch(e){}});else new Notification("Crew Day",{body})}catch(e){}}
+function beep(){audioOn();try{if(!audioCtx)return;const a=audioCtx;[0,.45,.9,1.8,2.25,2.7].forEach(t=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.0001,a.currentTime+t);g.gain.exponentialRampToValueAtTime(.35,a.currentTime+t+.02);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t+.35);o.start(a.currentTime+t);o.stop(a.currentTime+t+.37)})}catch(e){}
   try{navigator.vibrate&&navigator.vibrate([300,150,300,150,300])}catch(e){}}
 function timersBody(){
   const now=Date.now(),list=(S.timers||[]).slice().sort((a,b)=>a.end-b.end);
@@ -2220,7 +2277,7 @@ function timersBody(){
     <div class="row"><div class="field"><label for="tm-min">Custom (minutes)</label><input id="tm-min" class="num" type="number" min="1" max="600" inputmode="numeric" placeholder="e.g. 40"></div><div class="field"><label for="tm-lab">Name</label><input id="tm-lab" type="text" placeholder="e.g. Meal"></div></div>
     <div class="btns"><button id="tmstart">Start</button></div>
     ${list.length?`<div>${list.map(t=>{const left=t.end-now,up=left<=0;return `<div class="chk ${up?"":""}" style="${up?"color:var(--accent)":""}"><span><b>${esc(t.label)}</b><br><span class="note">${up?"Time's up":"ends "+hm(new Date(t.end))}</span></span><span id="tm-${t.id}" style="font:700 20px var(--mono);flex:none">${up?"0:00":fmtLeft(left)}</span><button class="ghost" data-tmdel="${t.id}">${up?"Dismiss":"Cancel"}</button></div>`}).join("")}</div>`:""}
-    <p class="note">Rings and vibrates while the app is open.</p>`;
+    <p class="note">Rings and vibrates. The screen stays on while a timer runs. If you lock the phone, allow notifications so it can still alert you, though phones may delay it.</p>`;
 }
 function waterBody(){
   rolloverWater();const w=S.water,pct=Math.min(100,Math.round(w.ml/(w.goal||1)*100));
@@ -2408,12 +2465,13 @@ function wvSections(txt){
     const t=l.trim();if(!t)return;secs[cur].push(t);if(sub)secs[cur+"/"+sub].push(t)});
   return secs;
 }
-function clip(arr,n){let s="";for(const p of arr||[]){if((s+p).length>n){if(!s)s=p.slice(0,n).replace(/\s\S*$/,"")+"…";break}s+=(s?"\n":"")+p}return s}
+// keep whole paragraphs; if one is too long, end it at a full stop instead of mid-sentence
+function clip(arr,n){let s="",more=false;for(const p of arr||[]){if((s+p).length>n){more=true;if(!s){const c=p.slice(0,n),e=Math.max(c.lastIndexOf(". "),c.lastIndexOf("! "),c.lastIndexOf("? "));s=e>n*0.4?c.slice(0,e+1):c.replace(/\s\S*$/,"")+"…"}break}s+=(s?"\n\n":"")+p}return s+(more?"\n\n(More in the full guide.)":"")}
 function wvPick(txt){
   const S2=wvSections(txt),find=re=>Object.keys(S2).filter(k=>re.test(k));
   const ev=find(/(^|\/)(events?|festivals?|festivals and events|events and festivals|annual events|carnival)\b/).map(k=>S2[k]).flat();
   const top=k=>S2[k]&&S2[k].filter(x=>!/^(See also|Main article)/.test(x));
-  return {intro:clip(top("intro"),500),understand:clip(top("understand"),700),events:clip([...new Set(ev)],1400),get:clip(top("get around"),600),see:clip(top("see"),700),eat:clip(top("eat"),500),safe:clip(top("stay safe"),500),health:clip(top("stay healthy"),300)};
+  return {intro:clip(top("intro"),900),understand:clip(top("understand"),1500),events:clip([...new Set(ev)],2500),get:clip(top("get around"),1200),see:clip(top("see"),1500),eat:clip(top("eat"),900),safe:clip(top("stay safe"),900),health:clip(top("stay healthy"),500)};
 }
 async function dlFetch(city,country,force){
   const k=dlKey(city),old=dlGet(city);
@@ -2439,7 +2497,7 @@ async function dlFetch(city,country,force){
   const keys=Object.keys(S.dl).sort((a,b)=>S.dl[b].at-S.dl[a].at);keys.slice(8).forEach(x=>delete S.dl[x]);
   delete dlBusy[k];render();save();
 }
-function dlAuto(){if(navigator.onLine===false)return;dlCities().forEach(x=>dlFetch(x.city,x.country,false))}
+function dlAuto(){if(navigator.onLine===false)return;if(on("more_news"))newsFetch(false);dlCities().forEach(x=>dlFetch(x.city,x.country,false))}
 function dlBlock(city,country){
   dlFetch(city,country,false);
   const D=dlGet(city),busy=dlBusy[dlKey(city)],day=S.duty.date&&S.duty.date>=today()?S.duty.date:today();
@@ -2447,7 +2505,7 @@ function dlBlock(city,country){
   const btn=`<button class="pick" data-dl="${esc(city)}" data-dlc="${esc(country||"")}" ${busy?"disabled":""}>${busy?"Downloading…":D&&D.ok?"Update now":"Download for the flight"}</button>`;
   if(!D||!D.ok)return `<span class="label">Today in ${esc(city)}</span><p class="note" style="margin:4px 0">Download today's info while you have signal: public holidays, sunrise and sunset, local events and a short city guide. It's kept on the phone for flight mode.${D&&D.err?`<br><b>${esc(D.err)}</b>`:""}</p><div class="btns" style="margin:0">${btn}</div>`;
   const sd=(D.sun||[]).find(x=>x.d===day)||(D.sun||[])[0],hols=D.hol||[],hToday=hols.filter(h=>h.d===day),hSoon=hols.filter(h=>h.d>day).slice(0,3);
-  const wv=D.wv||{},sec=(t,v)=>v?`<details><summary class="note"><b>${t}</b></summary><p class="note" style="white-space:pre-line;margin:6px 0">${esc(v)}</p></details>`:"";
+  const wv=D.wv||{},sec=(t,v)=>v?`<details><summary class="note"><b>${t}</b></summary><p class="note" style="white-space:pre-line;margin:6px 0;overflow-wrap:anywhere">${esc(v)}</p></details>`:"";
   const dow=new Date(day+"T12:00:00").getDay(),sundayShut=dow===0&&["Germany","Poland","Austria","Switzerland","Norway","Croatia"].includes(country);
   return `<span class="label">${day===today()?"Today":day===addDays(today(),1)?"Tomorrow":"Duty day"} in ${esc(city)} · ${esc(fmtDate(day,{weekday:"short",day:"numeric",month:"short"}))}</span>
   <div>
@@ -2456,7 +2514,7 @@ function dlBlock(city,country){
   ${sd?`<div class="ex"><span>Sunrise ${esc(sd.rise)} · Sunset ${esc(sd.set)} (local time there)${isFinite(sd.hi)?` · ${sd.lo}° to ${sd.hi}°`:""}</span></div>`:""}
   ${hSoon.length?`<div class="ex"><span class="note">Coming up: ${hSoon.map(h=>esc(h.n)+" "+esc(fmtDate(h.d,{day:"numeric",month:"short"}))).join(" · ")}</span></div>`:""}
   </div>
-  ${wv.events?`<span class="label">Events and festivals in ${esc(city)}</span><p class="note" style="white-space:pre-line;margin:4px 0;max-height:16em;overflow:auto">${esc(wv.events)}</p>`:""}
+  ${wv.events?`<span class="label">Events and festivals in ${esc(city)}</span><p class="note" style="white-space:pre-line;margin:4px 0;overflow-wrap:anywhere">${esc(wv.events)}</p>`:""}
   ${wv.intro||wv.understand||wv.see||wv.get||wv.eat||wv.safe?`<span class="label">City guide</span>${sec("About",wv.intro||wv.understand)}${wv.intro&&wv.understand?sec("Understand",wv.understand):""}${sec("See",wv.see)}${sec("Getting around",wv.get)}${sec("Eat",wv.eat)}${sec("Stay safe",wv.safe)}`:""}
   <p class="note" style="margin:8px 0 4px">Saved ${ago(D.at)} for offline use.${D.err?` ${esc(D.err)}`:""}${D.wvTitle?` Guide text from <a href="https://en.wikivoyage.org/wiki/${encodeURIComponent(D.wvTitle)}" target="_blank" rel="noopener">Wikivoyage</a> (CC BY-SA).`:""} Holidays from Nager.Date.</p>
   <div class="btns" style="margin:0">${btn}</div>`;
@@ -2479,8 +2537,24 @@ function factsBody(){
 }
 
 function movesBody(){return [...new Set(EXERCISES.map(x=>x[0]))].map(g=>`<span class="label">${esc(g)}</span><div>${EXERCISES.filter(x=>x[0]===g).map(x=>`<div class="ex"><b>${esc(x[1])}</b><span class="note">${esc(x[2])}</span></div>`).join("")}</div>`).join("")+(on("me_fitness")?`<div class="btns"><button class="linkbtn" data-goto="me:fitness">Log a workout in Me</button></div>`:"")}
-function wordsBody(){const P=PHRASES[S.trip.country];if(!P)return `<p class="note">Pick a destination country above to see handy words in the local language.</p>`;
-  return `<div>${PHRASE_KEYS.map((k,i)=>`<div class="ex" style="grid-template-columns:minmax(0,2fr) minmax(0,3fr);display:grid;gap:10px"><span class="note">${esc(k)}</span><b style="overflow-wrap:anywhere">${esc(P.p[i])}</b></div>`).join("")}</div>`}
+// On-board customer service phrases (formal). Checked against common usage; ask a native colleague if unsure.
+const CS_KEYS=["Welcome on board","May I see your boarding pass, please?","Your seat is this way","Please put your bag in the overhead locker","Please fasten your seatbelt","Please switch your phone to flight mode","Would you like anything to eat or drink?","We only accept card","Do you need any help?","Please stay seated","Thank you, goodbye!"];
+const CS={
+"Spain":["Bienvenidos a bordo","¿Me enseña su tarjeta de embarque, por favor?","Su asiento está por aquí","Por favor, ponga su equipaje en el compartimento superior","Abróchese el cinturón, por favor","Ponga su teléfono en modo avión, por favor","¿Desea algo de comer o beber?","Solo aceptamos tarjeta","¿Necesita ayuda?","Permanezca sentado, por favor","Gracias, ¡adiós!"],
+"Portugal":["Bem-vindos a bordo","Posso ver o seu cartão de embarque, por favor?","O seu lugar é por aqui","Por favor, coloque a bagagem no compartimento superior","Aperte o cinto de segurança, por favor","Coloque o telemóvel em modo de voo, por favor","Deseja alguma coisa para comer ou beber?","Só aceitamos cartão","Precisa de ajuda?","Permaneça sentado, por favor","Obrigado (man) / Obrigada (woman), adeus!"],
+"Italy":["Benvenuti a bordo","Posso vedere la sua carta d'imbarco, per favore?","Il suo posto è da questa parte","Per favore, metta il bagaglio nella cappelliera","Allacci la cintura, per favore","Metta il telefono in modalità aereo, per favore","Desidera qualcosa da mangiare o da bere?","Accettiamo solo carte","Ha bisogno di aiuto?","Resti seduto, per favore","Grazie, arrivederci!"],
+"France":["Bienvenue à bord","Puis-je voir votre carte d'embarquement, s'il vous plaît ?","Votre siège est par ici","Veuillez placer votre bagage dans le coffre à bagages","Attachez votre ceinture, s'il vous plaît","Mettez votre téléphone en mode avion, s'il vous plaît","Souhaitez-vous quelque chose à manger ou à boire ?","Nous acceptons uniquement les cartes","Avez-vous besoin d'aide ?","Restez assis, s'il vous plaît","Merci, au revoir !"],
+"Germany":["Willkommen an Bord","Darf ich bitte Ihre Bordkarte sehen?","Ihr Platz ist hier entlang","Bitte legen Sie Ihr Gepäck in das Gepäckfach","Bitte schnallen Sie sich an","Bitte schalten Sie Ihr Handy in den Flugmodus","Möchten Sie etwas essen oder trinken?","Wir nehmen nur Kartenzahlung","Brauchen Sie Hilfe?","Bitte bleiben Sie sitzen","Danke, auf Wiedersehen!"],
+"Greece":["Καλώς ήρθατε (ka-LOS IR-tha-te)","Την κάρτα επιβίβασης, παρακαλώ (tin KAR-ta e-pi-VI-va-sis, pa-ra-ka-LO)","Η θέση σας είναι από εδώ (i THE-si sas I-ne a-PO e-DHO)","Βάλτε την τσάντα στο ντουλάπι από πάνω, παρακαλώ (VAL-te tin TSAN-da sto dou-LA-pi a-PO PA-no)","Δέστε τη ζώνη σας, παρακαλώ (DHES-te ti ZO-ni sas)","Βάλτε το κινητό σε λειτουργία πτήσης (VAL-te to ki-ni-TO se li-tour-YI-a PTI-sis)","Θα θέλατε κάτι να φάτε ή να πιείτε; (tha THE-la-te KA-ti na FA-te i na pi-I-te)","Δεχόμαστε μόνο κάρτα (dhe-HO-ma-ste MO-no KAR-ta)","Χρειάζεστε βοήθεια; (hri-A-ze-ste vo-I-thi-a)","Παραμείνετε στη θέση σας, παρακαλώ (pa-ra-MI-ne-te sti THE-si sas)","Ευχαριστώ, αντίο! (ef-ha-ri-STO, an-DI-o)"],
+"Poland":["Witamy na pokładzie","Poproszę kartę pokładową","Pana / Pani miejsce jest tędy","Proszę włożyć bagaż do schowka nad siedzeniami","Proszę zapiąć pasy","Proszę włączyć tryb samolotowy w telefonie","Czy podać coś do jedzenia lub picia?","Przyjmujemy tylko karty","Czy potrzebuje Pan / Pani pomocy?","Proszę pozostać na miejscu","Dziękuję, do widzenia!"],
+"Turkey":["Hoş geldiniz","Biniş kartınızı görebilir miyim, lütfen?","Koltuğunuz bu tarafta","Lütfen çantanızı üst dolaba koyun","Lütfen emniyet kemerinizi bağlayın","Lütfen telefonunuzu uçak moduna alın","Yiyecek veya içecek bir şey ister misiniz?","Sadece kart kabul ediyoruz","Yardıma ihtiyacınız var mı?","Lütfen yerinizde oturun","Teşekkürler, güle güle!"],
+"Croatia":["Dobrodošli na let","Mogu li vidjeti vašu kartu za ukrcaj, molim?","Vaše sjedalo je ovuda","Molim stavite prtljagu u pretinac iznad sjedala","Molim vežite pojas","Molim prebacite mobitel u način rada u zrakoplovu","Želite li nešto za jelo ili piće?","Primamo samo kartice","Trebate li pomoć?","Molim ostanite sjediti","Hvala, doviđenja!"],
+"Netherlands":["Welkom aan boord","Mag ik uw instapkaart zien, alstublieft?","Uw stoel is deze kant op","Wilt u uw bagage in het bagagevak boven u leggen?","Wilt u uw riem vastmaken?","Wilt u uw telefoon in vliegtuigmodus zetten?","Wilt u iets eten of drinken?","We accepteren alleen kaartbetalingen","Heeft u hulp nodig?","Wilt u blijven zitten?","Dank u wel, tot ziens!"]
+};
+function wordsBody(){const P=PHRASES[S.trip.country],C=CS[S.trip.country];if(!P)return `<p class="note">Pick a destination country above to see handy words in the local language.</p>`;
+  const row=(k,v)=>`<div class="ex" style="grid-template-columns:minmax(0,2fr) minmax(0,3fr);display:grid;gap:10px"><span class="note">${esc(k)}</span><b style="overflow-wrap:anywhere">${esc(v)}</b></div>`;
+  return `${C?`<span class="label">On board · ${esc(P.lang)}</span><div>${CS_KEYS.map((k,i)=>row(k,C[i])).join("")}</div>`:""}
+  <span class="label">Out and about</span><div>${PHRASE_KEYS.map((k,i)=>row(k,P.p[i])).join("")}</div>`}
 function viewTrip(){
   const ph=phaseOf(),now=new Date(),r=S.roster[S.duty.date],sec=(r&&r.kind==="flying"&&r.sectors)||[],first=sec.find(x=>x.flt);
   const w=S.water,dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:""),P=PHRASES[S.trip.country];
@@ -2528,32 +2602,56 @@ function flightTimerCard(){
   const est=running?ft.est:(x&&(x.est||blockMins(x)))||(ft&&ft.est)||0;
   const nameOf=y=>(y.typ==="dh"?"Deadhead ":y.typ==="gt"?"🚌 ":"")+(y.flt||(y.typ==="gt"?"Transfer":"Flight"))+" "+y.from+"→"+y.to;
   const last=S.ftLast&&S.ftLast.date===t?S.ftLast:null;
-  if(running){const end=new Date(ft.start+ft.est*60000);
+  if(running){let end=new Date(ft.start+ft.est*60000);if(x&&x.ctot){const sl=new Date(r2lDT(t,x.ctot).getTime()+(ft.est-15)*60000);if(sl>end)end=sl}
     return `<section class="card ftcard"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>${x?esc(nameOf(x)):"Flight timer"}</h2><span class="chip">Block ${fmtMins(ft.est)}</span></div>
       <div class="pass" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">${cdSince("Since pushback",new Date(ft.start),"off blocks "+hm(new Date(ft.start)))}${cdCell("Block left",end,"on blocks ~"+hm(end),true)}</div>
+      ${x&&x.ctot?`<p class="note" style="margin:0">Slot ${r2l(t,x.ctot)}${RZ()?"L":""}: ${slotLine(t,x)}</p>`:""}
       <button class="primary bigbtn" id="ftstop">On blocks</button>
-      <div class="btns" style="margin:0"><button class="ghost" id="ftundo">Undo start</button></div></section>`}
+      <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from now</button><button class="ghost" id="ftundo">Cancel the timer</button></div></section>`}
   if(!x&&secs.length&&!ft)return last?`<section class="card ftcard"><h2>Flights done</h2><p style="margin:0">Last block ${fmtMins(last.block)}${last.est?" ("+(last.block>last.est?"+":last.block<last.est?"−":"±")+fmtMins(Math.abs(last.block-last.est))+" against "+fmtMins(last.est)+")":""}.</p></section>`:"";
   return `<section class="card ftcard">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>Flight timer</h2>${last?`<span class="chip">Last block ${fmtMins(last.block)}${last.est?" · "+(last.block>last.est?"+":last.block<last.est?"−":"±")+Math.abs(last.block-last.est)+" min":""}</span>`:""}</div>
     ${secs.length>1?`<div class="btns" style="margin:0">${secs.map((y,j)=>`<button class="pick" aria-pressed="${j===i}" data-ftsec="${j}" ${y.onb?"disabled":""}>${esc(nameOf(y))}${y.onb?" ✓":""}</button>`).join("")}</div>`:x?`<p style="margin:0"><b>${esc(nameOf(x))}</b>${x.dep?` · sched ${r2l(t,x.dep)}${RZ()?"L":""}`:""}</p>`:""}
     <div class="row2"><div class="field"><label for="ft-est">Block time today</label><input id="ft-est" type="text" inputmode="numeric" placeholder="e.g. 2:35" value="${est?fmtMins(est):""}"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">From the briefing.${x&&blockMins(x)?" Planned "+fmtMins(blockMins(x))+".":""}</span></div></div>
+    ${x?`<div class="row2"><div class="field"><label for="ft-slot">Slot (CTOT)${RZ()?" L":""}</label><input id="ft-slot" type="time" value="${x.ctot?r2l(t,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">${x.ctot?slotLine(t,x):"Add it if ATC gives you one. The landing estimate then moves with it."}</span></div></div>`:""}
     <button class="primary bigbtn" id="ftgo">Start at pushback</button>
+    ${last&&last.prev?`<div class="btns" style="margin:0"><button class="ghost" id="ftunstop">Pressed On blocks by mistake? Carry on timing</button></div>`:""}
   </section>`;
 }
+// slot: how it moves the day (taxi-out ~15 min is a planning figure)
+function slotLine(t,x){const now=new Date(),sl=r2lDT(t,x.ctot),mins=Math.round((sl-now)/60000),std=x.dep?r2lDT(t,x.dep):null,late=std?Math.round((sl-std)/60000)-15:0;
+  const bm=blockMins(x)||x.est||0,land=bm?new Date(sl.getTime()+(bm-15)*60000):null;
+  return `${mins>0?"in "+fmtMins(mins):mins>-5?"now":"passed"}${late>0?` · about ${late} min late off blocks`:""}${land?` · on blocks ~${hm(land)}`:""}`}
 function tripFlightsBody(){
   const dt=S.duty.date||today(),r=S.roster[S.duty.date],sec=(r&&r.sectors)||[];
   if(!sec.length)return `<p class="note" style="margin:0">Add today's flights in More › Roster and they show here.</p>`;
   let tot=0,plan=0;
   const rows=sec.map((x,i)=>{const pb=blockMins(x),ab=x.offb&&x.onb?blockMins({dep:x.offb,arr:x.onb}):0,op=!x.typ||x.typ==="op";if(op){plan+=pb;tot+=ab}
     return `<div class="seccard"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${x.typ==="dh"?"Deadhead ":x.typ==="gt"?"🚌 ":""}${esc(x.flt||(x.typ==="gt"?"Ground transfer":"Flight "+(i+1)))} · ${esc(x.from)}→${esc(x.to)}</b><span class="note" style="margin:0">Sched ${x.dep?r2l(dt,x.dep):"--:--"}–${x.arr?r2l(dt,x.arr):"--:--"}${RZ()?"L":""}${x.reg?" · "+esc(x.reg):""}</span></div>
-      <div class="row3"><div class="field"><label for="ts-c-${i}">Slot${RZ()?" L":""}</label><input id="ts-c-${i}" type="time" value="${x.ctot?r2l(dt,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field"><label for="ts-o-${i}">Off blocks${RZ()?" L":""}</label><input id="ts-o-${i}" type="time" value="${x.offb?r2l(dt,x.offb):""}" data-secf="${i}:offb"></div><div class="field"><label for="ts-n-${i}">On blocks${RZ()?" L":""}</label><input id="ts-n-${i}" type="time" value="${x.onb?r2l(dt,x.onb):""}" data-secf="${i}:onb"></div></div>
+      <div class="blkgrid">
+        <label for="ts-o-${i}">Off blocks${RZ()?" (L)":""}</label><input id="ts-o-${i}" type="time" value="${x.offb?r2l(dt,x.offb):""}" data-secf="${i}:offb"><button class="pick" data-secnow="${i}:offb">Now</button>
+        <label for="ts-n-${i}">On blocks${RZ()?" (L)":""}</label><input id="ts-n-${i}" type="time" value="${x.onb?r2l(dt,x.onb):""}" data-secf="${i}:onb"><button class="pick" data-secnow="${i}:onb">Now</button>
+        <label for="ts-c-${i}">Slot${RZ()?" (L)":""}</label><input id="ts-c-${i}" type="time" value="${x.ctot?r2l(dt,x.ctot):""}" data-secf="${i}:ctot"><span></span>
+      </div>
       ${blockNote(x,pb,ab)}
       <span class="note" style="margin:0">${ab?`Actual block <b>${fmtMins(ab)}</b>${pb?` (planned ${fmtMins(pb)}, ${ab>pb?"+":ab<pb?"−":"±"}${fmtMins(Math.abs(ab-pb))})`:""}`:pb?`Planned block ${fmtMins(pb)}`:""}${x.ctot&&x.dep?` · slot ${(()=>{const d=blockMins({dep:x.dep,arr:x.ctot});return d>720?"before STD":"+"+d+" min after STD"})()}`:""}</span>
     </div>`});
   return rows.join("")+(tot?`<p style="margin:0"><b>Today: ${fmtMins(tot)} actual block</b>${plan?` · ${fmtMins(plan)} planned`:""}</p>`:"");
 }
 function windComp(dir,spd,rwy){const hdg=(+String(rwy).replace(/[^0-9]/g,"")||0)*10,a=(dir-hdg)*Math.PI/180;return {head:Math.round(spd*Math.cos(a)),cross:Math.round(spd*Math.sin(a))}}
+// everything a pilot wants for one hour at one airport (Open-Meteo, Met Office/ECMWF models)
+function wxAt(lat,lon,at){const h=wxGet(lat,lon);if(!h||!h.time)return null;let best=null,bd=1e15;h.time.forEach((t,i)=>{const d=Math.abs(Date.parse(t+":00Z")-at.getTime());if(d<bd){bd=d;best=i}});if(best==null||bd>2*3600000)return null;
+  const g=k=>h[k]?h[k][best]:null;return {vis:g("visibility"),low:g("cloud_cover_low"),t:g("temperature_2m"),dp:g("dew_point_2m"),qnh:g("pressure_msl"),fzl:g("freezing_level_height"),cape:g("cape"),code:g("weather_code"),pr:g("precipitation"),pp:g("precipitation_probability"),gust:g("wind_gusts_10m")!=null?Math.round(g("wind_gusts_10m")/1.852):null}}
+function wxFlags(x,w,cross){const f=[];if(!x)return f;
+  if((x.code>=95)||(x.cape!=null&&x.cape>=1000))f.push("Thunderstorms possible");
+  if(x.code===45||x.code===48||(x.vis!=null&&x.vis<1500))f.push("Fog or low visibility");
+  else if(x.vis!=null&&x.vis<5000)f.push("Reduced visibility");
+  if(x.t!=null&&x.t<=3&&(x.pr>0||x.pp>=40||(x.dp!=null&&x.t-x.dp<=2)))f.push("Icing / de-icing likely");
+  if([56,57,66,67].includes(x.code))f.push("Freezing rain or drizzle");
+  if([71,73,75,77,85,86].includes(x.code))f.push("Snow");
+  if(w&&w.gust>=30)f.push("Strong gusts");
+  if(cross!=null&&cross>=20)f.push("Crosswind "+cross+" kt: check company limits");
+  return f}
 function windAt(lat,lon,at){const h=wxGet(lat,lon);if(!h||!h.time||!h.wind_speed_10m)return null;let best=null,bd=1e15;h.time.forEach((t,i)=>{const d=Math.abs(Date.parse(t+":00Z")-at.getTime());if(d<bd){bd=d;best=i}});return best==null||bd>2*3600000?null:{dir:h.wind_direction_10m[best],kt:Math.round(h.wind_speed_10m[best]/1.852),gust:Math.round(h.wind_gusts_10m[best]/1.852)}}
 const RWY_DEF={EGSS:"04/22"};
 function pilotAirport(code,lat,lon,at,label){
@@ -2564,13 +2662,21 @@ function pilotAirport(code,lat,lon,at,label){
     <div class="links" style="font-size:13px"><a href="https://metar-taf.com/${ic}" target="_blank" rel="noopener">METAR and TAF ↗</a><a href="https://www.notams.faa.gov/dinsQueryWeb/queryRetrievalMapAction.do?reportType=Raw&retrieveLocId=${ic}&actionType=notamRetrievalbyICAOs" target="_blank" rel="noopener">NOTAMs ↗</a><a href="https://skyvector.com/airport/${ic}" target="_blank" rel="noopener">Runways and charts ↗</a></div>
     <div class="field" style="max-width:200px"><label for="rw-${ic}">Runways</label><input id="rw-${ic}" type="text" value="${esc(rw)}" placeholder="e.g. 04/22" data-rwy="${ic}"></div>
     ${w&&ends.length?`<div>${ends.map(e=>{const c=windComp(w.dir,w.kt,e);return `<div class="tip"><span class="t">${esc(e)}</span><span>${c.head>=0?c.head+" kt headwind":Math.abs(c.head)+" kt tailwind"} · ${Math.abs(c.cross)} kt crosswind${c.cross?" from the "+(c.cross>0?"right":"left"):""}</span></div>`}).join("")}</div>`:""}
+    ${(()=>{const x=lat!=null?wxAt(lat,lon,at):null;if(!x)return "";const cx=w&&ends.length?Math.min(...ends.map(e=>Math.abs(windComp(w.dir,w.kt,e).cross))):null,fl=wxFlags(x,w,cx);
+      const vis=x.vis==null?"":x.vis>=10000?"10 km+":x.vis>=1000?(x.vis/1000).toFixed(x.vis<5000?1:0)+" km":Math.round(x.vis/50)*50+" m";
+      const bits=[vis?"Visibility "+vis:"",x.low!=null?"Low cloud "+Math.round(x.low)+"%":"",x.t!=null?"Temp "+Math.round(x.t)+"° / dew point "+Math.round(x.dp)+"°":"",x.qnh!=null?"QNH about "+Math.round(x.qnh):"",x.fzl!=null?"Freezing level about "+(Math.round(x.fzl*3.281/500)*500).toLocaleString("en-GB")+" ft":""].filter(Boolean);
+      return `<p class="note" style="margin:0">${esc(bits.join(" · "))}</p>${fl.length?`<div class="btns" style="margin:0">${fl.map(t=>`<span class="pill" style="border:1px solid var(--danger);color:var(--danger);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600">${esc(t)}</span>`).join("")}</div>`:""}`})()}
   </div>`;
 }
 function pilotBody(){
   const r=S.roster[S.duty.date],sec=(r&&r.sectors)||[],now=new Date(),bxy=BASE_XY[S.profile.base]||BASE_XY.STN;
   const p=plan(),to=sec.find(x=>x.to&&x.to!==S.profile.base),city=to?IATA[to.to]:"",dxy=city?destXY(city):null;
-  return pilotAirport(S.profile.base,bxy[0],bxy[1],p.rep>now?p.rep:now,"Base")+(to?pilotAirport(to.to,dxy?dxy[0]:null,dxy?dxy[1]:null,landTime(S.duty,p.rep),city||to.to):"")
-    +`<p class="note" style="margin:0">Wind is a forecast for planning only. Always use the official METAR, TAF, NOTAMs and your company briefing.</p>`;
+  const first=sec.find(x=>x.dep),depAt=first?r2lDT(S.duty.date,first.dep):(p.rep>now?p.rep:now);
+  let out=pilotAirport(S.profile.base,bxy[0],bxy[1],depAt,"Base, departure "+hm(depAt));const seen={};
+  sec.filter(x=>x.to&&x.to!==S.profile.base&&x.typ!=="gt").forEach(x=>{if(seen[x.to])return;seen[x.to]=1;const c=IATA[x.to],xy=c?destXY(c):null,at=x.arr?r2lDT(S.duty.date,x.arr):landTime(S.duty,p.rep);
+    out+=pilotAirport(x.to,xy?xy[0]:null,xy?xy[1]:null,at,(c||x.to)+", arrival "+hm(at))});
+  if(!sec.length&&to)out+=pilotAirport(to.to,dxy?dxy[0]:null,dxy?dxy[1]:null,landTime(S.duty,p.rep),city||to.to);
+  return out+`<p class="note" style="margin:0">Model forecast (Met Office, ECMWF and others via Open-Meteo) for the town near each airport, for planning only. QNH is an estimate. Always use the official METAR, TAF, NOTAMs and your company briefing.</p>`;
 }
 function liveBodyTrip(first){
   return `${first?`<div class="links">${((S.roster[S.duty.date]||{}).sectors||[]).filter(x=>x.flt).map(x=>`<a href="${fr24Flight(x.flt)}" target="_blank" rel="noopener">${esc(x.flt)} ${esc(x.from)}→${esc(x.to)} ↗</a>`).join("")}</div>
@@ -2644,8 +2750,7 @@ function dayPlanBody(p,x){
 function foodBody(p){
   const type=dutyType(p.rep),D=DUTY[type];
   return `<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
-    <span class="label">Your food needs</span>
-    <div class="btns">${DIETS.map(d=>{const sel=S.diet.includes(d[0]);return `<button class="pick" aria-pressed="${sel}" data-diet="${d[0]}">${sel?"✓ ":""}${d[1]}</button>`}).join("")}</div>
+    <p class="note" style="margin:0">Your food needs: <b>${S.diet.length?esc(DIETS.filter(d=>S.diet.includes(d[0])).map(d=>d[1]).join(", ")):"none set"}</b>. <button class="linkbtn" data-goto="more:profile">Change in Profile</button></p>
     ${S.diet.some(d=>DIET_LINKS[d])?`<div class="links">${[...new Set(S.diet.filter(d=>DIET_LINKS[d]).map(d=>DIET_LINKS[d][1]))].map(u=>{const k=S.diet.find(d=>DIET_LINKS[d]&&DIET_LINKS[d][1]===u);return `<a href="${u}" target="_blank" rel="noopener">${esc(DIET_LINKS[k][0])} ↗</a>`}).join("")}</div>`:""}
     <span class="label">Easy meals to prep</span>
     <div>${MEALS[type].map(m=>{const sw=mealSwaps(m[0]);return `<div class="ex"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(m[0])}</b><span class="note" style="font-family:var(--mono);white-space:nowrap">${esc(m[2])}</span></div><span class="note">${esc(m[1])}</span>${sw.map(s=>`<span style="font-size:13px;color:var(--accent);font-weight:600">${esc(s)}</span>`).join("")}</div>`}).join("")}</div>
@@ -2699,17 +2804,18 @@ function viewPlan(){
 }
 
 /* ---------- ME: your details and wellbeing ---------- */
-function profileFields(){
+function pfAbout(){
   return `<div class="seg" role="tablist" aria-label="Your role">${[["cabin","Cabin crew"],["pilot","Pilot"]].map(r=>`<button role="tab" aria-selected="${S.profile.role===r[0]}" data-role="${r[0]}">${r[1]}</button>`).join("")}</div>
     <div class="row"><div class="field"><label for="pr-al">Airline</label><select id="pr-al" data-k="profile.airline">${["Ryanair","Jet2","Other"].map(a=>`<option ${S.profile.airline===a?"selected":""}>${a}</option>`).join("")}</select></div>
     <div class="field"><label for="pr-b">Base</label><select id="pr-b" data-k="profile.base"><option value="STN" selected>London Stansted (STN)</option></select></div></div>
     <div class="row"><div class="field"><label for="pr-n">Your name</label><input id="pr-n" type="text" autocomplete="name" value="${esc(S.me.name)}" data-k="me.name"></div>
     <div class="field"><label for="pr-s">${idLabel()}</label><input id="pr-s" type="text" value="${esc(S.me.staffNo)}" data-k="me.staffNo"></div></div>
-    <div class="row2"><div class="field"><label for="pr-cc">Crew control phone</label><input id="pr-cc" type="tel" autocomplete="off" value="${esc(S.me.ccPhone||"")}" data-k="me.ccPhone" placeholder="e.g. +44 ..."></div><div class="field"><label for="pr-wa">Crew control WhatsApp (optional)</label><input id="pr-wa" type="tel" autocomplete="off" value="${esc(S.me.ccWa||"")}" data-k="me.ccWa" placeholder="Same or another number"></div></div>
-    <div class="field"><label for="pr-fk">Flight lookup key (optional)</label><input id="pr-fk" type="password" autocomplete="off" spellcheck="false" value="${esc(S.me.flightKey||"")}" data-k="me.flightKey" placeholder="Paste your free AirLabs key"><span class="note" style="margin:0">With a key, typing a flight number on the roster fills the route and scheduled times (in Zulu). Get a free key at <a href="https://airlabs.co/signup" target="_blank" rel="noopener">airlabs.co</a> ↗, then copy it from your AirLabs account page. It stays on this phone.</span></div>
     <div class="field"><span class="label">Grooming extras</span><div class="seg" role="tablist" aria-label="Grooming extras">${[["f","Female crew"],["m","Male crew"],["","None"]].map(g=>`<button role="tab" aria-selected="${(S.profile.gender||"")===g[0]}" data-gender="${g[0]}">${g[1]}</button>`).join("")}</div>
     <span class="note" style="margin:0">${S.profile.gender==="f"?"Adds time for hair and makeup, tights and makeup to your kit and evening prep, and tights reminders.":S.profile.gender==="m"?"Adds time to shave, and shaving and shoe care to your kit and evening prep.":"Pick one to add the matching grooming times, kit and reminders."}</span></div>`;
 }
+function pfCC(){return `<div class="row2"><div class="field"><label for="pr-cc">Crew control phone</label><input id="pr-cc" type="tel" autocomplete="off" value="${esc(S.me.ccPhone||"")}" data-k="me.ccPhone" placeholder="e.g. +44 ..."></div><div class="field"><label for="pr-wa">Crew control WhatsApp (optional)</label><input id="pr-wa" type="tel" autocomplete="off" value="${esc(S.me.ccWa||"")}" data-k="me.ccWa" placeholder="Same or another number"></div></div>`}
+function pfKey(){return `<div class="field"><label for="pr-fk">Flight lookup key (optional)</label><input id="pr-fk" type="password" autocomplete="off" spellcheck="false" value="${esc(S.me.flightKey||"")}" data-k="me.flightKey" placeholder="Paste your free AirLabs key"><span class="note" style="margin:0">With a key, typing a flight number on the roster fills the route and scheduled times (in Zulu). Get a free key at <a href="https://airlabs.co/signup" target="_blank" rel="noopener">airlabs.co</a> ↗, then copy it from your AirLabs account page. It stays on this phone.</span></div>`}
+function profileFields(){return pfAbout()+pfCC()+pfKey()}
 /* grooming extras: added when crew choose female or male, removed again if they switch (only the ones the app added) */
 const GROOM={
   f:{step:["Hair and makeup",30],evening:["Hair bun kit: pins, net, spray","Remove makeup and skincare","Spare tights in bag","Makeup bag restocked","Nails checked or painted"],kit:[["Grooming","Spare tights"],["Grooming","Makeup bag"],["Grooming","Hair pins, net and spray"],["Grooming","Nail file and clear polish"]],care:[["Restock tights",14]]},
@@ -2752,22 +2858,32 @@ function routeFields(rk){
   </div>`;
 }
 function transitFields(){return routeFields("train")+routeFields("bus")}
-function homeEnd(){const d=S.duty,r=S.roster[d.date]||{};if(hasEnd(d.kind))return asbyEnd();if(r.off){let e=r2lDT(d.date,r.off);const st=plan().rep;if(e<st)e=new Date(e.getTime()+86400000);return e}
+function homeEndSched(){const d=S.duty,r=S.roster[d.date]||{};if(hasEnd(d.kind))return asbyEnd();if(r.off){let e=r2lDT(d.date,r.off);const st=plan().rep;if(e<st)e=new Date(e.getTime()+86400000);return e}
   const sec=(r.sectors||[]).filter(x=>x.arr);if(sec.length){let e=r2lDT(d.date,sec[sec.length-1].arr);const st=plan().rep;if(e<st)e=new Date(e.getTime()+86400000);return new Date(e.getTime()+30*60000)}return null}
+// how early or late the day is running, from the latest actual on/off-blocks or the running flight timer
+function dayShift(){const d=S.duty,r=S.roster[d.date]||{},sec=r.sectors||[],t=d.date,st=plan().rep;
+  const at=v=>{let x=r2lDT(t,v);if(x<st)x=new Date(x.getTime()+86400000);return x};
+  for(let i=sec.length-1;i>=0;i--){const x=sec[i];if(!x.arr)continue;
+    if(x.onb)return {min:Math.round((at(x.onb)-at(x.arr))/60000),why:"actual on blocks "+hm(at(x.onb))+" ("+(x.flt||x.to)+")"};
+    if(x.offb){const bm=x.est||blockMins(x)||0;if(bm){const exp=new Date(at(x.offb).getTime()+bm*60000);return {min:Math.round((exp-at(x.arr))/60000),why:"off blocks "+hm(at(x.offb))+" ("+(x.flt||x.to)+"), landing ~"+hm(exp)}}}}
+  return null}
+function homeEnd(){const e=homeEndSched();if(!e||hasEnd(S.duty.kind))return e;const sh=dayShift();return sh?new Date(e.getTime()+sh.min*60000):e}
 function homeCard(){
   const m=modeOf(S.duty.date);if(m==="car")return "";const T=R(m),v=tt("back",m);if(!ttCount(v))return "";const end=homeEnd();if(!end)return "";
   const ready=new Date(Math.max(end.getTime(),Date.now())+tBuf(m)*60000),d0=S.duty.date;
   const L=tList(d0,"back",m).concat(tList(addDays(d0,1),"back",m)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).slice(0,3),w=RNAME[m];
   return `<section class="card"><h2>Getting home</h2>
-    <p class="note" style="margin:0">Off duty around ${hmL(end)}. At the ${m==="bus"?"coach station":"station"} from about ${hmL(ready)}.</p>
+    <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}. At the ${m==="bus"?"coach station":"station"} from about ${hmL(ready)}.</p>
     ${L.length?`<div>${L.map((x,i)=>`<div class="tip"><span class="t clk">${x.t}</span><span>${i===0?"<b>Next "+w+"</b>"+(x.n?" ("+esc(x.n)+")":"")+", ":x.n?"("+esc(x.n)+") ":""}arrives ${hm(x.arr)}${T.walk?", home about "+hm(new Date(x.arr.getTime()+(+T.walk)*60000)):""}</span></div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more ${w}${m==="bus"?"es":"s"} home tonight.</b> Book a taxi or arrange a lift.</p>`}
   </section>`;
 }
 function travelChoice(n,pn){
   if(!tHas())return (S.duty.mode==="transit"||RK.includes(S.duty.mode))?transitCard(n,pn,RK.includes(S.duty.mode)?S.duty.mode:"train"):"";
-  const m=modeOf(n.date),opts=RK.filter(r=>tHas(r)).map(r=>{const p2=plan(Object.assign({},n,{_mode:r}));return [r,(r==="bus"?"Bus":"Train")+(p2.tr&&p2.tr.chosen?" "+p2.tr.chosen.t+" · leave "+hm(p2.leave):" · none in time")]}).concat([["car","Car · leave "+hm(carLeave(n))]]);
+  const m=modeOf(n.date),cands=[];const opts=RK.filter(r=>tHas(r)).map(r=>{const p2=plan(Object.assign({},n,{_mode:r}));if(p2.tr&&p2.tr.chosen)cands.push([r,p2.leave,(r==="bus"?"Bus ":"Train ")+p2.tr.chosen.t]);return [r,(r==="bus"?"Bus":"Train")+(p2.tr&&p2.tr.chosen?" "+p2.tr.chosen.t+" · leave "+hm(p2.leave):p2.skipped&&!p2.skipped.none?" · only ones hours early":" · none in time")]}).concat([["car","Car · leave "+hm(carLeave(n))]]);
+  cands.push(["car",carLeave(n),"Car"]);cands.sort((a,b)=>b[1]-a[1]);const best=cands[0];
   return `<div class="seccard"><span class="label">How are you getting there?</span>
     <div class="btns" role="radiogroup" aria-label="Travel">${opts.map(x=>`<button class="pick" role="radio" aria-checked="${m===x[0]}" aria-pressed="${m===x[0]}" data-tmode="${n.date}|${x[0]}">${x[1]}</button>`).join("")}</div>
+    ${cands.length>1?`<p style="margin:0"><b>Advice:</b> ${esc(best[2])} lets you leave latest, at ${hm(best[1])}${cands[1]?` (${(m=>m<60?m+" min":hmDur(m))(Math.round((best[1]-cands[1][1])/60000))} later than ${esc(cands[1][2].toLowerCase())})`:""}. If the weather or traffic looks bad, pick the earlier one.</p>`:""}
     <p class="note" style="margin:0">Your alarms follow the one you pick.</p></div>
     ${m!=="car"?transitCard(n,pn,m):""}`;
 }
@@ -2782,15 +2898,9 @@ function transitCard(n,pn,rk){rk=rk||"train";
     <p style="margin:0">Leave home <b>${hm(pn.leave)}</b> for the <b>${c.t}</b>${c.n?" ("+esc(c.n)+")":""}. At the airport ${hm(c.arr)}, then ${tBuf(rk)} min to the crew room${spare>0?`, with ${spare} min spare`:""}.${o.ok.length>1&&c.t!==o.ok[o.ok.length-1].t?"":" This is the last one that works, so don't miss it."}</p>
     ${live}</div>`;
 }
-function timesFields(){
-  const d=S.duty,s=S.standby,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
-  return `<span class="label">Roster</span>
-    <div class="seg" role="tablist" aria-label="Roster times are in">${[["Z","Zulu (UTC)"],["local","UK local time"]].map(x=>`<button role="tab" aria-selected="${(RZ()?"Z":"local")===x[0]}" data-rtz="${x[0]}">${x[1]}</button>`).join("")}</div>
-    <p class="note" style="margin:0">Your roster is in ${RZ()?"Zulu. The app converts to UK time for alarms and Today (+1 hour in summer)":"UK local time"}.</p>
-    <span class="label">Duty</span>
-    ${num("t-rb","profile.repBefore",repBefore(),"Report before first departure (min)","",5)}
-    <span class="label">Getting to work</span>
-    <div class="field"><label for="t-ap">Report at</label><input id="t-ap" type="text" value="${esc(d.airport)}" data-k="duty.airport"></div>
+function travelFieldsInner(){
+  const d=S.duty,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
+  return `    <div class="field"><label for="t-ap">Report at</label><input id="t-ap" type="text" value="${esc(d.airport)}" data-k="duty.airport"></div>
     <div class="row"><div class="field"><label for="t-mode">Usually travel by</label><select id="t-mode" data-k="duty.mode">${[["train","Train"],["bus","Bus or coach"],["driving","Car"],["taxi","Taxi"],["shuttle","Staff car park + shuttle"]].map(o=>`<option value="${o[0]}" ${d.mode===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
 </div>
     <p class="note" style="margin:0">Set up your train, your bus and your car journey. Plan lets you pick each day, and a standby call-out shows them all.</p>
@@ -2805,6 +2915,16 @@ function timesFields(){
       <p class="note" role="status" id="routemsg" style="margin:0">${esc(routeMsg||(IS_PWA?"Uses OpenStreetMap for the usual driving time to "+((BASES[S.profile.base]||BASES.STN).name)+". Your postcode is only sent when you tap the button.":"Works in the installed app."))}</p>
       ${routeMins?`<div class="btns" style="margin:0"><button class="primary" id="routeuse">Use ${routeMins} min</button></div>`:""}
     </div>
+`;
+}
+function timesFields(noTravel){
+  const d=S.duty,s=S.standby,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
+  return `<span class="label">Roster</span>
+    <div class="seg" role="tablist" aria-label="Roster times are in">${[["Z","Zulu (UTC)"],["local","UK local time"]].map(x=>`<button role="tab" aria-selected="${(RZ()?"Z":"local")===x[0]}" data-rtz="${x[0]}">${x[1]}</button>`).join("")}</div>
+    <p class="note" style="margin:0">Your roster is in ${RZ()?"Zulu. The app converts to UK time for alarms and Today (+1 hour in summer)":"UK local time"}.</p>
+    <span class="label">Duty</span>
+    ${num("t-rb","profile.repBefore",repBefore(),"Report before first departure (min)","",5)}
+    ${noTravel?"":`<span class="label">Getting to work</span>`+travelFieldsInner()}
     <span class="label">Home standby</span>
     <div class="row">${num("t-co","standby.calloutMins",calloutMins(),"Time to report if called (min)",S.profile.airline==="Jet2"?"Jet2: usually 120":S.profile.airline==="Ryanair"?"Ryanair: usually 60":"",15)}
     <div class="field"><label for="t-si">Check roster every</label><select id="t-si" data-k="standby.interval">${[30,45,60,90,120].map(m=>`<option value="${m}" ${+s.interval===m?"selected":""}>${m<60?m+" min":m===60?"hour":m/60+" hours"}</option>`).join("")}</select></div></div>
@@ -2852,10 +2972,17 @@ function viewMe(){
 }
 function viewProfile(){
   const docsDue=S.docs.filter(x=>x.expiry&&daysBetween(today(),x.expiry)<=365).length;
-  return `<section class="card"><h2>My details</h2>${profileFields()}<p class="note" style="margin:0">${S.profile.role==="pilot"?"Pilot mode adds pilot tools on Trip, and licence, medical and headset to kit and documents.":"Your airline and ID go into messages to crewing and set your call-out time."}</p></section>
-  <section class="card"><h2>My times</h2><p class="note" style="margin:0">Set these once and Today, Plan and standby use them.</p>${timesFields()}</section>
-  ${on("more_docs")?`<section class="card"><h2>Documents</h2><p class="note" style="margin:0">${S.docs.length?(docsDue?docsDue+" to renew soon":"All in date"):"Add expiry dates to get reminders at 12 and 6 months."}</p></section>${viewDocs()}`:""}`;
+  const dietTxt=S.diet.length?DIETS.filter(d=>S.diet.includes(d[0])).map(d=>d[1]).join(", "):"";
+  return `<section class="card"><h2>${esc(S.me.name||"Your profile")}</h2><p class="note" style="margin:0">${esc([S.profile.role==="pilot"?"Pilot":"Cabin crew",S.profile.airline,S.profile.base,S.me.staffNo?idLabel()+" "+S.me.staffNo:""].filter(Boolean).join(" · "))}</p></section>
+  ${fold("pf_about","About you",()=>pfAbout()+`<p class="note" style="margin:0">${S.profile.role==="pilot"?"Pilot mode adds pilot tools on Trip, and licence, medical and headset to kit and documents.":"Your airline and ID go into messages to crewing and set your call-out time."}</p>`,false,S.me.name?"":"Start here")}
+  ${fold("pf_times","Duty and standby times",()=>timesFields(true),false,"Report "+repBefore()+" min before")}
+  ${fold("pf_travel","Getting to work",()=>travelFieldsInner(),false,tHas()?[tHas("train")?"Train":"",tHas("bus")?"Bus":"","Car"].filter(Boolean).join(", "):"Car")}
+  ${fold("pf_food","Food needs",foodNeedsFields,false,dietTxt||"None set")}
+  ${fold("pf_cc","Crew control contacts",()=>pfCC(),false,S.me.ccPhone?"Saved":"Not set")}
+  ${fold("pf_key","Flight lookup",()=>pfKey(),false,S.me.flightKey?"Key saved":"Optional")}
+  ${on("more_docs")?fold("pf_docs","Documents",()=>`<p class="note" style="margin:0">${S.docs.length?(docsDue?docsDue+" to renew soon":"All in date"):"Add expiry dates to get reminders at 12 and 6 months."}</p>`+viewDocs(),false,docsDue?docsDue+" to renew":""):""}`;
 }
+function foodNeedsFields(){return `<div class="btns">${DIETS.map(d=>{const sel=S.diet.includes(d[0]);return `<button class="pick" aria-pressed="${sel}" data-diet="${d[0]}">${sel?"✓ ":""}${d[1]}</button>`}).join("")}</div><p class="note" style="margin:0">Used for meal ideas on Plan and food searches on layovers.</p>`}
 /* ---------- MORE: setup and records the main tabs use ---------- */
 const PROD_TYPES=["Tights","Foundation","Concealer","Powder","Mascara","Lipstick","Hairspray","Hair gel or wax","Deodorant","Moisturiser","Shaving","Nail polish","Perfume or aftershave","Other"];
 function prodDue(x){if(!x.last||!x.days)return null;return daysBetween(today(),addDays(x.last,+x.days))}
@@ -2902,6 +3029,7 @@ function viewKitList(){
     <div class="links">
       <a href="https://www.boots.com/" target="_blank" rel="noopener">Boots ↗</a>
       <a href="https://www.superdrug.com/" target="_blank" rel="noopener">Superdrug ↗</a>
+      <a href="https://www.primark.com/en-gb" target="_blank" rel="noopener">Primark ↗</a>
       ${S.profile.gender==="f"?`<a href="https://www.marksandspencer.com/" target="_blank" rel="noopener">M&amp;S tights ↗</a><a href="https://www.prettypolly.co.uk/" target="_blank" rel="noopener">Pretty Polly ↗</a>`:""}
     </div>
   </section>`;
@@ -3214,7 +3342,7 @@ document.addEventListener("click",e=>{
     const to=to0<from?from:to0;
     let ep=b.id==="updsick"?currentSick():null;
     if(!ep){ep={id:uid(),from,to,type,file:null,steps:{},rosterOk:{},prev:{}};S.sick.push(ep)}
-    ep.type=type;applySick(ep,from,to);
+    ep.type=type;ep.reason=(($("#sk-reason")||{}).value||"").trim().slice(0,80);applySick(ep,from,to);
     const fEl=$("#sk-file"),f=fEl&&fEl.files[0];
     render();save();
     if(f&&assetsNS){assetsNS.upload(f).then(r=>{ep.file=r.id;render();save()},err=>{const m=$("#sickmsg");if(m)m.textContent=uploadMsg(err)})}
@@ -3259,7 +3387,11 @@ document.addEventListener("click",e=>{
   if(b.dataset.ftsec!==undefined){const v=$("#ft-est");S.ft={date:today(),i:+b.dataset.ftsec,est:v?parseHM(v.value):0};render();save();return}
   if(b.id==="ftgo"){const {t,secs,i}=ftState(),est=parseHM(($("#ft-est")||{}).value);if(!est){const v=$("#ft-est");if(v){v.setCustomValidity("Type the block time, e.g. 2:35");v.reportValidity();v.oninput=()=>v.setCustomValidity("")}return}
     const now=new Date();S.ft={date:t,i,start:now.getTime(),est};if(i>=0&&secs[i]){secs[i].offb=(RZ()?hmZ:hm)(now);secs[i].est=est;secs[i].onb=""}render();save();return}
-  if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est};S.ft=null;render();save();return}
+  if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+  if(b.id==="newsrf"){newsFetch(true);return}
+  if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
+  if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date();ft.start=now.getTime();if(ft.i>=0&&secs[ft.i])secs[ft.i].offb=(RZ()?hmZ:hm)(now);render();save();return}
+  if(b.id==="ftunstop"){const l=S.ftLast;if(!l||!l.prev)return;const {secs}=ftState();S.ft=l.prev;if(l.prev.i>=0&&secs[l.prev.i])secs[l.prev.i].onb="";S.ftLast=null;render();save();return}
   if(b.id==="ftundo"){const {secs,ft}=ftState();if(ft&&ft.i>=0&&secs[ft.i]){secs[ft.i].offb=""}S.ft=null;render();save();return}
   if(b.dataset.evepick){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(b.dataset.evepick);render();save();return}
   if(b.id==="eveadd"){const v=($("#eve-n")||{}).value||"";if(v.trim()){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(v.trim().slice(0,60))}render();save();return}
@@ -3297,6 +3429,7 @@ document.addEventListener("click",e=>{
     let mins,label;if(b.dataset.timer){mins=+b.dataset.timer;label=b.dataset.tlabel}else{mins=parseFloat($("#tm-min").value);label=$("#tm-lab").value.trim()||"Timer"}
     if(!(mins>0&&mins<=600))return;
     try{if(!audioCtx){const A=window.AudioContext||window.webkitAudioContext;if(A)audioCtx=new A()}if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume()}catch(err){}
+    try{if(IS_PWA&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission()}catch(err){}
     S.timers=(S.timers||[]).filter(t=>t.end>Date.now()-3600000);S.timers.push({id:uid(),label:label.slice(0,30),end:Date.now()+mins*60000,rang:false});S.fold.timers=true;render();save();return}
   if(b.dataset.tmdel){S.timers=(S.timers||[]).filter(t=>t.id!==b.dataset.tmdel);render();save();return}
   if(b.id==="undoroster"){if(rosterBackup){S.roster=rosterBackup;rosterBackup=null;rosterMsg="Last import undone.";render();save()}return}
@@ -3417,6 +3550,7 @@ document.addEventListener("change",e=>{
   if(el.dataset.sc!==undefined){const t=today(),x=S.selfcare.items[+el.dataset.sc];let d=S.selfcare.done[t]||[];d=el.checked?d.concat(x):d.filter(y=>y!==x);S.selfcare.done={[t]:d};render();save();return}
   if(el.dataset.k==="trip.city"){const nm=cityFrom(el.value),c=CITIES.find(x=>x.name===nm);S.trip.city=nm;if(c)S.trip.country=c.country;render();save();return}
   if(el.dataset.k==="next.dest"&&S.next){const nm=cityFrom(el.value);S.next.dest=nm||el.value;render();save();return}
+  if(el.dataset.secf&&el.id==="ft-slot"){const [i]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i].ctot=el.value?l2r(S.duty.date,cleanTime(el.value)):"";render();save()}return}
   if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=l2r(S.duty.date,cleanTime(el.value));render();save()}return}
   if(el.dataset.rwy){if(!S.rwy)S.rwy={};S.rwy[el.dataset.rwy]=el.value.toUpperCase().replace(/[^0-9LRC\/ ]/g,"").slice(0,20);render();save();return}
   if(el.id==="is-a"){S.issueDraft=Object.assign({},S.issueDraft||{},{area:el.value});return}
@@ -3472,7 +3606,8 @@ function initMap(){
 let lastNext=null,lastPhase=null,lastMin=null;
 setInterval(()=>{
   const now=Date.now();let changed=false;
-  (S.timers||[]).forEach(t=>{const el=document.getElementById("tm-"+t.id),left=t.end-now;if(el)el.textContent=left>0?fmtLeft(left):"0:00";if(left<=0&&!t.rang){t.rang=true;changed=true;beep()}});
+  (S.timers||[]).forEach(t=>{const el=document.getElementById("tm-"+t.id),left=t.end-now;if(el)el.textContent=left>0?fmtLeft(left):"0:00";if(left<=0&&!t.rang){t.rang=true;changed=true;beep();timerNotify(t)}});
+  keepAwake((S.timers||[]).some(t=>t.end>now)||!!(S.ft&&S.ft.start&&!S.ft.stop));
   document.querySelectorAll("[data-cdto]").forEach(el=>{el.textContent=fmtCD(+el.dataset.cdto-now)});
   document.querySelectorAll("[data-cdfrom]").forEach(el=>{el.textContent=fmtCD(now-+el.dataset.cdfrom)});
   if(S.tab==="trip"){const a=$("#dc-on"),b=$("#dc-left");if(a||b){const p=plan();if(a)a.textContent=fmtLeft(now-p.rep);if(b)b.textContent=fmtLeft(fdpEnd()-now)}}
