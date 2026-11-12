@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.16.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -858,7 +858,7 @@ const RP_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:1
 const RP_KIND={OFF:"off",DO:"off",HSBY:"standby",SBY:"standby",HS:"standby",ASBY:"asby",ADTY:"adty",TRNG:"training",TRG:"training",SIM:"training",L:"leave",AL:"leave",LVE:"leave",VTO:"vto",SICK:"sick",SCK:"sick",DUTY:"flying",FLY:"flying"};
 function rpPad(n){return String(n).padStart(2,"0")}
 function rpYear(m,y){if(y)return y<100?2000+y:y;const t=new Date(),cy=t.getFullYear(),cm=t.getMonth()+1;return m<cm-6?cy+1:m>cm+6?cy-1:cy}
-function rpNorm(txt){return String(txt||"").replace(/\r/g,"").replace(/[✈✈️🛫🛬]/g," ").replace(/[|•·]/g," ").replace(/(\d)\s*[.:]\s*(\d\d)(?!\d)/g,"$1:$2")}
+function rpNorm(txt){return String(txt||"").replace(/\r/g,"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/[✈✈️🛫🛬]/g," ").replace(/[|•·]/g," ").replace(/(\d)\s*[.:]\s*(\d\d)(?!\d)/g,"$1:$2")}
 // List view: "12 Nov 26, Thu" headed blocks with Z times, airports, flight numbers and registrations.
 function rpList(txt){
   const t=rpNorm(txt),re=/\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*,?\s*(\d{2,4})?\b/gi;
@@ -867,16 +867,18 @@ function rpList(txt){
   heads.forEach((h,k)=>{
     const before=t.slice(k?heads[k-1].end:0,h.i),body=t.slice(h.end,k+1<heads.length?heads[k+1].i:t.length);
     // the block's type label sits just above the date (e.g. "DUTY  FLIGHT TIME: 8H 45M")
-    const lab=(before.match(/\b(DUTY|HSBY|SBY|ASBY|ADTY|TRNG|TRG|SIM|OFF|VTO|SICK|LVE|AL)\b(?![\s\S]*\b(DUTY|HSBY|SBY|ASBY|ADTY|TRNG|TRG|SIM|OFF|VTO|SICK|LVE|AL)\b)/i)||[])[1];
+    // label: right after the date (Gemini sentences) or just above it (Ryanair screen)
+    const head=body.slice(0,Math.min(body.length,(body.search(/\d{1,2}:\d\d/)+1||81)-1,80)),tail=before.slice(-45);
+    const kindA=rpKindOf(head),kindB=rpKindOf(tail);
     const times=[];const tr=/\b([01]?\d|2[0-3]):([0-5]\d)\b(\s*(LT|L\b|LCL))?/gi;let x;while((x=tr.exec(body))){if(!x[4])times.push(rpPad(+x[1])+":"+x[2])}
     const flts=(body.match(/\b(FR|RK|LS|EXS|RYR|RUK|U2|EZY|BA|W6)\s?\d{1,4}[A-Z]?\b/gi)||[]).map(f=>f.toUpperCase().replace(/\s/g,""));
-    const aps=(body.replace(/\b(CHECK|IN|OUT|LT|DUTY|FLIGHT|TIME|MORE|ACTIONS|OFF|HSBY|ASBY|TRNG|VTO|SBY|UTC|THU|FRI|SAT|SUN|MON|TUE|WED)\b/gi," ").match(/\b[A-Z]{3}\b/g)||[]).filter(a=>!/^(FR|RK|LS|EXS|RYR|RUK|EZY)/.test(a)||a.length===3).filter(a=>IATA_OK(a));
+    const aps=(body.replace(/\b(CHECK|IN|OUT|LT|DUTY|FLIGHT|TIME|MORE|ACTIONS|OFF|HSBY|ASBY|TRNG|VTO|SBY|UTC|THU|FRI|SAT|SUN|MON|TUE|WED|AND|THE|FOR|ARR|DEP)\b/g," ").match(/\b[A-Z]{3}\b/g)||[]).filter(a=>!/^(FR|RK|LS|EXS|RYR|RUK|EZY)/.test(a)||a.length===3).filter(a=>IATA_OK(a));
     const regs=(body.match(/\b(9H[A-Z]{3}|EI[A-Z]{3}|G[A-Z]{4}|SP[A-Z]{3}|OE[A-Z]{3}|9H-[A-Z]{3}|EI-[A-Z]{3}|G-[A-Z]{4})\b/g)||[]).map(r=>r.replace("-",""));
-    const kind=lab?(RP_KIND[lab.toUpperCase()]||"flying"):(flts.length?"flying":"");
+    const kind=kindA||kindB||(flts.length?"flying":"");
     if(!kind)return;
     const e={date:h.date,kind,report:"",off:"",sectors:[]};
     if(kind==="flying"&&flts.length){
-      const n=flts.length,ci=/CHECK\s*IN/i.test(body),co=/CHECK\s*OUT/i.test(body);
+      const n=flts.length,ci=/CHECK[\s-]*IN/i.test(body),co=/CHECK[\s-]*OUT/i.test(body);
       let T=times.slice();if(ci)e.report=T.shift()||"";if(co&&T.length>2*n)e.off=T.pop()||"";
       // row order (dep,arr,dep,arr) or column order (deps… then arrs…): pick the one that runs forward in time
       const mins=s=>{const [a,b]=s.split(":").map(Number);return a*60+b};
@@ -894,11 +896,13 @@ function rpList(txt){
       const chain=s=>s.reduce((ok,p,i)=>ok+(i&&s[i-1][1]===p[0]?1:0)+(p[0]&&p[1]&&p[0]!==p[1]?1:0),0);
       const AP=chain(ac)>chain(ar)?ac:ar;
       for(let i=0;i<n;i++)e.sectors.push({flt:flts[i],from:(AP[i]||[])[0]||"",to:(AP[i]||[])[1]||"",dep:P[2*i]||"",arr:P[2*i+1]||"",reg:regs[i]||regs[0]||""});
-    }else{e.report=times[0]||"";e.off=times.length>1?times[times.length-1]:""}
+    }else if(["standby","asby","training","adty","flying"].includes(kind)){e.report=times[0]||"";e.off=times.length>1?times[times.length-1]:""}
     out.push(e);
   });
   return out;
 }
+function rpKindOf(t){t=String(t||"");const R=[[/\b(home\s+standby|HSBY|SBY)\b/i,"standby"],[/\b(airport\s+standby|ASBY)\b/i,"asby"],[/\b(airport\s+duty|ADTY)\b/i,"adty"],[/\b(training|TRNG|TRG|SIM|CRMS?|recurrent)\b/i,"training"],[/\b(day\s+off|OFF|rest\s+day)\b/i,"off"],[/\b(annual\s+leave|leave|LVE)\b/i,"leave"],[/\bVTO\b/i,"vto"],[/\b(sick|SCK)\b/i,"sick"],[/\b(DUTY|flying|flights?)\b/i,"flying"]];
+  let best=null,pos=1e9;R.forEach(([re,k])=>{const m=t.match(re);if(m&&m.index<pos){pos=m.index;best=k}});return best}
 function IATA_OK(a){return typeof IATA==="undefined"||!!IATA[a]||(typeof ICAO!=="undefined"&&!!ICAO[a])||/^(STN|LTN|LGW|LHR|MAN|BHX|EMA|LBA|NCL|GLA|EDI|BRS|BFS)$/.test(a)}
 // Calendar view: "November 2026" then day numbers and codes (OFF, HSBY, VTO, TRNG, L, DUTY, or a number of flights).
 function rpCal(txt){
@@ -945,8 +949,29 @@ function changesNote(scope){
     <div>${items.map(x=>`<div class="ex"><b>${esc(fmtDate(x.date,{weekday:"short",day:"numeric",month:"short"}))}</b>${x.ch.map(y=>`<span class="note" style="margin:0">${esc(y)}</span>`).join("")}</div>`).join("")}</div>
     <p class="note" style="margin:4px 0 0">Found when you last brought in your roster. Check them against your official roster.</p></section>`;
 }
+
+// Simple one-line-per-day format (what the Gemini prompt asks for):
+// 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
+const GEMINI_PROMPT=`Read my work roster on this screen. Reply with one line per day and nothing else, in exactly this format:
+YYYY-MM-DD | CODE | check-in | check-out | flights
+CODE is the code the roster shows (DUTY, HSBY, ASBY, OFF, VTO, TRNG, L, SICK). If the calendar only shows a number of flights, write DUTY. Use the Z (UTC) times. Leave a time empty if it isn't shown. Write flights separated by ; like: FR1234 STN-LIS 16:10-19:00 EIEKL
+Example:
+2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
+2026-11-14 | OFF | | |`;
+function rpLines(txt){
+  const out=[];String(txt||"").replace(/\r/g,"").split("\n").forEach(line=>{
+    const m=line.replace(/[*`]/g,"").match(/^\s*(?:[-•]\s*)?(\d{4})-(\d{2})-(\d{2})\s*\|\s*([A-Za-z0-9]+)\s*(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*(.*))?$/);
+    if(!m)return;const date=m[1]+"-"+m[2]+"-"+m[3],code=m[4].toUpperCase(),kind=/^\d$/.test(code)?"flying":(RP_KIND[code]||null);if(!kind)return;
+    const T=v=>v?cleanTime(v.replace(".",":")):"";
+    const sec=[];String(m[7]||"").split(/;/).forEach(f=>{const x=f.trim().toUpperCase().match(/^([A-Z0-9]{2,3}\s?\d{1,4}[A-Z]?)\s+([A-Z]{3})\s*[-–>]+\s*([A-Z]{3})\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)(?:\s*Z)?(?:\s+([A-Z0-9-]{4,7}))?/);if(x)sec.push({flt:x[1].replace(/\s/g,""),from:x[2],to:x[3],dep:T(x[4]),arr:T(x[5]),reg:(x[6]||"").replace("-","")})});
+    out.push({date,kind,report:T(m[5]),off:T(m[6]),sectors:sec,lines:1});
+  });
+  return out;
+}
+function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<textarea id="gemp" readonly rows="6" style="width:100%;box-sizing:border-box;font:500 13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:6px">${esc(GEMINI_PROMPT)}</textarea>`);const t=$("#gemp");t.focus();t.select()}
 function rpApply(txt){
-  const L=rpList(txt),C=rpCal(txt);if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
+  txt=String(txt||"").split(GEMINI_PROMPT).join("");const G=rpLines(txt),Gd=G.filter(e=>e.report||e.sectors.length),Gc=G.filter(e=>!(e.report||e.sectors.length));
+  const L=rpList(txt).concat(Gd),C=rpCal(txt).concat(Gc);if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
   rosterBackup=JSON.parse(JSON.stringify(S.roster));let nc=0,nl=0;const OLD=rosterBackup;
   C.forEach(e=>{const cur=S.roster[e.date];
     if(cur&&cur.kind===e.kind&&(cur.report||(cur.sectors||[]).length))return;
@@ -958,15 +983,17 @@ function rpApply(txt){
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
-  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} dut${nl===1?"y":"ies"} with flights and times`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
+  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
 }
 function pasteImportHTML(){return `<div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
-    <details><summary class="note"><b>How to copy your roster text (no screenshots needed)</b></summary><div class="note" style="margin:6px 0">
-      <p style="margin:4px 0"><b>Pixel:</b> open your roster app on the Calendar screen. Swipe up from the bottom and hold to see your open apps, then tap <b>Select</b> under the roster app (or long-press its text). Tap <b>Select all</b> → <b>Copy</b>, and paste here. Nothing is saved to your photos.</p>
-      <p style="margin:4px 0">Or use <b>Circle to Search</b>: long-press the bottom bar, then <b>Select text</b> or circle the roster → <b>Copy</b>.</p>
-      <p style="margin:4px 0"><b>iPhone:</b> take a screenshot and tap the small preview. Long-press the text → <b>Select All</b> → <b>Copy</b>. Then tap <b>Done</b> → <b>Delete Screenshot</b>.</p>
-      <p style="margin:4px 0">You can paste the Calendar screen and several Roster screens one after another into the box, then tap Read once. Everything is read on this phone; nothing is sent anywhere.</p></div></details>`}
+    <details open><summary class="note"><b>How to copy your roster text</b></summary><div class="note" style="margin:6px 0">
+      <p style="margin:4px 0"><b>Android, 2 screenshots a month:</b></p>
+      <p style="margin:4px 0">1. On the <b>Calendar</b> screen, take a screenshot.<br>2. On the <b>Roster</b> list, take a screenshot and tap <b>Capture more</b>. Drag the bottom edge down to the end of the month and tap <b>Save</b>.<br>3. Open each in Google Photos, tap <b>Lens</b> → <b>Text</b> → <b>Select all</b> → <b>Copy</b>, and paste them here one under the other. Tap <b>Read my roster</b> once.<br>4. Delete both screenshots, and empty them from the <b>Bin</b>.</p>
+      <p style="margin:4px 0"><b>iPhone:</b> take a screenshot and tap the small preview. For the long list, tap <b>Full Page</b> if it's offered. Long-press the text → <b>Select All</b> → <b>Copy</b>. Then <b>Done</b> → <b>Delete Screenshot</b>.</p>
+      <p style="margin:4px 0"><b>No screenshots (Android, uses Google):</b> tap below, open your roster app, open Gemini, tap <b>Ask about screen</b>, paste the prompt and send. Copy the answer and paste it here. Your screen is sent to Google to read it.</p>
+      <div class="btns" style="margin:4px 0"><button id="copygem">Copy Gemini prompt</button></div>
+      <p style="margin:4px 0">The app itself reads everything on this phone; nothing is sent anywhere. Times marked Z are kept as Zulu. Always check the result against your roster.</p></div></details>`}
 function readDayForm(d){const cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual",sectors:[]};
   const r=$("#rw-r"),o=$("#rw-o"),de=$("#rw-d"),n=$("#rw-n"),l=$("#rw-l");if(r)cur.report=cleanTime(r.value);if(o)cur.off=cleanTime(o.value);if(de)cur.dest=cityFrom(de.value);if(n)cur.note=n.value.trim().slice(0,120);if(l)cur.loc=l.value.trim().slice(0,80);
   const sec=[];for(let i=0;i<10;i++){const f=$("#sc-flt-"+i);if(!f)break;const old=(cur.sectors||[])[i]||{};sec.push(Object.assign({},old,{flt:old.typ==="gt"?f.value.slice(0,8):f.value,reg:($("#sc-reg-"+i)||{}).value||old.reg||"",from:$("#sc-from-"+i).value,to:$("#sc-to-"+i).value,dep:$("#sc-dep-"+i).value,arr:$("#sc-arr-"+i).value}))}
@@ -3238,6 +3265,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.ccmsg){ccOpen=ccOpen===b.dataset.ccmsg?"":b.dataset.ccmsg;render();return}
   if(b.dataset.cccopy){const t=ccText(ccOpen),el=$("#cctext");Promise.resolve().then(()=>navigator.clipboard.writeText(t)).then(()=>{if(el)el.textContent=t+" (Copied)"},()=>{});return}
   if(b.dataset.chseen){if(S.rosterChanges)S.rosterChanges.seen=true;render();save();return}
+  if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy Gemini prompt"},2000)};try{navigator.clipboard.writeText(GEMINI_PROMPT).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
   if(b.id==="pasteroster"){const ta=$("#rost-p");rosterMsg=rpApply(ta?ta.value:"");render();save();return}
   if(b.dataset.dl){dlFetch(b.dataset.dl,b.dataset.dlc,true);return}
   if(b.dataset.coago!==undefined){S.standby.calledAt=new Date(Date.now()-(+b.dataset.coago)*60000).toISOString();render();save();return}
