@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.4";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.17.8";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -484,6 +484,8 @@ function parseTT(text,ride0){
   const all=String(text);
   const dur=all.match(/(?:journey|duration|takes|travel time)[^.\n]*?(\d{1,3})\s*(?:to|-|–)\s*(\d{1,3})\s*min/i)||all.match(/(?:journey|duration|takes|typically)[^.\n]*?(\d{1,3})\s*min/i);if(dur)ride=+(dur[2]||dur[1]);
   for(let raw of all.split(/\r?\n/)){
+    // ":28 (arriving at :36)" under a "Daytime pattern (07:00 – 22:00)" heading means every hour at :28
+    raw=raw.replace(/(^|[^\dxX:])[:.](\d{2})\b/g,"$1xx:$2");
     const ln=raw.trim();if(!ln)continue;const low=ln.toLowerCase();
     if(/^(mon(day)?\b.*fri|weekdays?\b|mon\s*[-–]\s*fri)/.test(low)){sec="wk";continue}
     if(/^sat(urday)?\b/.test(low)){sec="sat";if(!/\d/.test(ln))continue}
@@ -554,12 +556,22 @@ function plan(x){
   const rep=new Date((d.date||today())+"T00:00:00");rep.setHours(h||0,m||0,0,0);
   const base=((+S.duty.commute||0)+(+S.duty.buffer||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000;
   let leave=new Date(rep.getTime()-base);
-  if(+S.duty.peak&&isPeak(leave))leave=new Date(leave.getTime()-(+S.duty.peak)*60000);
-  let tr=null;const dd=d.date||today(),tm=d._mode||(d._car?"car":modeOf(dd));if(tm!=="car"){const o=tOptions(dd,tDeadline(rep,tm),(S.tpick||{})[dd+"|"+tm]||(S.tpick||{})[dd],tm);if(o&&o.chosen){tr=o;tr.rk=tm;leave=new Date(o.chosen.dep.getTime()-((+R(tm).walk||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000)}}
+  const parts={journey:+S.duty.commute||0,buffer:+S.duty.buffer||0,weather:S.wxExtra&&+S.wxExtra[d.date]||0,peak:0};
+  if(+S.duty.peak&&isPeak(leave)){leave=new Date(leave.getTime()-(+S.duty.peak)*60000);parts.peak=+S.duty.peak}
+  let tr=null,skipped=null;const dd=d.date||today(),tm=d._mode||(d._car?"car":modeOf(dd));if(tm!=="car"){const o=tOptions(dd,tDeadline(rep,tm),(S.tpick||{})[dd+"|"+tm]||(S.tpick||{})[dd],tm);if(o&&o.chosen){const wait=(tDeadline(rep,tm)-o.chosen.arr)/60000;
+      // a bus or train that gets you there hours early means the timetable is missing later ones: don't build the morning round it
+      if(wait>180&&!((S.tpick||{})[dd+"|"+tm]||(S.tpick||{})[dd])){skipped={rk:tm,o,wait}}
+      else{tr=o;tr.rk=tm;leave=new Date(o.chosen.dep.getTime()-((+R(tm).walk||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000)}}
+    else if(o&&!o.chosen)skipped={rk:tm,o,none:true}}
   let t=leave.getTime();const times=[];
   for(let i=S.steps.length-1;i>=0;i--){t-=(+S.steps[i].min||0)*60000;times[i]=new Date(t)}
-  return {rep,leave,times,first:times[0]||leave,tr};
+  return {rep,leave,times,first:times[0]||leave,tr,parts,skipped};
 }
+function leaveWhy(p){if(!p||!p.parts)return "";
+  if(p.skipped){const k=p.skipped,w=RNAME[k.rk]||k.rk,c=k.o.chosen;return `<p class="note" style="margin:0;padding:10px 12px;border:1px solid var(--danger);border-radius:12px;color:var(--ink)"><b>No good ${esc(w)} in your timetable.</b> ${k.none?`None gets you there in time.`:`The last one before report is ${esc(c.t)}, which would get you there ${hmDur(k.wait)} early, so your timetable is probably missing the later ones.`} Times below are for the car. <button class="linkbtn" data-goto="plan">Add the later ${esc(w==="bus"?"buses":w+"s")} or pick one in Plan</button></p>`}
+  if(p.tr&&p.tr.chosen){const c=p.tr.chosen;return `<p class="note" style="margin:-4px 0 0">${esc(RNAME[p.tr.rk]||"")} ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}const q=p.parts,tot=Math.round((p.rep-p.leave)/60000);
+  const bits=[q.journey?"journey "+q.journey:"",q.buffer?"buffer "+q.buffer:"",q.weather?"weather "+q.weather:"",q.peak?"rush hour "+q.peak:""].filter(Boolean).join(" + ");
+  const big=tot>180;return `<p class="note" style="margin:${big?"0":"-4px 0 0"};${big?"padding:10px 12px;border:1px solid var(--danger);border-radius:12px;color:var(--ink)":""}">${big?"<b>Check your travel time:</b> ":""}Leave by is ${hmDur(tot)} before report${bits?" ("+esc(bits)+" min)":""}. <button class="linkbtn" data-goto="today:travel|${esc(phaseOf())}">Change it</button></p>`}
 const hm=d=>String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
 const day=d=>d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
 
@@ -966,7 +978,8 @@ function rpLines(txt){
     if(!m)return;const date=m[1]+"-"+m[2]+"-"+m[3],code=m[4].toUpperCase(),kind=/^\d$/.test(code)?"flying":(RP_KIND[code]||null);if(!kind)return;
     const T=v=>v?cleanTime(v.replace(".",":")):"";
     const sec=[];String(m[7]||"").split(/;/).forEach(f=>{const x=f.trim().toUpperCase().match(/^([A-Z0-9]{2,3}\s?\d{1,4}[A-Z]?)\s+([A-Z]{3})\s*[-–>]+\s*([A-Z]{3})(?:\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)(?:\s*Z)?)?(?:\s+([A-Z0-9-]{4,7}))?/);if(x)sec.push({flt:x[1].replace(/\s/g,""),from:x[2],to:x[3],dep:T(x[4]),arr:T(x[5]),reg:(x[6]||"").replace("-","")})});
-    out.push({date,kind,report:T(m[5]),off:T(m[6]),sectors:sec,lines:1});
+    const timed=["standby","asby","training","adty","flying"].includes(kind);
+    out.push({date,kind,report:timed?T(m[5]):"",off:timed?T(m[6]):"",sectors:sec,lines:1});
   });
   return out;
 }
@@ -1020,7 +1033,7 @@ function shortDest(s){const c=Object.keys(IATA).find(k=>IATA[k]===s);return c||S
 function viewWeek(){
   const t=today(),G=monthGrid(),sel=selDay||(G.ym===t.slice(0,7)?t:G.ym+"-01"),e=S.roster[sel];
   const inMonth=Object.entries(S.roster).filter(([d])=>d.slice(0,7)===G.ym).map(([,x])=>x);
-  const hrs=inMonth.filter(x=>isDutyK(x.kind)&&x.report&&x.off).reduce((s,x)=>s+dutyHours(x),0);
+  const hrs=inMonth.filter(x=>isDutyK(x.kind)&&x.kind!=="standby"&&x.report&&x.off).reduce((s,x)=>s+dutyHours(x),0);
   const fltM=inMonth.filter(x=>x.kind==="flying").reduce((s,x)=>s+(x.sectors||[]).reduce((t,y)=>t+opMins(y),0),0);
   return `
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -2181,9 +2194,9 @@ function viewToday(){
   return head(asb?"Airport standby":trg?"Training day":adt?"Airport duty":"Duty day",(asb?"Standby ":trg?"Training ":adt?"Starts ":"Report ")+hm(p.rep)+(asb||trg||adt?"–"+esc(d.end||""):"")+(RZ()?"L":"")+(asb||trg||adt?"":dest?" · "+esc(dest):"")+(trg&&d.loc?" · "+esc(d.loc):""))+todayAlerts(p)+`
   ${ph==="duty"?`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdSince("On duty",p.rep,"since "+hm(p.rep))}${cdCell("FDP left",fdpEnd(),"ends by "+hm(fdpEnd()),true)}</section>`:`<section class="pass" aria-label="Your duty">
     ${cell("ready","Wake up",p.first,day(p.first))}
-    ${cell("go","Leave by",p.leave,esc(modeName(d.mode)))}
+    ${cell("go","Leave by",p.leave,esc(p.tr&&p.tr.chosen?(p.tr.rk==="bus"?"Bus ":"Train ")+p.tr.chosen.t:modeName(RK.includes(d.mode)?"driving":d.mode)))}
     ${cell("duty",asb?"Standby":trg?"Start":"Report",p.rep,esc(placeOf(d).split(" ").slice(0,2).join(" ")))}
-  </section>`}
+  </section>${leaveWhy(p)}`}
   ${ph==="duty"&&homeEnd()&&Date.now()>=homeEnd().getTime()-3*3600000?homeCard():""}
   <section class="card nowcard" role="status"><span class="label">Now</span><b>${esc(stage[0])}</b><span class="note" style="margin:0">${ph==="duty"?"Live flights, water and timers are on Trip.":"In "+fmtIn(stage[1]-now)}</span>${ph==="duty"&&on("tab_trip")?`<button class="primary" data-tab="trip" style="justify-self:start">Open Trip</button>`:""}</section>
   ${ph==="go"?ccBar(ph):""}
