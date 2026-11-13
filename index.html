@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.27.1";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.28.0";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -1018,12 +1018,43 @@ function changesNote(scope){
 
 // Simple one-line-per-day format (what the Gemini prompt asks for):
 // 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
-const GEMINI_PROMPT=`Read my work roster on this screen. Reply with one line per day and nothing else, in exactly this format:
+const GEMINI_PROMPT=`I'm sending screenshots of my airline work roster. Read every screenshot. Reply with one line per day and nothing else, in exactly this format:
 YYYY-MM-DD | CODE | check-in | check-out | flights
-CODE is the code the roster shows (DUTY, HSBY, ASBY, OFF, VTO, TRNG, L, SICK). If the calendar only shows a number of flights, write DUTY. Use the Z (UTC) times. Leave a time empty if it isn't shown. Write flights separated by ; like: FR1234 STN-LIS 16:10-19:00 EIEKL
+Rules:
+- One line per date, in date order. If a day is in more than one screenshot, write it once with all its details.
+- CODE is the duty code shown (DUTY, HSBY, ASBY, OFF, VTO, TRNG, L, SICK). If only a number of flights is shown, write DUTY.
+- Use the times exactly as the roster shows them (Z/UTC when both are shown). Leave a time empty if it isn't shown. Never guess.
+- Flights separated by ; as: flight number, from-to airports, departure-arrival, aircraft registration if shown. Like: FR1234 STN-LIS 16:10-19:00 EIEKL
+- Take the year from the roster; if it isn't shown, use ${new Date().getFullYear()}.
+- Leave out names, crew codes and staff numbers.
 Example:
 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
 2026-11-14 | OFF | | |`;
+// AI apps crew can use: the prompt is copied, the app opens, the crew member adds the screenshots. Nothing goes through Crew Day.
+const AI_APPS=[["Gemini","https://gemini.google.com/app"],["ChatGPT","https://chatgpt.com/"],["Claude","https://claude.ai/new"]];
+let ttShown="";
+function aiLinks(){return `<div class="links" style="font-size:13px;margin:0">${AI_APPS.map(a=>`<a href="${a[1]}" target="_blank" rel="noopener">Open ${a[0]} ↗</a>`).join("")}</div>`}
+// timetable prompt for the train or the bus, both ways, in the layout the timetable box reads
+function ttPrompt(rk){const T=R(rk),bus=rk==="bus",ap=((BASES[S.profile.base]||BASES.STN).airport||"London Stansted Airport"),from=T.from||(bus?"[my bus stop]":"[my station]");
+  return `Look up the current ${bus?"bus and coach":"train"} timetable between ${from} and ${ap}, both ways. Use the operator's or National Rail's current timetable; if you can't check it, say so instead of guessing.
+Reply with the timetable only, in exactly this layout:
+Monday to Friday
+05:28 → 05:39
+06:13 → 06:23
+xx:13 → xx:23 (09:00 – 22:00)
+Saturday
+...
+Sunday
+...
+Return
+Monday to Friday
+...
+Saturday
+...
+Sunday
+...
+Rules: departure → arrival on each line, 24-hour times. Include the first and last ${bus?"bus":"train"} of each day, every early-morning and late-night one${bus?", and the route number in brackets after the times, like 05:10 → 05:45 (510)":""}. Where it runs at the same minutes every hour, you may write one xx: line with the hours it covers. After "Return", the same from ${ap} back to ${from}.`}
+
 function rpLines(txt){
   const out=[];String(txt||"").replace(/\r/g,"").split("\n").forEach(line=>{
     const m=line.replace(/[*`]/g,"").match(/^\s*(?:[-•]\s*)?(\d{4})-(\d{2})-(\d{2})\s*\|\s*([A-Za-z0-9]+)\s*(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*(.*))?$/);
@@ -1054,13 +1085,18 @@ function rpApply(txt){
 }
 function pasteImportHTML(){return `<div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
-    <details open><summary class="note"><b>How to copy your roster text</b></summary><div class="note" style="margin:6px 0">
-      <p style="margin:4px 0"><b>Android, 2 screenshots a month:</b></p>
-      <p style="margin:4px 0">1. On the <b>Calendar</b> screen, take a screenshot.<br>2. On the <b>Roster</b> list, take a screenshot and tap <b>Capture more</b>. Drag the bottom edge down to the end of the month and tap <b>Save</b>.<br>3. Open each in Google Photos, tap <b>Lens</b> → <b>Text</b> → <b>Select all</b> → <b>Copy</b>, and paste them here one under the other. Tap <b>Read my roster</b> once.<br>4. Delete both screenshots, and empty them from the <b>Bin</b>.</p>
-      <p style="margin:4px 0"><b>iPhone:</b> take a screenshot and tap the small preview. For the long list, tap <b>Full Page</b> if it's offered. Long-press the text → <b>Select All</b> → <b>Copy</b>. Then <b>Done</b> → <b>Delete Screenshot</b>.</p>
-      <p style="margin:4px 0"><b>No screenshots (Android, uses Google):</b> tap below, open your roster app, open Gemini, tap <b>Ask about screen</b>, paste the prompt and send. Copy the answer and paste it here. Your screen is sent to Google to read it.</p>
-      <div class="btns" style="margin:4px 0"><button id="copygem">Copy Gemini prompt</button></div>
-      <p style="margin:4px 0">The app itself reads everything on this phone; nothing is sent anywhere. Times marked Z are kept as Zulu. Always check the result against your roster.</p></div></details>`}
+    <details open><summary class="note"><b>How to bring in your roster</b></summary><div class="note" style="margin:6px 0;display:grid;gap:10px">
+      <div><p style="margin:0"><b>1. Screenshots and your phone's AI (works with any airline)</b></p>
+      <ol style="margin:4px 0 0;padding-left:20px"><li>In your roster app, take a screenshot of every part of the month: the calendar, then the roster list, scrolling a screen at a time so every day is in a picture.</li><li>Tap <b>Copy roster prompt</b> below, then open your AI app.</li><li>Add <b>all</b> the screenshots to one message, paste the prompt and send.</li><li>Copy its answer, paste it in the box above and tap <b>Read my roster</b>.</li></ol>
+      <div class="btns" style="margin:6px 0 4px"><button id="copygem">Copy roster prompt</button></div>${aiLinks()}
+      <p style="margin:4px 0 0">Your screenshots go to that AI company, not to Crew Day. Crop out your name and crew code if you like, and delete the screenshots afterwards.</p></div>
+      <div><p style="margin:0"><b>2. A calendar link (Jet2 and others)</b></p>
+      <p style="margin:4px 0 0">If your roster app emails you a link to add your roster to a calendar, paste it under "Calendar link" below. If the airline blocks it, Crew Day shows how to fetch it with an iPhone Shortcut or Chrome on Android.</p></div>
+      <div><p style="margin:0"><b>3. A calendar file (.ics)</b></p>
+      <p style="margin:4px 0 0">If your roster app can export or email a calendar file, choose it under "Calendar file" below.</p></div>
+      <div><p style="margin:0"><b>4. Copy the text yourself</b></p>
+      <p style="margin:4px 0 0"><b>Android:</b> screenshot the roster (tap <b>Capture more</b> for the long list), open it in Google Photos, tap <b>Lens</b> → <b>Text</b> → <b>Select all</b> → <b>Copy</b>, and paste above. <b>iPhone:</b> open the screenshot, long-press the text → <b>Select All</b> → <b>Copy</b>.</p></div>
+      <p style="margin:0">Crew Day reads everything on this phone; nothing is sent anywhere. Times marked Z are kept as Zulu. Always check the result against your roster.</p></div></details>`}
 /* ---------- Weekly meals and shopping list ---------- */
 // Ingredients per portion: [item, amount, unit ("g", "ml" or "" for a count), aisle]. keeps = days it lasts in the fridge.
 const AISLES=["Fruit and veg","Meat and fish","Fridge: dairy and eggs","Bakery","Cupboard","Frozen"];
@@ -3073,6 +3109,10 @@ function routeFields(rk){
     <div class="field"><label for="tr-buf-${rk}">Airport ${bus?"coach station":"station"} to the crew room (min)</label><input id="tr-buf-${rk}" class="num" type="number" min="0" inputmode="numeric" value="${esc(T.buf!=null&&T.buf!==""?T.buf:(+S.duty.buffer||0))}" data-k="routes.${rk}.buf"></div>
     <div class="row2"><div class="field"><label for="tr-walk-${rk}">Home to ${bus?"stop":"station"} (min)</label><input id="tr-walk-${rk}" class="num" type="number" min="0" inputmode="numeric" value="${esc(T.walk)}" data-k="routes.${rk}.walk"></div><div class="field"><label for="tr-ride-${rk}">Usual journey (min)</label><input id="tr-ride-${rk}" class="num" type="number" min="1" inputmode="numeric" value="${esc(T.ride)}" data-k="routes.${rk}.ride"><span class="note" style="margin:0">Used when a time has no arrival.</span></div></div>
     ${bus?`<div class="field"><label for="tr-rides-${rk}">Journey by route (optional)</label><input id="tr-rides-${rk}" type="text" value="${esc(T.rides||"")}" data-k="routes.${rk}.rides" placeholder="e.g. 510=20, 509=25, 309=35"><span class="note" style="margin:0">If routes take different times, add them here.</span></div>`:""}
+    <div class="field"><span class="label" style="margin:0">Get the timetable from your phone's AI</span>
+      <p class="note" style="margin:0">Fill in your ${bus?"bus stop":"station"} above, tap <b>Copy timetable prompt</b>, paste it into your AI app and send. Paste its whole answer into "Going to work" below: the app splits off the return part by itself. AI can be out of date, so check a few times against the ${bus?"operator's":"National Rail"} timetable.</p>
+      <div class="btns" style="margin:4px 0"><button data-ttprompt="${rk}">Copy timetable prompt</button></div>
+      ${ttShown===rk?`<textarea id="ttp-${rk}" readonly rows="6" aria-label="Timetable prompt to copy" style="width:100%;box-sizing:border-box;font:500 13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px">${esc(ttPrompt(rk))}</textarea>`:""}${aiLinks()}</div>
     ${box("tr-out","out","Going to work: to the airport","Paste the timetable here, e.g.\nMonday to Friday\n05:28 → 05:39\nxx:13 → xx:23 (09:00 – 22:00)\nSaturday\nFirst train: 05:28 ...")}
     ${box("tr-back","back","Coming home: from the airport","Paste the return timetable the same way")}
     <p class="note" style="margin:0">Paste it as it is: departure and arrival times, lists like "19:27, 19:57", "xx:13" patterns with their hours, first and last ${w}${bus?"es":"s"}, and Monday–Friday, Saturday and Sunday headings all work. Paste both ways in one go with a "Return" line between them and the app splits them. Check the times it read. Timetables usually change in May and December.</p>
@@ -3742,7 +3782,8 @@ document.addEventListener("click",e=>{
   if(b.dataset.ccmsg){ccOpen=ccOpen===b.dataset.ccmsg?"":b.dataset.ccmsg;render();return}
   if(b.dataset.cccopy){const t=ccText(ccOpen),el=$("#cctext");Promise.resolve().then(()=>navigator.clipboard.writeText(t)).then(()=>{if(el)el.textContent=t+" (Copied)"},()=>{});return}
   if(b.dataset.chseen){if(S.rosterChanges)S.rosterChanges.seen=true;render();save();return}
-  if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy Gemini prompt"},2000)};try{navigator.clipboard.writeText(GEMINI_PROMPT).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
+  if(b.dataset.ttprompt){const txt=ttPrompt(b.dataset.ttprompt),lab=b.textContent;const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent=lab},2000)};const show=()=>{ttShown=b.dataset.ttprompt;render();const t=document.getElementById("ttp-"+ttShown);if(t){t.focus();t.select()}};try{navigator.clipboard.writeText(txt).then(done,show)}catch(e){show()}return}
+  if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy roster prompt"},2000)};try{navigator.clipboard.writeText(GEMINI_PROMPT).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
   if(b.id==="pasteroster"){const ta=$("#rost-p"),v=ta?ta.value:"";
     if(/BEGIN:VCALENDAR/i.test(v)){let days=[];try{days=parseICS(v)}catch(e){days=[]}const n=mergeRoster(days,"calendar");if(n)jumpTo(days.map(x=>x.date).sort()[0]);rosterMsg=n?`Imported ${n} day${n===1?"":"s"} from your calendar. Check them against your official roster.`:"That calendar had no roster days in it.";if(ta&&n)ta.value="";render();save();return}
     rosterMsg=rpApply(v);render();save();return}
