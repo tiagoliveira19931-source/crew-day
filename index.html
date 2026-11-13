@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -1803,7 +1803,7 @@ function phaseOf(){
   if(d.kind==="standby"){if(d.date!==t)return d.date>t?"future":"none";if(calloutInfo())return "called";const w=sbWindow();return now<w.start?"sbbefore":now<=w.end?"sbon":"sbdone"}
   const p=plan();
   if(hasEnd(d.kind)){const e=asbyEnd();if(now>e)return "done";if(now>=p.rep)return d.kind==="asby"?"asby":d.kind==="adty"?"adty":"training"}
-  else if(now>fdpEnd())return "done";
+  else if(now>fdpEnd()||(dutyOff()&&now>dutyOff().at))return "done";
   if(p.first-now>12*3600000)return "future";
   if(now<p.first)return "soon";
   if(now<p.leave.getTime()-30*60000)return "ready";
@@ -2560,7 +2560,9 @@ function viewTrip(){
   const w=S.water,dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:""),P=PHRASES[S.trip.country];
   const running=(S.timers||[]).filter(t=>t.end>Date.now()).length;
   let clock="";
-  if(ph==="duty"){const p=plan(),end=fdpEnd();clock=`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><span class="k">On duty</span><span class="v" id="dc-on">${fmtLeft(now-p.rep)}</span><span class="d">since ${hm(p.rep)}</span></div><div><span class="k">FDP left</span><span class="v hl" id="dc-left">${fmtLeft(end-now)}</span><span class="d">ends by ${hm(end)}</span></div></section>`}
+  if(ph==="done"&&S.duty.date&&(S.duty.date===today()||S.duty.date===addDays(today(),-1))){const p=plan(),o=dutyOff();if(o&&o.actual){const m=Math.round((o.at-p.rep)/60000);clock=`<section class="pass" aria-label="Duty done" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><span class="k">Duty done</span><span class="v">${hmDur(m)}</span><span class="d">${hm(p.rep)}–${hm(o.at)}</span></div><div><span class="k">Off duty</span><span class="v">${hm(o.at)}</span><span class="d">after your last on blocks</span></div></section>`}}
+  if(ph==="duty"){const p=plan(),end=fdpEnd(),o=dutyOff();if(o&&o.actual){clock=`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><span class="k">On duty</span><span class="v" id="dc-on">${fmtLeft(now-p.rep)}</span><span class="d">since ${hm(p.rep)}</span></div><div><span class="k">Off duty in</span><span class="v hl" data-cdto="${o.at.getTime()}">${fmtCD(o.at-now)}</span><span class="d">at ${hm(o.at)} · flights done</span></div></section>`}else
+    clock=`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><span class="k">On duty</span><span class="v" id="dc-on">${fmtLeft(now-p.rep)}</span><span class="d">since ${hm(p.rep)}</span></div><div><span class="k">FDP left</span><span class="v hl" id="dc-left">${fmtLeft(end-now)}</span><span class="d">ends by ${hm(end)}</span></div></section>`}
   else if(["soon","ready","go"].includes(ph)){const p=plan();clock=`<section class="card nowcard"><span class="label">Next</span><b>Report ${hm(p.rep)}${dest?" · "+esc(dest):""}</b><span class="note" style="margin:0">In ${fmtIn(p.rep-now)}</span></section>`}
   const destPick=`<div class="row">
       <div class="field"><label for="tr-c">Country</label><select id="tr-c" data-k="trip.country">${[...new Set(Object.keys(PHRASES).concat(CITIES.map(c=>c.country).filter(c=>c!=="United Kingdom")))].concat(["Other"]).map(c=>`<option ${S.trip.country===c?"selected":""}>${c}</option>`).join("")}</select></div>
@@ -2867,6 +2869,12 @@ function dayShift(){const d=S.duty,r=S.roster[d.date]||{},sec=r.sectors||[],t=d.
     if(x.onb)return {min:Math.round((at(x.onb)-at(x.arr))/60000),why:"actual on blocks "+hm(at(x.onb))+" ("+(x.flt||x.to)+")"};
     if(x.offb){const bm=x.est||blockMins(x)||0;if(bm){const exp=new Date(at(x.offb).getTime()+bm*60000);return {min:Math.round((exp-at(x.arr))/60000),why:"off blocks "+hm(at(x.offb))+" ("+(x.flt||x.to)+"), landing ~"+hm(exp)}}}}
   return null}
+// when duty really ends: last actual on blocks + the post-flight time on the roster (usually 30 min)
+function dutyOff(){const d=S.duty,r=S.roster[d.date]||{},sec=(r.sectors||[]).filter(x=>x.arr);if(!sec.length||hasEnd(d.kind))return null;
+  const last=sec[sec.length-1],t=d.date,st=plan().rep,at=v=>{let x=r2lDT(t,v);if(x<st)x=new Date(x.getTime()+86400000);return x};
+  let post=30;if(r.off){const m=Math.round((at(r.off)-at(last.arr))/60000);if(m>=0&&m<=120)post=m}
+  if(last.onb)return {at:new Date(at(last.onb).getTime()+post*60000),actual:true};
+  const e=homeEnd();return e?{at:new Date(e.getTime()+60*60000),actual:false}:null}
 function homeEnd(){const e=homeEndSched();if(!e||hasEnd(S.duty.kind))return e;const sh=dayShift();return sh?new Date(e.getTime()+sh.min*60000):e}
 function homeCard(){
   const m=modeOf(S.duty.date);if(m==="car")return "";const T=R(m),v=tt("back",m);if(!ttCount(v))return "";const end=homeEnd();if(!end)return "";
