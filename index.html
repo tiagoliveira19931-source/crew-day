@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.30.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.30.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -1073,7 +1073,7 @@ function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<texta
 const RZ_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 const RZ_ACT=[[/\bHSBY\b|home\s*standby/i,"standby"],[/\bASBY\b|airport\s*standby/i,"asby"],[/airport\s*duty|\bADTY\b/i,"adty"],[/\bv\s?[tIl1|]\s?[o0]\b/i,"vto"],[/training|\bTRNG\b|\bSIM\b/i,"training"],[/\bSICK\b/i,"sick"],[/annual\s*leave|\bAL\b/,"leave"],[/\bOFF\b/,"off"]];
 function rpZ(txt){
-  const L=String(txt||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];let cur=null,dayOff=false;
+  const L=String(txt||"").split(/\r?\n/).map(x=>x.replace(/\bCalendar\b|\bV\s?T\s?O\s*Hub\b|\bLegend\b|More\s*Actions\W*|\bRoster\b/gi," ").trim()).filter(Boolean),out=[];let cur=null,dayOff=false;
   const ZT=/(\d{1,2}:\d{2})\s*Z\b/g,FLT=/\b(FR|RK|LS|U2|EZY|BA|W6|N0)\s?(\d{1,4})\b/i;
   const aps=l=>(l.replace(/\b(CHECK|IN|OUT|LT|DUTY|FLIGHT|TIME|OFF|VTO|HSBY|ASBY)\b/g," ").match(/\b[A-Z]{3}\b/g)||[]).filter(a=>IATA_OK(a));
   for(let i=0;i<L.length;i++){const l=L[i],next=L[i+1]||"";
@@ -1089,7 +1089,8 @@ function rpZ(txt){
     if(/CHECK\s*OUT/i.test(l)){cur.off=T[0];continue}
     if(T.length<2)continue;
     const A=aps(l),fm=l.match(FLT)||(!/\d{1,2}:\d{2}\s*Z/.test(next)&&next.match(FLT));
-    if(A.length>=2||fm){cur.sectors.push({flt:fm?(fm[1]+fm[2]).toUpperCase():"",from:A[0]||"",to:A[1]||"",dep:T[0],arr:T[1],reg:""});continue}
+    if(A.length>=2||fm){const mins=s=>{const [a,b]=s.split(":").map(Number);return a*60+b},dur=(mins(T[1])-mins(T[0])+1440)%1440,ok=dur>=20&&dur<=600;
+      cur.sectors.push({flt:fm?(fm[1]+fm[2]).toUpperCase():"",from:A[0]||"",to:A[1]||"",dep:ok?T[0]:"",arr:ok?T[1]:"",reg:""});continue}
     const both=l+" "+(!/\d{1,2}:\d{2}\s*Z/.test(next)?next:"");const act=RZ_ACT.find(a=>a[0].test(both));
     if(act)cur.acts.push({kind:act[1],from:T[0],to:T[1]})}
   return out.map(e=>{let kind=e.sectors.length?"flying":"",rep=e.report,off=e.off;
@@ -1097,11 +1098,23 @@ function rpZ(txt){
     if(!kind)kind=e.hdrOff?"off":(rep?"flying":"");
     if(["off","vto","leave","sick"].includes(kind)){rep="";off=""}
     return kind?{date:e.date,kind,report:rep||"",off:off||"",sectors:e.sectors,note:e.sectors.length&&e.acts.some(a=>a.kind==="standby")?"Called from home standby":""}:null}).filter(Boolean)}
-function rpApply(txt){
+function rpCareful(e){const old=S.roster[e.date];if(!old)return e;
+  const hasOld=old.report||(old.sectors||[]).length,hasNew=e.report||(e.sectors||[]).some(x=>x.dep||x.flt);
+  if(hasOld&&!hasNew&&e.kind!==old.kind)return null;          // nothing solid read for a day we already know: leave it
+  const full=d=>(d.report?1:0)+(d.off?1:0)+(d.sectors||[]).filter(x=>x.flt&&x.dep&&x.arr).length*2;
+  if(hasOld&&full(e)<full(old))return null;                   // a weaker reading than what we have: leave the day as it is
+  const os=old.sectors||[];
+  const sec=(e.sectors||[]).map((x,i)=>{const o=os.find(y=>x.flt&&cleanFlt(y.flt)===cleanFlt(x.flt))||(!x.flt&&os[i]&&(!x.from||os[i].from===x.from)?os[i]:null);if(!o)return x;
+    const r2z=v=>v;return Object.assign({},x,{flt:x.flt||o.flt,from:x.from||o.from,to:x.to||o.to,dep:x.dep||"",arr:x.arr||"",reg:x.reg||o.reg||"",_old:o})});
+  if(os.length&&sec.length<os.length&&sec.some(x=>!x.dep||!x.arr))return null;   // fewer, half-read flights: keep what we have
+  return Object.assign({},e,{report:e.report||"",off:e.off||"",sectors:sec,_keep:old})}
+function rpApply(txt,careful){
   txt=String(txt||"").split(GEMINI_PROMPT).join("");const G=rpLines(txt),Gd=G.filter(e=>e.report||e.sectors.length),Gc=G.filter(e=>!(e.report||e.sectors.length));
   let L=rpList(txt).concat(Gd),C=rpCal(txt).concat(Gc);
   // screens read row by row by the on-phone reader: use the row reader when it finds more
-  const Zr=Gd.length?[]:rpZ(txt);if(Zr.length&&Zr.length>=L.length){L=Zr;C=[]}if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
+  // screenshots read on the phone come row by row: always use the row reader for them
+  const Zr=Gd.length?[]:rpZ(txt);if(Zr.length&&(careful||Zr.length>=L.length)){L=Zr;C=[]}
+  if(careful){L=L.map(rpCareful).filter(Boolean);C=C.filter(e=>!S.roster[e.date])}if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
   rosterBackup=JSON.parse(JSON.stringify(S.roster));let nc=0,nl=0;const OLD=rosterBackup;
   C.forEach(e=>{const cur=S.roster[e.date];
     if(cur&&cur.kind===e.kind&&isDutyK(e.kind)&&(cur.report||(cur.sectors||[]).length))return;
@@ -1109,7 +1122,8 @@ function rpApply(txt){
     if(e.kind==="standby"||e.kind==="asby")o.note="Times not shown, add them";
     S.roster[e.date]=o;nc++});
   L.forEach(e=>{const sec=cleanSectors(e.sectors.map(x=>{const m=(!x.dep||!x.arr)&&(S.flights||{})[cleanFlt(x.flt)];const y=Object.assign({},x,{dep:z2roster(e.date,x.dep),arr:z2roster(e.date,x.arr)});if(m&&m.from===x.from&&m.to===x.to){y.dep=y.dep||m.dep;y.arr=y.arr||m.arr}return y}));learnFlights(sec,e.date);
-    S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report)),off:cleanTime(z2roster(e.date,e.off)),dest:destFromSectors(sec),note:"",src:"paste",sectors:sec};nl++});
+    const K=e._keep;if(K){sec.forEach((x,i)=>{const o=(e.sectors[i]||{})._old;if(o){if(!x.dep)x.dep=o.dep;if(!x.arr)x.arr=o.arr}delete x._old})}
+    S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report))||(K&&K.report)||"",off:cleanTime(z2roster(e.date,e.off))||(K&&K.off)||"",dest:destFromSectors(sec),note:"",src:"paste",sectors:sec};nl++});
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
@@ -1118,14 +1132,14 @@ function rpApply(txt){
 /* Read roster screenshots on this phone: a small text-recognition model (Tesseract, downloaded once, then kept offline)
    turns the pictures into text, and the app's own roster reader turns that into days. The pictures never leave the phone. */
 const OCR_LIB="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
-let ocrBusy=false,ocrMsg="";
+let ocrBusy=false,ocrMsg="",ocrRaw="";
 function loadOCR(){if(window.Tesseract)return Promise.resolve(window.Tesseract);return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src=OCR_LIB;sc.onload=()=>window.Tesseract?ok(window.Tesseract):no(new Error("no lib"));sc.onerror=()=>no(new Error("offline"));document.head.appendChild(sc)})}
 // Prepare a screenshot for the reader: every bit of text becomes black on white. Roster apps mix dark cards, light
 // headers and coloured badges (navy text on blue/green, pink on purple), so each pixel is judged against its
 // surroundings: inside a coloured badge, anything differing from the badge colour is text; elsewhere text is
 // lighter than a dark background or darker than a light one. Tested on real Ryanair screens (dark mode).
 function ocrPrep(file){return new Promise(res=>{const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{try{
-    const k=im.width<900?2:1,w=im.width*k,h=im.height*k,c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,w,h);
+    const k=Math.min(3,Math.max(0.5,1612/im.width)),w=Math.round(im.width*k),h=Math.round(im.height*k),c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,w,h);
     const d=x.getImageData(0,0,w,h),p=d.data,n=w*h,g=new Uint8Array(n),sat=new Uint8Array(n);
     for(let i=0,j=0;i<n;i++,j+=4){const r=p[j],gg=p[j+1],bb=p[j+2];g[i]=(0.299*r+0.587*gg+0.114*bb)|0;sat[i]=Math.max(r,gg,bb)-Math.min(r,gg,bb)}
     const W1=w+1,IG=new Float64Array(W1*(h+1)),IC=new Float64Array(W1*(h+1));
@@ -1143,11 +1157,11 @@ function ocrClean(t){return String(t||"").split("\n").map(l=>l
   .replace(/\b([A-Z]{3})(?=\d{1,2}:\d{2}\b)/g,"$1 ")
   .replace(/\s[=—–]+\s/g," → ")
   .replace(/\bF\s?R\s?S?([0-9SOEBIlGZ]{4})\b/g,(m,d)=>"FR"+d.replace(/S/g,"5").replace(/O/g,"0").replace(/[EG]/g,"6").replace(/B/g,"8").replace(/[Il]/g,"1").replace(/Z/g,"2"))).join("\n")}
-window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t)});
+window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),careful:t=>rpZ(t).map(rpCareful)});
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
     for(let i=0;i<files.length;i++){ocrMsg=`Reading picture ${i+1} of ${files.length}…`;render();const src=await ocrPrep(files[i]);const r=await worker.recognize(src);all+="\n--- next picture ---\n"+((r&&r.data&&r.data.text)||"")}
-    all=ocrClean(all);const ta=$("#rost-p");rosterMsg=rpApply(all);ocrMsg=/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
+    all=ocrClean(all);ocrRaw=all.trim();const ta=$("#rost-p");rosterMsg=rpApply(all,true);ocrMsg=/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
     if(ta&&/^Nothing/.test(rosterMsg))ta.value=all.trim();
   }catch(e){ocrMsg=String(e&&e.message)==="offline"?"The reader needs signal the first time, to download. Try again when you're online.":"Something went wrong reading the pictures. Try fewer at a time, or use your phone's AI below."}
   try{if(worker)await worker.terminate()}catch(e){}
@@ -1155,7 +1169,8 @@ async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=t
 function pasteImportHTML(){return `<div class="seccard" style="margin-bottom:8px"><span class="label">Read screenshots on this phone</span>
       <p class="note" style="margin:0">Take screenshots of your whole roster (the calendar and the roster list, a screen at a time), then choose them all here. Crew Day reads them on your phone: the pictures never leave it. Check the days it finds against your roster.</p>
       <div class="field"><label for="ocr-f">Roster screenshots</label><input id="ocr-f" type="file" accept="image/*" multiple ${ocrBusy?"disabled":""}></div>
-      ${ocrMsg?`<p class="note" role="status" style="margin:0">${esc(ocrMsg)}</p>`:""}</div>
+      ${ocrMsg?`<p class="note" role="status" style="margin:0">${esc(ocrMsg)}</p>`:""}
+      ${ocrRaw?`<details><summary class="note">What the reader saw</summary><textarea id="ocr-raw" readonly rows="8" style="width:100%;box-sizing:border-box;font:500 12px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px">${esc(ocrRaw)}</textarea><p class="note" style="margin:4px 0 0">If days came out wrong, this helps fix the reader. It contains your roster, so only share it with someone you choose.</p></details>`:""}</div>
     <div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
     <details open><summary class="note"><b>How to bring in your roster</b></summary><div class="note" style="margin:6px 0;display:grid;gap:10px">

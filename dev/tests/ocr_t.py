@@ -47,7 +47,16 @@ _ OFF _
 26 Nov 26, Thu
 05:4O Z STN CHECK IN
 05:40 Z STN ~ Airport Duty 13:40 Z
-13:40 Z CHECK OUT"""
+13:40 Z CHECK OUT
+DUTY FLIGHT TIME: 5H 40M
+27 Nov 26, Fri
+16:10 Z STN CHECK IN
+19:00 Z STN FR1882 LIS
+FR1883 STN
+22:45 Z STN CHECK OUT
+DUTY FLIGHT TIME: 3H 35M
+28 Nov 26, Sat
+Calendar VTO Hub"""
 WANT={"2026-11-16":("flying","05:10","09:30",["FR5101","FR6102"]),"2026-11-17":("standby","04:00","15:00",[]),"2026-11-18":("vto","","",[]),
       "2026-11-19":("flying","18:20","00:03",["FR2301","FR2302"]),"2026-11-24":("off","","",[]),"2026-11-25":("training","08:00","17:25",[]),"2026-11-26":("adty","05:40","13:40",[])}
 STUB="<script>window.__r=%s;window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:window.__r.shift()||''}}),terminate:async()=>{}})};</script>"%json.dumps([PIC1,PIC2])
@@ -68,6 +77,8 @@ with sync_playwright() as p:
     print("prep:",st); assert st["bw"]==1 and st["black"]<0.25 and st["mid"]>50, st
     pg.fill("#pr-n","T"); pg.fill("#pr-s","A"); pg.click("#setupdone")
     pg.click("[data-tab=more]"); pg.click('[data-more="roster"]'); pg.wait_for_timeout(150)
+    # a day already known and correct must survive a poor reading of it
+    pg.fill("#rost-p","2026-11-27 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00; FR1883 LIS-STN 19:25-22:15"); pg.click("#pasteroster"); pg.wait_for_timeout(200)
     fp=os.path.join(d,"s.png"); open(fp,"wb").write(shot)
     pg.set_input_files("#ocr-f",[fp,fp]); pg.wait_for_function("document.querySelector('main').innerText.includes('Read 2 pictures')||document.querySelector('main').innerText.includes('Couldn')||document.querySelector('main').innerText.includes('went wrong')",timeout=20000)
     print("app:",pg.inner_text("#rostmsg"))
@@ -75,6 +86,9 @@ with sync_playwright() as p:
     got={k:(v.get("kind"),v.get("report") or "",v.get("off") or "",[s.get("flt") for s in v.get("sectors",[])]) for k,v in R.items()}
     for k in sorted(got): print(k,got[k])
     for k,v in WANT.items(): assert got.get(k)==v, (k,got.get(k),v)
+    assert got.get("2026-11-27")==("flying","15:25","22:45",["FR1882","FR1883"]), ("known day kept",got.get("2026-11-27"))
+    assert "2026-11-28" not in got, ("nav bar is not a VTO",got.get("2026-11-28"))
+    assert "What the reader saw" in pg.inner_text("main")
     assert got.get("2026-11-21",("",))[0]=="flying" and "2026-11-20" not in got, "21 Nov cut off; 20 Nov is the overnight end of 19 Nov"
     b.close()
 print("ERRORS:", errs or "none")
