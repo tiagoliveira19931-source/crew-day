@@ -16,7 +16,8 @@ with sync_playwright() as p:
     t=pg.inner_text('[aria-label="Your duty"]').replace("\n"," "); print("today:",t); assert "07:30" in t, "wake after 8h30 from 23:00"
     f=pg.locator('[data-fold^="morning"]')
     if f.count() and f.get_attribute("aria-expanded")=="false": f.click()
-    pg.wait_for_timeout(100); pg.click("#copyalarms"); pg.wait_for_timeout(300); m=pg.inner_text("#copymsg"); print("alarms:",m)
+    pg.wait_for_timeout(100); mb=f.locator("xpath=..").inner_text(); assert "bed 23:00" in mb and "Wake up" in mb, mb[:300]
+    pg.click("#copyalarms"); pg.wait_for_timeout(300); m=pg.inner_text("#copymsg"); print("alarms:",m)
     assert "07:30 Wake up" in m.replace("  "," ") and "Start getting ready" in m and "Snooze" not in m
     pg.click("[data-tab=more]"); pg.click('[data-more=""]') if pg.locator('[data-more=""]').count() else None
     pg.click('[data-more="profile"]'); pg.wait_for_timeout(150)

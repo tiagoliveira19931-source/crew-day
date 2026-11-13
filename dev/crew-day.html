@@ -534,6 +534,7 @@ function tOptions(date,deadline,pick,rk){
 function bedTime(){return /^\d\d:\d\d$/.test(S.profile.bed||"")?S.profile.bed:"23:00"}
 function sleepHours(){const v=+S.profile.sleepH;return v>=6&&v<=10?v:8.5}
 // the alarms for a duty morning: on a late report, one to wake up after a full night's sleep, then one to start getting ready
+function stepRings(p,s,i){return !!s.alarm&&(!p.split||i===0||!/alarm|snooze|wake|breakfast/i.test(s.label))}
 function alarmList(p){
   if(!p.split)return S.steps.map((s,i)=>s.alarm?{t:p.times[i],label:s.label,i}:null).filter(Boolean);
   const out=[{t:p.wake,label:"Wake up (about "+hmDur(sleepHours()*60)+" sleep)",i:"wake"},{t:p.ready,label:"Start getting ready",i:"ready"}];
@@ -564,13 +565,13 @@ function plan(x){
   for(let i=S.steps.length-1;i>=0;i--){t-=(+S.steps[i].min||0)*60000;times[i]=new Date(t)}
   const ready=times[0]||leave;
   // wake after a proper night's sleep, not just in time to get ready: a late report leaves the morning free
-  let wake=ready,split=false;
+  let wake=ready,split=false,bedAt=null,bedLate=false;
   // not when called out from home standby: then it's the call-out time that counts
   const called=S.standby.calledAt&&S.standby.date===dd,sbDay=S.roster[dd]&&/standby/.test(S.roster[dd].kind||"")&&S.roster[dd].kind!=="asby";
   if(!d._car&&d.kind!=="standby"&&!called&&!sbDay&&!(S.roster[dd]&&S.roster[dd].callout)){const [bh,bm]=bedTime().split(":").map(Number),eve=addDays(dd,-1);let bed=new Date((bh<12?dd:eve)+"T00:00:00");bed.setHours(bh,bm||0,0,0);
-    const home=d.date?prevHome(d):null;if(home&&home.getTime()+45*60000>bed.getTime())bed=new Date(home.getTime()+45*60000);
-    const nat=new Date(bed.getTime()+sleepHours()*3600000);if(nat.getTime()<=ready.getTime()-60*60000){wake=nat;split=true}}
-  return {rep,leave,times,first:wake,ready,wake,split,tr,parts,skipped};
+    const home=d.date?prevHome(d):null;if(home&&home.getTime()+45*60000>bed.getTime()){bed=new Date(home.getTime()+45*60000);bedLate=true}
+    const nat=new Date(bed.getTime()+sleepHours()*3600000);if(nat.getTime()<=ready.getTime()-60*60000){wake=nat;split=true;bedAt=bed}}
+  return {rep,leave,times,first:wake,ready,wake,split,bedAt,bedLate,tr,parts,skipped};
 }
 function leaveWhy(p){if(!p||!p.parts)return "";
   if(p.tr&&p.tr.fallback&&p.tr.chosen){const c=p.tr.chosen,w=RNAME[p.tr.fallback]||p.tr.fallback;return `<p class="note" style="margin:-4px 0 0">No ${esc(w)} fits this report, so the ${p.tr.rk==="bus"?"bus":"train"}: ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}
@@ -1946,10 +1947,11 @@ function phaseOf(){
 
 /* ---------- small bodies shared between tabs ---------- */
 function morningBody(p,which){
-  return `${p.split?`<div class="seccard"><span class="label">Late report, free morning</span><p style="margin:0">Alarm <b>${hm(p.wake)}</b> to wake up after about ${hmDur(sleepHours()*60)} of sleep (bed ${esc(bedTime())}), then <b>${hm(p.ready)}</b> to start getting ready. The rest of the morning is yours.</p><p class="note" style="margin:0">Change your bedtime and sleep in <button class="linkbtn" data-goto="more:profile">Profile</button>.</p></div>`:""}<p class="note" style="margin:0">Tap the bell to make a step an alarm.</p>
+  return `${p.split?`<div class="seccard"><span class="label">Late report, free morning</span><p style="margin:0">Alarm <b>${hm(p.wake)}</b> to wake up after about ${hmDur(sleepHours()*60)} of sleep (bed ${hm(p.bedAt)}${p.bedLate?", as you're home late from the day before":""}), then <b>${hm(p.ready)}</b> to start getting ready. The rest of the morning is yours.</p><p class="note" style="margin:0">Change your bedtime and sleep in <button class="linkbtn" data-goto="more:profile">Profile</button>.</p></div>`:""}<p class="note" style="margin:0">Tap the bell to make a step an alarm.${p.split?" On a free morning the snooze and breakfast alarms are skipped; your first step rings to start getting ready.":""}</p>
     <div class="timeline">
+      ${p.split?`<div class="step"><span class="t alarm">${hm(p.wake)}</span><span class="fixed">Wake up</span><span></span></div>`:""}
       ${S.steps.map((s,i)=>`<div class="step">
-        <span class="t ${s.alarm?"alarm":""}">${hm(p.times[i])}</span>
+        <span class="t ${stepRings(p,s,i)?"alarm":""}">${hm(p.times[i])}</span>
         <div class="n"><input aria-label="Step name" type="text" value="${esc(s.label)}" data-step="${s.id}" data-f="label"><input aria-label="Minutes for ${esc(s.label)}" class="num" type="number" min="0" inputmode="numeric" value="${esc(s.min)}" data-step="${s.id}" data-f="min"></div>
         <div style="display:flex;gap:4px"><button class="bell" aria-pressed="${s.alarm}" aria-label="Alarm for ${esc(s.label)}" data-bell="${s.id}">${ICON.bell}</button><button class="ghost" aria-label="Remove ${esc(s.label)}" data-delstep="${s.id}">${ICON.x}</button></div>
       </div>`).join("")}
