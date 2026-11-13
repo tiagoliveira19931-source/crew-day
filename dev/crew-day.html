@@ -1252,51 +1252,32 @@ function viewBackup(){
 
 /* ---------- Aviation news (links: live headlines need a news feed in the full app) ---------- */
 // Headlines saved for offline reading (fetched through rss2json, which allows apps to read news feeds)
-const NEWS_FEEDS=[["Simple Flying","https://simpleflying.com/feed/"],["AeroTime","https://www.aerotime.aero/feed"],["Aviation Week","https://aviationweek.com/awn/rss.xml"]];
+const NEWS_FEEDS=[["Simple Flying","https://simpleflying.com/feed/","industry"],["AeroTime","https://www.aerotime.aero/feed","industry"],["Aviation Week","https://aviationweek.com/awn/rss.xml","industry"],
+  ["AirLive","https://www.airlive.net/feed/","disruption"],["Met Office warnings","https://www.metoffice.gov.uk/public/data/PWSCache/WarningsRSS/Region/UK","disruption"],
+  ["UK CAA","https://www.caa.co.uk/newsroom/news/rss/","uk"],["Ryanair newsroom","https://corporate.ryanair.com/feed/","airline"],["Jet2 news","https://www.jet2plc.com/en/news/rss","airline"]];
+const NEWS_CATS=[["all","All"],["industry","Industry"],["disruption","Disruption"],["uk","UK and rules"],["airline","Your airline"]];
 let newsBusy=false;
 function newsFetch(force){
   if(newsBusy||navigator.onLine===false)return;const c=S.newsCache;if(!force&&c&&Date.now()-c.at<3*3600000)return;
   newsBusy=true;if(force)render();
   const strip=h=>{const d=document.createElement("div");d.innerHTML=String(h||"");return (d.textContent||"").replace(/\s+/g," ").trim()};
-  Promise.allSettled(NEWS_FEEDS.map(([n,u])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,10).map(x=>({src:n,t:strip(x.title).slice(0,200),d:strip(x.description||x.content).slice(0,600),u:String(x.link||""),dt:String(x.pubDate||"")})))))
+  const feeds=NEWS_FEEDS.filter(f=>f[2]!=="airline"||(S.profile.airline==="Ryanair"&&/ryanair/i.test(f[0]))||(S.profile.airline==="Jet2"&&/jet2/i.test(f[0])));
+  // keep the whole article text the feed gives (most news sites send it), so it can be read offline
+  Promise.allSettled(feeds.map(([n,u,c])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,8).map(x=>{const full=strip(x.content||""),sum=strip(x.description||"");return {src:n,cat:c,t:strip(x.title).slice(0,200),d:(full.length>sum.length?full:sum).slice(0,5000),u:String(x.link||""),dt:String(x.pubDate||"")}}))))
   .then(rs=>{const items=rs.filter(r=>r.status==="fulfilled").flatMap(r=>r.value).filter(x=>x.t&&/^https:\/\//.test(x.u));
-    newsBusy=false;if(items.length){items.sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));S.newsCache={at:Date.now(),items:items.slice(0,30)};save()}else if(force){S.newsCache=Object.assign({},S.newsCache||{items:[]},{err:Date.now()})}render()});
+    newsBusy=false;if(items.length){items.sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));S.newsCache={at:Date.now(),items:items.slice(0,40)};save()}else if(force){S.newsCache=Object.assign({},S.newsCache||{items:[]},{err:Date.now()})}render()});
 }
 function newsSaved(){
-  newsFetch(false);const c=S.newsCache,items=(c&&c.items)||[];
-  const ago=c&&c.at?Math.round((Date.now()-c.at)/60000):null;
-  return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Latest headlines</h2><button class="pick" id="newsrf" ${newsBusy?"disabled":""}>${newsBusy?"Loading…":"Refresh"}</button></div>
-    ${items.length?`<div>${items.map(x=>`<details class="ex"><summary><b>${esc(x.t)}</b><span class="note" style="display:block">${esc(x.src)}${x.dt?" · "+esc(x.dt.slice(0,16)):""}</span></summary>${x.d?`<p class="note" style="margin:6px 0">${esc(x.d)}</p>`:""}<a href="${esc(x.u)}" target="_blank" rel="noopener" class="linkbtn">Read the full article ↗</a></details>`).join("")}</div>
-    <p class="note" style="margin:6px 0 0">Saved ${ago<1?"just now":ago<60?ago+" min ago":Math.round(ago/60)+"h ago"} so you can read the headlines and summaries offline. Full articles need signal.</p>`
-    :`<p class="note" style="margin:0">${c&&c.err?"Couldn't load the headlines. ":""}Open this page once with signal and the latest headlines are saved for reading offline${IS_PWA?"":" (works in the installed app)"}.</p>`}</section>`;
+  newsFetch(false);const c=S.newsCache,all=(c&&c.items)||[],cat=S.newsCat||"all",items=all.filter(x=>cat==="all"||(x.cat||"industry")===cat);
+  const ago=c&&c.at?Math.round((Date.now()-c.at)/60000):null,n=k=>all.filter(x=>k==="all"||(x.cat||"industry")===k).length;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="note" style="margin:0">${all.length?`Saved ${ago<1?"just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+"h ago":Math.round(ago/1440)+" days ago"}: readable offline`:"Not saved yet"}</span><button class="pick" id="newsrf" ${newsBusy?"disabled":""}>${newsBusy?"Loading…":"Refresh"}</button></div>
+    <div class="btns" role="tablist" aria-label="News type" style="margin:0">${NEWS_CATS.filter(k=>k[0]==="all"||n(k[0])).map(k=>`<button class="pick" role="tab" aria-pressed="${cat===k[0]}" aria-selected="${cat===k[0]}" data-newscat="${k[0]}">${k[1]}${k[0]!=="all"?" ("+n(k[0])+")":""}</button>`).join("")}</div>
+    ${items.length?`<div>${items.map(x=>`<details class="ex"><summary><b>${esc(x.t)}</b><span class="note" style="display:block">${esc(x.src)}${x.dt?" · "+esc(x.dt.slice(0,16)):""}</span></summary>${x.d?`<p style="margin:6px 0;white-space:pre-line;overflow-wrap:anywhere;font-size:15px;line-height:1.5">${esc(x.d)}</p>`:""}<a href="${esc(x.u)}" target="_blank" rel="noopener" class="linkbtn">Open on the website ↗</a></details>`).join("")}</div>`
+    :`<p class="note" style="margin:0">${c&&c.err?"Couldn't load the news. ":""}Open this once with signal and the latest industry news, disruption alerts and UK rule changes are saved here to read offline${IS_PWA?"":" (works in the installed app)"}.</p>`}`;
 }
 function viewNews(){
-  const L=(n,u,d)=>`<a class="newsl" href="${u}" target="_blank" rel="noopener"><b>${esc(n)} ↗</b><span class="note">${esc(d)}</span></a>`;
-  const airline=S.profile.airline==="Ryanair"?L("Ryanair newsroom","https://corporate.ryanair.com/news/","Company announcements and results"):S.profile.airline==="Jet2"?L("Jet2 plc news","https://www.jet2plc.com/","Company announcements and results"):"";
-  return `${newsSaved()}<section class="card">
-    <h2>Industry news</h2>
-    <div class="newsgrid">
-      ${L("Simple Flying","https://simpleflying.com/","Airlines, aircraft and routes")}
-      ${L("AeroTime","https://www.aerotime.aero/","European aviation news")}
-      ${L("FlightGlobal","https://www.flightglobal.com/","Industry and fleet news")}
-      ${L("Reuters: Aerospace","https://www.reuters.com/business/aerospace-defense/","Business and breaking news")}
-    </div>
-  </section>
-  <section class="card">
-    <h2>Your airline and the UK</h2>
-    <div class="newsgrid">
-      ${airline}
-      ${L("UK Civil Aviation Authority","https://www.caa.co.uk/newsroom/","Rules, safety and passenger news")}
-    </div>
-  </section>
-  <section class="card">
-    <h2>Disruption</h2>
-    <div class="newsgrid">
-      ${L("Eurocontrol network","https://www.eurocontrol.int/","European air traffic and ATC delays")}
-      ${L("Met Office warnings","https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings","Weather warnings in the UK")}
-    </div>
-    <p class="note">Live headlines inside the app come with the full phone app.</p>
-  </section>`;
+  const L=(n,u)=>`<a href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a>`;
+  return newsSaved()+`<details><summary class="note">More sources (need signal)</summary><div class="links" style="font-size:13px">${L("FlightGlobal","https://www.flightglobal.com/")}${L("Reuters: Aerospace","https://www.reuters.com/business/aerospace-defense/")}${L("Eurocontrol network","https://www.eurocontrol.int/")}${L("Met Office warnings","https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings")}${L("UK CAA newsroom","https://www.caa.co.uk/newsroom/")}${S.profile.airline==="Ryanair"?L("Ryanair newsroom","https://corporate.ryanair.com/news/"):S.profile.airline==="Jet2"?L("Jet2 plc news","https://www.jet2plc.com/"):""}</div></details>`;
 }
 
 function standbyTimes(o){const s=o||S.standby,[sh,sm]=(s.start||"05:00").split(":").map(Number),[eh,em]=(s.end||"13:00").split(":").map(Number);let a=sh*60+sm,b=eh*60+em;if(b<=a)b+=1440;const step=Math.max(15,+s.interval||60),out=[];for(let t=a;t<=b;t+=step){const m=t%1440;out.push(String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"))}return out}
@@ -1782,7 +1763,7 @@ function phaseOf(){
   const p=plan();
   if(hasEnd(d.kind)){const e=asbyEnd();if(now>e)return "done";if(now>=p.rep)return d.kind==="asby"?"asby":d.kind==="adty"?"adty":"training"}
   else if(now>fdpEnd()||(dutyOff()&&now>dutyOff().at))return "done";
-  if(p.first-now>12*3600000)return "future";
+  if(p.first-now>12*3600000&&d.date!==t)return "future"; // on the duty day itself, always show it
   if(now<p.first)return "soon";
   if(now<p.leave.getTime()-30*60000)return "ready";
   if(now<p.rep)return "go";
@@ -2552,7 +2533,7 @@ function viewTrip(){
   return `<header><h1>Trip</h1><p class="sub">${dest?"Today: "+esc(dest):"What you need on duty and away"}</p></header>
   ${showFt?flightTimerCard():""}
   ${clock}
-  ${on("trip_flights")&&sec.length?fold("flights","My flights",tripFlightsBody,ph==="duty",sec.length+" sector"+(sec.length===1?"":"s")):""}
+  ${on("trip_flights")&&sec.length?fold("flights","My flights",tripFlightsBody,["soon","ready","go","duty"].includes(ph),sec.length+" sector"+(sec.length===1?"":"s")):""}
   ${on("weather")?fold("wxtoday","Weather today",()=>wxDayBody(today(),dutyCity(S.duty)||S.trip.city).html+`<p class="note" style="margin:0">Tomorrow's weather is on Plan.</p>`,false,""):""}
   ${S.profile.role==="pilot"&&on("pilot")?fold("pilot","Pilot briefing",pilotBody,false,"Wind and runways"):""}
   ${on("more_water")?fold("water","Water",waterBody,true,w.ml+" / "+w.goal+" ml"):""}
@@ -2562,7 +2543,7 @@ function viewTrip(){
   ${on("destfacts")?fold("destfacts","Facts and what's on",factsBody,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
   ${on("words")?fold("words","Useful words",wordsBody,false,P?esc(P.lang):""):""}
   ${on("more_currency")?fold("currency","Currency",viewCurrency,false,(CURRENCY[S.trip.country]||"")):""}
-  ${on("more_news")?fold("news","Aviation news",viewNews,false,""):""}`;
+  ${on("more_news")?fold("news","News",viewNews,false,(S.newsCache&&S.newsCache.items||[]).length?(S.newsCache.items.length+" saved for offline"):""):""}`;
 }
 function addM(t,m){const [h,mi]=t.split(":").map(Number);let x=((h*60+mi+m)%1440+1440)%1440;return String(Math.floor(x/60)).padStart(2,"0")+":"+String(x%60).padStart(2,"0")}
 function vsSched(t,sta){let d=blockMins({dep:sta,arr:t});if(d>720)d-=1440;return d===0?"on time":Math.abs(d)+" min "+(d>0?"late":"early")}
@@ -3104,7 +3085,7 @@ function viewPerks(){
 const TOGGLES=[
   ["Main tabs",[["tab_trip","Trip"],["tab_plan","Plan"],["tab_me","Me"]]],
   ["Today",[["core","Before you leave"],["travel","Getting there"],["late","Running late"]]],
-  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","Aviation news"]]],
+  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","News"]]],
   ["Plan",[["planday","Tonight and sleep"],["evening","Evening prep and grooming"],["kitcheck","Kit check"],["packing","Packing"],["weather","Weather"],["todo","To do"],["food","Food and meals"]]],
   ["Me",[["more_wellbeing","Mood and energy"],["me_selfcare","My routine"],["me_fitness","Fitness"]]],
   ["More",[["tool_roster","Roster"],["tool_money","Money"],["more_hours","FTL and hours"],["more_notes","Layover"],["kitlist","Grooming and kit"],["more_care","Uniform care"],["perks","Crew discounts"]]],
@@ -3390,6 +3371,7 @@ document.addEventListener("click",e=>{
     const now=new Date();S.ft={date:t,i,start:now.getTime(),est};if(i>=0&&secs[i]){secs[i].offb=(RZ()?hmZ:hm)(now);secs[i].est=est;secs[i].onb=""}render();save();return}
   if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
   if(b.id==="newsrf"){newsFetch(true);return}
+  if(b.dataset.newscat){S.newsCat=b.dataset.newscat;render();save();return}
   if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
   if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date();ft.start=now.getTime();if(ft.i>=0&&secs[ft.i])secs[ft.i].offb=(RZ()?hmZ:hm)(now);render();save();return}
   if(b.id==="ftunstop"){const l=S.ftLast;if(!l||!l.prev)return;const {secs}=ftState();S.ft=l.prev;if(l.prev.i>=0&&secs[l.prev.i])secs[l.prev.i].onb="";S.ftLast=null;render();save();return}

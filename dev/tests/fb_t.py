@@ -14,7 +14,7 @@ Daytime Pattern (07:00 – 23:59):
 """
 def handle(r):
     u=r.request.url;H={"Access-Control-Allow-Origin":"*"}
-    if "rss2json" in u: return r.fulfill(status=200,content_type="application/json",headers=H,body=json.dumps({"status":"ok","items":[{"title":"Ryanair adds new routes","description":"<p>Ryanair announced <b>12</b> new routes.</p>","link":"https://example.com/a","pubDate":"2026-11-12 10:00:00"}]}))
+    if "rss2json" in u: return r.fulfill(status=200,content_type="application/json",headers=H,body=json.dumps({"status":"ok","items":[{"title":"Ryanair adds new routes","description":"<p>Ryanair announced <b>12</b> new routes.</p>","content":"<p>Ryanair announced 12 new routes from Stansted for summer 2027, including Tirana and Rzeszow.</p><p>Full article text for offline reading.</p>","link":"https://example.com/a","pubDate":"2026-11-12 10:00:00"}]}))
     return r.abort() if u.startswith("http") else r.continue_()
 with sync_playwright() as p:
     b=p.chromium.launch(); pg=b.new_page(viewport={"width":390,"height":844},device_scale_factor=2)
