@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.3";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.4";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -2591,7 +2591,7 @@ function vsSched(t,sta){let d=blockMins({dep:sta,arr:t});if(d>720)d-=1440;return
 function blockNote(x,pb,ab){
   const dt=S.duty.date||today(),L=RZ()?"L":"";
   if(x.onb&&x.arr)return `<p style="margin:0"><b>On blocks ${r2l(dt,x.onb)}${L}</b>: ${vsSched(x.onb,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled.</p>`;
-  if(x.offb&&pb){const eta=addM(x.offb,pb);return `<p style="margin:0"><b>Expected on blocks ${r2l(dt,eta)}${L}</b>${x.arr?`: ${vsSched(eta,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled`:""}. Based on the planned ${fmtMins(pb)} block.</p>`}
+  const bm=x.est||pb;if(x.offb&&bm){const eta=addM(x.offb,bm);return `<p style="margin:0"><b>Expected on blocks ${r2l(dt,eta)}${L}</b>${x.arr?`: ${vsSched(eta,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled`:""}. Based on ${x.est?"today's "+fmtMins(bm)+" block from the briefing":"the planned "+fmtMins(bm)+" block"}.</p>`}
   return "";
 }
 /* ---------- flight timer: block time from the briefing, start at pushback ---------- */
@@ -2634,9 +2634,10 @@ function tripFlightsBody(){
         <label for="ts-o-${i}">Off blocks${RZ()?" (L)":""}</label><input id="ts-o-${i}" type="time" value="${x.offb?r2l(dt,x.offb):""}" data-secf="${i}:offb"><button class="pick" data-secnow="${i}:offb">Now</button>
         <label for="ts-n-${i}">On blocks${RZ()?" (L)":""}</label><input id="ts-n-${i}" type="time" value="${x.onb?r2l(dt,x.onb):""}" data-secf="${i}:onb"><button class="pick" data-secnow="${i}:onb">Now</button>
         <label for="ts-c-${i}">Slot${RZ()?" (L)":""}</label><input id="ts-c-${i}" type="time" value="${x.ctot?r2l(dt,x.ctot):""}" data-secf="${i}:ctot"><span></span>
+        <label for="ts-b-${i}">Block today</label><input id="ts-b-${i}" type="text" inputmode="numeric" placeholder="${pb?"Planned "+fmtMins(pb):"e.g. 2:35"}" value="${x.est?fmtMins(x.est):""}" data-secest="${i}"><span class="note" style="margin:0">From the briefing</span>
       </div>
       ${blockNote(x,pb,ab)}
-      <span class="note" style="margin:0">${ab?`Actual block <b>${fmtMins(ab)}</b>${pb?` (planned ${fmtMins(pb)}, ${ab>pb?"+":ab<pb?"−":"±"}${fmtMins(Math.abs(ab-pb))})`:""}`:pb?`Planned block ${fmtMins(pb)}`:""}${x.ctot&&x.dep?` · slot ${(()=>{const d=blockMins({dep:x.dep,arr:x.ctot});return d>720?"before STD":"+"+d+" min after STD"})()}`:""}</span>
+      <span class="note" style="margin:0">${ab?`Actual block <b>${fmtMins(ab)}</b>${x.est?` (briefing ${fmtMins(x.est)}, ${ab>x.est?"+":ab<x.est?"−":"±"}${fmtMins(Math.abs(ab-x.est))})`:pb?` (planned ${fmtMins(pb)}, ${ab>pb?"+":ab<pb?"−":"±"}${fmtMins(Math.abs(ab-pb))})`:""}`:x.est?`Today's block ${fmtMins(x.est)}${pb?" (planned "+fmtMins(pb)+")":""}`:pb?`Planned block ${fmtMins(pb)}`:""}${x.ctot&&x.dep?` · slot ${(()=>{const d=blockMins({dep:x.dep,arr:x.ctot});return d>720?"before STD":"+"+d+" min after STD"})()}`:""}</span>
     </div>`});
   return rows.join("")+(tot?`<p style="margin:0"><b>Today: ${fmtMins(tot)} actual block</b>${plan?` · ${fmtMins(plan)} planned`:""}</p>`:"");
 }
@@ -3573,6 +3574,7 @@ document.addEventListener("change",e=>{
   if(el.dataset.k==="trip.city"){const nm=cityFrom(el.value),c=CITIES.find(x=>x.name===nm);S.trip.city=nm;if(c)S.trip.country=c.country;render();save();return}
   if(el.dataset.k==="next.dest"&&S.next){const nm=cityFrom(el.value);S.next.dest=nm||el.value;render();save();return}
   if(el.dataset.secf&&el.id==="ft-slot"){const [i]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i].ctot=el.value?l2r(S.duty.date,cleanTime(el.value)):"";render();save()}return}
+  if(el.dataset.secest!==undefined){const i=+el.dataset.secest,r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[i]){const v=parseHM(el.value);r.sectors[i].est=v||0;if(S.ft&&S.ft.start&&S.ft.i===i&&v)S.ft.est=v;render();save()}return}
   if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=l2r(S.duty.date,cleanTime(el.value));render();save()}return}
   if(el.dataset.rwy){if(!S.rwy)S.rwy={};S.rwy[el.dataset.rwy]=el.value.toUpperCase().replace(/[^0-9LRC\/ ]/g,"").slice(0,20);render();save();return}
   if(el.id==="is-a"){S.issueDraft=Object.assign({},S.issueDraft||{},{area:el.value});return}
