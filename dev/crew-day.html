@@ -768,6 +768,21 @@ function mergeRoster(days,src){rosterBackup=JSON.parse(JSON.stringify(S.roster))
   const cut=addDays(today(),-120);Object.keys(S.roster).forEach(d=>{if(d<cut)delete S.roster[d]});syncToday();return n}
 function syncToday(){const t=today(),r=S.roster[t];if(r&&isDutyK(r.kind)&&r.report&&!S.standby.calledAt&&!(S.ft&&S.ft.start&&!S.ft.stop))useDay(t)}
 /* calendar file (.ics) import: groups each day's events into one roster day */
+/* Roster from a private calendar link (Jet2 and others share one by email). The phone downloads it straight from the
+   airline; the link stays on this phone only (it works like a password) and refreshes the roster when online. */
+function calLinkOk(u){u=String(u||"").trim().replace(/^webcals?:\/\//i,"https://");return /^https:\/\/[^\s]+$/i.test(u)?u:""}
+let calBusy=false;
+async function calLinkFetch(manual){const u=calLinkOk(S.rosterLink&&S.rosterLink.url);if(!u||calBusy)return;if(!navigator.onLine){if(manual){rosterMsg="You're offline. Your roster updates from the link when you have signal.";render()}return}
+  calBusy=true;if(manual){rosterMsg="Getting your roster from the link…";render()}
+  try{const r=await fetch(u,{cache:"no-store",credentials:"omit",referrerPolicy:"no-referrer"});if(!r.ok)throw new Error("http "+r.status);
+    const days=parseICS(await r.text());const n=days.length?mergeRoster(days,"calendar"):0;S.rosterLink.at=new Date().toISOString();S.rosterLink.err="";
+    if(manual){if(n){jumpTo(days.map(x=>x.date).sort()[0])}rosterMsg=n?`Imported ${n} day${n===1?"":"s"} from your calendar link. It updates by itself when you're online. Check against your official roster.`:"The link worked, but no roster days were found in it."}
+  }catch(e){S.rosterLink.err=String(e&&e.message||"blocked");if(manual)rosterMsg="Your phone couldn't read that link from Crew Day. The airline's server may only allow calendar apps. Try the steps below instead."}
+  calBusy=false;render();save()}
+function calLinkHTML(){const L=S.rosterLink||{};return `<div class="field"><label for="cal-u">Calendar link from your roster app</label><input id="cal-u" type="url" inputmode="url" autocomplete="off" placeholder="https://… .ics" value="${esc(L.url||"")}"></div>
+    <div class="btns">${L.url?`<button class="primary" id="calget">Update now</button><button id="caldel">Remove link</button>`:`<button class="primary" id="calsave">Use this link</button>`}</div>
+    <p class="note" style="margin:0">If your airline emails you a link to "add your roster to a calendar" (Jet2 does), paste it here. Your phone downloads the roster straight from the airline and updates it when you're online. The link is private, like a password: it stays on this phone only.${L.at?` Last updated ${esc(new Date(L.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))}.`:""}</p>
+    ${L.err?`<details class="note"><summary>Link not working? Other ways in</summary><ul class="plain"><li>Open the link in Safari or Chrome. If it saves a .ics file, choose it under "Calendar file" below.</li><li>Or add the link to your phone's calendar, open any duty there and share it to Crew Day as a file.</li><li>Or copy the roster text from your crew app and paste it above.</li></ul></details>`:""}`}
 function parseICS(text){
   const lines=text.replace(/\r\n[ \t]/g,"").replace(/\n[ \t]/g,"").split(/\r?\n/),events=[];let cur=null;
   for(const ln of lines){if(ln==="BEGIN:VEVENT")cur={};else if(ln==="END:VEVENT"){if(cur)events.push(cur);cur=null}else if(cur){const i=ln.indexOf(":");if(i<0)continue;const key=ln.slice(0,i).split(";")[0].toUpperCase(),params=ln.slice(0,i),val=ln.slice(i+1);cur[key]={val,params}}}
@@ -1169,6 +1184,8 @@ function fr24Airport(code,board){return "https://www.flightradar24.com/data/airp
 const AIRLINES=["Ryanair","Ryanair UK","Jet2","Norse","Other"];
 function isRyr(){return /^Ryanair/.test(S.profile.airline||"")}
 function isLongHaul(){return S.profile.airline==="Norse"}
+// Who sets the flight time rules: UK airlines follow the UK CAA (UK ORO.FTL, the same figures EASA uses); EU airlines follow EASA.
+function regName(){const a=S.profile.airline;return a==="Jet2"||a==="Ryanair UK"?"UK CAA":a==="Ryanair"?"EASA":"EASA or UK CAA"}
 function idLabel(){return isRyr()?"Crew code":S.profile.airline==="Jet2"||S.profile.airline==="Norse"?"Staff number":"Staff number or crew code"}
 function jumpTo(d){const t=new Date(today()+"T00:00:00"),p=new Date(d+"T00:00:00");monthOff=(p.getFullYear()-t.getFullYear())*12+(p.getMonth()-t.getMonth());selDay=d}
 function monthGrid(){const t=new Date(today()+"T00:00:00"),first=new Date(t.getFullYear(),t.getMonth()+monthOff,1);
@@ -1218,6 +1235,7 @@ function viewWeek(){
     ${sampleImages?`<div class="field"><label for="rost-img">Or a screenshot or photo of it</label><input id="rost-img" type="file" accept="image/jpeg,image/png,image/webp"></div>`:""}
     <div class="btns"><button class="primary" id="readroster" ${rosterBusy?"disabled":""}>${rosterBusy?"Reading…":"Read my roster"}</button>${rosterBusy?`<button id="stoproster">Stop</button>`:""}</div>`:""}
     ${sampleNS?"":pasteImportHTML()}
+    ${calLinkHTML()}
     <div class="field"><label for="ics">Calendar file from your roster app (.ics)</label><input id="ics" type="file" accept=".ics,text/calendar"></div>
     <p class="note" id="rostmsg" role="status">${esc(rosterMsg||"Many roster apps can export your roster as a calendar file. Or tap any day above and write it in.")}</p>
     ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
@@ -1264,6 +1282,7 @@ function viewWeekList(){
     <div class="btns"><button class="primary" id="readroster" ${rosterBusy?"disabled":""}>${rosterBusy?"Reading…":"Read my roster"}</button>${rosterBusy?`<button id="stoproster">Stop</button>`:""}</div>
     <p class="note">Claude reads it and fills in your days. Uses your Claude account and asks your permission the first time.</p>`:""}
     ${sampleNS?"":pasteImportHTML()}
+    ${calLinkHTML()}
     <div class="field"><label for="ics">Calendar file from your roster app (.ics)</label><input id="ics" type="file" accept=".ics,text/calendar"></div>
     <p class="note" id="rostmsg" role="status">${esc(rosterMsg||"Many roster apps can export your roster as a calendar file. You can also add or edit any day by hand above.")}</p>
     ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
@@ -1522,7 +1541,7 @@ function viewFTL(){
   const st=(v,lim)=>v>=lim?"color:var(--danger);font-weight:700":v>=lim*.85?"color:var(--accent);font-weight:700":"";
   return `
   <section class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>FTL helper</h2><span class="chip">EASA guide</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>FTL helper</h2><span class="chip">${regName()} guide</span></div>
     ${days.length?`<div class="field"><label for="ftl-d">Duty</label><select id="ftl-d">${days.map(d=>{const x=S.roster[d];return `<option value="${d}" ${d===pick?"selected":""}>${esc(fmtDate(d,{weekday:"short",day:"numeric",month:"short"}))} · report ${esc(x.report||"--:--")} · ${(x.sectors||[]).length||"?"} sector${(x.sectors||[]).length===1?"":"s"}</option>`}).join("")}</select></div>`:`<p class="note">Add flying days with sectors on the Roster tab to check them here.</p>`}
     <table><tbody>
       <tr><td>Report</td><td class="r m clk">${esc(rep)}</td></tr>
@@ -1546,7 +1565,7 @@ function viewFTL(){
   </section>
   <section class="card" style="background:var(--bg)">
     ${isLongHaul()?`<p class="note" style="margin:0"><b>Long-haul isn't covered yet.</b> These are short-haul figures. Long-haul duties with extra crew, in-flight rest and big time-zone changes follow other rules, so use your company's FTL scheme for now.</p>`:""}
-    <p class="note" style="margin:0"><b>A guide only.</b> Based on ORO.FTL.205 Table 2 (acclimatised crew), ORO.FTL.210 and ORO.FTL.235, without extensions, split duty or commander's discretion. Your airline's approved FTL scheme and your rostering team always have the final say. If you think a duty breaks FTL, raise it through your airline's process.</p>
+    <p class="note" style="margin:0"><b>A guide only.</b> Based on ${regName()==="UK CAA"?"UK CAA rules, UK ":""}ORO.FTL.205 Table 2 (acclimatised crew), ORO.FTL.210 and ORO.FTL.235, without extensions, split duty or commander's discretion. Your airline's approved FTL scheme and your rostering team always have the final say. If you think a duty breaks FTL, raise it through your airline's process.</p>
   </section>`;
 }
 function viewHours(){
@@ -1566,7 +1585,7 @@ function viewHours(){
       ${rows.map(r=>{const pct=r[2]?r[1]/r[2]:0;return `<tr><td>${r[0]}</td><td class="r m" style="${pct>=1?"color:var(--danger);font-weight:700":pct>=.85?"color:var(--accent);font-weight:700":""}">${r[1].toFixed(1)}</td><td class="r m">${r[2]}</td></tr>`}).join("")}
       <tr><td>Days off in last 7</td><td class="r m">${daysOff7}</td><td></td></tr>
     </tbody></table>
-    <p class="note">Limits start at the common EASA duty limits (60, 110 and 190 hours). Your airline's scheme decides what applies to you, so change them below if yours differ.</p>
+    <p class="note">Limits start at the common duty limits under ${regName()} rules (60, 110 and 190 hours). Your airline's scheme decides what applies to you, so change them below if yours differ.</p>
     <div class="row"><div class="field"><label for="l7">Limit, 7 days</label><input id="l7" class="num" type="number" min="0" value="${L.d7}" data-k="limits.d7"></div><div class="field"><label for="l28">Limit, 28 days</label><input id="l28" class="num" type="number" min="0" value="${L.d28}" data-k="limits.d28"></div></div>
   </section>
   <section class="card">
@@ -2099,7 +2118,7 @@ function sbFtlBody(){
       <li>If your standby starts between 23:00 and 07:00, the time between 23:00 and 07:00 doesn't count towards that reduction until you're contacted.</li>
       <li>Standby plus FDP shouldn't mean more than 18 hours awake. The app counts this from the start of standby (or from 07:00 or the call, if your standby starts overnight).</li>
       <li>25% of home standby time counts towards your duty hours.</li>
-    </ul><p class="note">Based on EASA CS FTL.1.225 (the standard UK and EU scheme). Your airline's approved FTL scheme can differ, so check it and your roster.</p></details>`;
+    </ul><p class="note">${regName()==="UK CAA"?"Based on UK CAA rules (UK ORO.FTL and CS FTL.1.225, the same figures as EASA's).":"Based on EASA CS FTL.1.225 (the standard EU and UK scheme)."} Your airline's approved FTL scheme can differ, so check it and your roster.</p></details>`;
 }
 function rosterCheckBtn(){
   const s=S.standby,list=sbDated(),now=Date.now(),past=list.filter(x=>x.at.getTime()<=now).pop();
@@ -3314,6 +3333,8 @@ function sendOutbox(){
   q.reduce((p,r)=>p.then(()=>one(r)),Promise.resolve()).catch(()=>{}).finally(()=>{outboxBusy=false;save();if(S.moreView==="issues")render()});
 }
 window.addEventListener("online",()=>setTimeout(sendOutbox,1500));setTimeout(sendOutbox,4000);
+function calAuto(){const L=S.rosterLink;if(!L||!L.url)return;if(L.at&&Date.now()-Date.parse(L.at)<3*3600000)return;calLinkFetch(false)}
+setTimeout(calAuto,3000);window.addEventListener("online",()=>setTimeout(calAuto,2000));document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(calAuto,2000)});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(sendOutbox,2000)});
 function viewIssues(){
   if(!S.issues)S.issues=[];if(!S.issueDraft)S.issueDraft={kind:"problem",area:"Today"};
@@ -3582,6 +3603,9 @@ document.addEventListener("click",e=>{
   if(b.dataset.say){const [k,i]=b.dataset.say.split("|"),P=PHRASES[S.trip.country],C=CS[S.trip.country];const t=k==="cs"?(C||[])[+i]:(P&&P.p||[])[+i];if(P&&t)sayIt(P.lang,t);return}
   if(b.id==="chkupd"){const m=$("#updmsg");if(!navigator.onLine){if(m)m.textContent="You're offline. It checks again when you have signal.";return}
     if(m)m.textContent="Checking…";Promise.resolve(window.crewdayCheckUpdate?window.crewdayCheckUpdate():false).then(found=>{const m2=$("#updmsg");if(m2)m2.textContent=found?"New version found. It loads in a few seconds.":"You have the latest version."});return}
+  if(b.id==="calsave"){const u=calLinkOk(($("#cal-u")||{}).value);if(!u){rosterMsg="That doesn't look like a calendar link. It should start with https:// or webcal://.";render();return}S.rosterLink={url:u,at:"",err:""};save();calLinkFetch(true);return}
+  if(b.id==="calget"){const u=calLinkOk(($("#cal-u")||{}).value);if(u&&S.rosterLink)S.rosterLink.url=u;calLinkFetch(true);return}
+  if(b.id==="caldel"){delete S.rosterLink;rosterMsg="Calendar link removed from this phone.";render();save();return}
   if(b.id==="uncalled"){S.standby.calledAt=null;render();save();return}
   if(b.id==="latefromcall"){const el=$("#lt-m");if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.focus()}return}
   if(b.id==="dobackup"){const plain=JSON.stringify({app:"crewday",v:1,saved:new Date().toISOString(),state:S},null,1),pw=(($("#bk-pw")||{}).value||"");
