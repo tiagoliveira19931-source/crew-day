@@ -17,6 +17,7 @@ with sync_playwright() as p:
     pg.fill("#rost-p",rost); pg.click("#pasteroster"); pg.wait_for_timeout(150)
     pg.click("[data-tab=more]"); pg.click('[data-more=""]') if pg.locator('[data-more=""]').count() else None
     pg.click('[data-more="meals"]'); pg.wait_for_timeout(200)
+    n=pg.locator('[data-mplan="2026-11-16"] option').count()-1; print("recipes in menu:",n); assert n==100,n
     picks={d:pg.locator(f'[data-mplan="{d}"]').input_value() for d in ["2026-11-16","2026-11-17","2026-11-18","2026-11-19","2026-11-20"]}
     print("suggested:",picks)
     assert picks["2026-11-16"] and picks["2026-11-17"] and picks["2026-11-19"], "duty days need a meal"

@@ -37,7 +37,7 @@ with sync_playwright() as p:
     pg.clock.set_system_time(datetime.datetime(2026,11,13,0,30)); pg.wait_for_timeout(1200)
     pg.click("[data-tab=trip]"); pg.click("[data-tab=today]"); pg.wait_for_timeout(200)
     t=pg.inner_text("main").replace("\n"," "); i=t.upper().find("GETTING HOME"); print("home 00:30:", t[i:i+330])
-    assert "Take the bus" in t, "after midnight with no train, the bus should be suggested"
+    assert "Take: bus" in t, "after midnight with no train, the bus should be suggested"
     # Saturday 14th, report 12:45: trains only run 07:00-09:00 → falls back to the bus
     pg.clock.set_system_time(datetime.datetime(2026,11,14,9,30)); pg.wait_for_timeout(1200)
     pg.click("[data-tab=trip]"); pg.click("[data-tab=today]"); pg.wait_for_timeout(200)
