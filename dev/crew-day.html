@@ -527,8 +527,9 @@ function routeRides(rk){const o={};String(R(rk).rides||"").replace(/([0-9]{1,4}[
 function tOptions(date,deadline,pick,rk){
   let L=tList(date,"out",rk);if(!L.length)return null;
   const ok=L.filter(x=>x.arr<=deadline);if(!ok.length)return {ok:[],chosen:null,late:L[0]};
-  const chosen=(pick&&ok.find(x=>x.t===pick))||ok[ok.length-1];
-  return {ok:ok.slice(-4),chosen,late:L.find(x=>x.arr>deadline)||null};
+  // leave one spare: suggest the one before the last that works, so a late or cancelled one doesn't make you late
+  const chosen=(pick&&ok.find(x=>x.t===pick))||ok[Math.max(0,ok.length-2)];
+  return {ok:ok.slice(-4),chosen,last:ok[ok.length-1],late:L.find(x=>x.arr>deadline)||null};
 }
 function tBuf(rk){const T=R(rk||"train");return T.buf!=null&&T.buf!==""?+T.buf:(+S.duty.buffer||0)}
 function tDeadline(rep,rk){return new Date(rep.getTime()-tBuf(rk)*60000)}
@@ -3003,7 +3004,7 @@ function travelChoice(n,pn){
     <div class="btns" role="radiogroup" aria-label="Travel">${opts.map(x=>`<button class="pick" role="radio" aria-checked="${m===x[0]}" aria-pressed="${m===x[0]}" data-tmode="${n.date}|${x[0]}">${x[1]}</button>`).join("")}</div>
     ${cands.length>1?`<p style="margin:0"><b>Advice:</b> ${esc(best[2])} lets you leave latest, at ${hm(best[1])}${cands[1]?` (${(m=>m<60?m+" min":hmDur(m))(Math.round((best[1]-cands[1][1])/60000))} later than ${esc(cands[1][2].toLowerCase())})`:""}. If the weather or traffic looks bad, pick the earlier one.</p>`:""}
     <p class="note" style="margin:0">Your alarms follow the one you pick.</p></div>
-    ${m!=="car"?transitCard(n,pn,m):""}`;
+    ${m!=="car"?transitCard(n,pn,pn&&pn.tr&&pn.tr.fallback?pn.tr.rk:m):""}`;
 }
 function transitCard(n,pn,rk){rk=rk||"train";
   const T=R(rk),dl=tDeadline(pn.rep,rk),o=tOptions(n.date,dl,(S.tpick||{})[n.date+"|"+rk]||(S.tpick||{})[n.date],rk),word=RNAME[rk];
@@ -3012,8 +3013,9 @@ function transitCard(n,pn,rk){rk=rk||"train";
   if(!o.chosen)return `<div class="seccard" style="border-color:var(--danger)"><b style="color:var(--danger)">No ${word} gets you there in time</b><p style="margin:0">The first one, ${o.late.t}, arrives ${hm(o.late.arr)}${RZ()?"L":""}, after ${hm(dl)}. Plan a taxi or a lift.</p>${live}</div>`;
   const c=o.chosen,spare=Math.round((dl-c.arr)/60000);
   return `<div class="seccard"><span class="label">Your ${word}${T.from?" from "+esc(T.from):""}</span>
-    <div class="btns" style="margin:0">${o.ok.map(x=>`<button class="pick" aria-pressed="${x.t===c.t}" data-tpick="${n.date}|${rk}|${x.t}">${x.t}${x.n?" · "+esc(x.n):""}</button>`).join("")}${o.late?`<button class="pick" disabled title="Too late">${o.late.t} late</button>`:""}</div>
-    <p style="margin:0">Leave home <b>${hm(pn.leave)}</b> for the <b>${c.t}</b>${c.n?" ("+esc(c.n)+")":""}. At the airport ${hm(c.arr)}, then ${tBuf(rk)} min to the crew room${spare>0?`, with ${spare} min spare`:""}.${o.ok.length>1&&c.t!==o.ok[o.ok.length-1].t?"":" This is the last one that works, so don't miss it."}</p>
+    <div class="btns" style="margin:0">${o.ok.map(x=>`<button class="pick" aria-pressed="${x.t===c.t}" data-tpick="${n.date}|${rk}|${x.t}">${x.t}${x.n?" · "+esc(x.n):""}${x===o.last&&o.ok.length>1?" · last one":""}</button>`).join("")}${o.late?`<button class="pick" disabled title="Too late">${o.late.t} late</button>`:""}</div>
+    <p style="margin:0">Leave home <b>${hm(pn.leave)}</b> for the <b>${c.t}</b>${c.n?" ("+esc(c.n)+")":""}. At the airport ${hm(c.arr)}, then ${tBuf(rk)} min to the crew room${spare>0?`, with ${spare} min spare`:""}.</p>
+    ${c===o.last?`<p class="note" style="margin:0;color:var(--danger)"><b>${o.ok.length>1?"You picked the last one that works":"This is the only one that works"}.</b> If it's late or cancelled, you'll be late for report.${o.ok.length>1?" Your choice, at your own risk.":""}</p>`:`<p class="note" style="margin:0">If it's cancelled, the ${esc(o.last.t)} still gets you there in time. You can pick the ${esc(o.last.t)} yourself, at your own risk.</p>`}
     ${live}</div>`;
 }
 function travelFieldsInner(){
