@@ -1004,11 +1004,13 @@ Rules:
 - CODE is the duty code shown (DUTY, HSBY, ASBY, OFF, VTO, TRNG, L, SICK). If only a number of flights is shown, write DUTY.
 - Use the times exactly as the roster shows them (Z/UTC when both are shown). Leave a time empty if it isn't shown. Never guess.
 - Flights separated by ; as: flight number, from-to airports, departure-arrival, aircraft registration if shown. Like: FR1234 STN-LIS 16:10-19:00 EIEKL
+- If a day has more than one duty code (for example home standby and then flights, a special duty after the flights, LATE, or a training code like CRMS), put the main one in CODE and add each other one after the flights as: + CODE start-end. Like: ; + HSBY 11:00-18:20
 - Take the year from the roster; if it isn't shown, use the year that makes the dates closest to today.
 - Leave out names, crew codes and staff numbers.
 Example:
 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
-2026-11-14 | OFF | | |`;
+2026-11-14 | OFF | | |
+2026-10-25 | DUTY | 18:20 | 00:03 | FR2738 STN-BGY 19:09-20:45 EIEBY; FR2739 BGY-STN 21:25-23:33 EIEBY; + HSBY 11:00-18:20`;
 const GEMINI_PROMPT=rosterPrompt();
 // AI apps crew can use: the prompt is copied, the app opens, the crew member adds the screenshots. Nothing goes through Crew Day.
 const AI_APPS=[["Gemini","https://gemini.google.com/app"],["ChatGPT","https://chatgpt.com/"],["Claude","https://claude.ai/new"]];
@@ -1040,9 +1042,11 @@ function rpLines(txt){
     const m=line.replace(/[*`]/g,"").match(/^\s*(?:[-•]\s*)?(\d{4})-(\d{2})-(\d{2})\s*\|\s*([A-Za-z0-9]+)\s*(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*([0-2]?\d[:.][0-5]\d)?\s*Z?\s*)?(?:\|\s*(.*))?$/);
     if(!m)return;const date=m[1]+"-"+m[2]+"-"+m[3],code=m[4].toUpperCase(),kind=/^\d$/.test(code)?"flying":(RP_KIND[code]||null);if(!kind)return;
     const T=v=>v?cleanTime(v.replace(".",":")):"";
-    const sec=[];String(m[7]||"").split(/;/).forEach(f=>{const x=f.trim().toUpperCase().match(/^([A-Z0-9]{2,3}\s?\d{1,4}[A-Z]?)\s+([A-Z]{3})\s*[-–>]+\s*([A-Z]{3})(?:\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)(?:\s*Z)?)?(?:\s+([A-Z0-9-]{4,7}))?/);if(x)sec.push({flt:x[1].replace(/\s/g,""),from:x[2],to:x[3],dep:T(x[4]),arr:T(x[5]),reg:(x[6]||"").replace("-","")})});
+    const sec=[],also=[];String(m[7]||"").split(/;/).forEach(f=>{const ax=f.trim().match(/^\+\s*([A-Za-z][A-Za-z ]{1,24}?)\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)/);
+      if(ax){const nm=ax[1].trim(),k=RP_KIND[nm.toUpperCase()]||(RZ_ACT.find(a=>a[0].test(nm))||[])[1],lab=k?ALSO_LABEL[k]:nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase();also.push({label:lab,from:T(ax[2]),to:T(ax[3])});return}
+      const x=f.trim().toUpperCase().match(/^([A-Z0-9]{2,3}\s?\d{1,4}[A-Z]?)\s+([A-Z]{3})\s*[-–>]+\s*([A-Z]{3})(?:\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)(?:\s*Z)?)?(?:\s+([A-Z0-9-]{4,7}))?/);if(x)sec.push({flt:x[1].replace(/\s/g,""),from:x[2],to:x[3],dep:T(x[4]),arr:T(x[5]),reg:(x[6]||"").replace("-","")})});
     const timed=["standby","asby","training","adty","flying"].includes(kind);
-    out.push({date,kind,report:timed?T(m[5]):"",off:timed?T(m[6]):"",sectors:sec,lines:1});
+    out.push({date,kind,report:timed?T(m[5]):"",off:timed?T(m[6]):"",sectors:sec,also,lines:1});
   });
   return out;
 }
@@ -1051,7 +1055,8 @@ function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<texta
    or "time Z airport CHECK IN/OUT". Days start at a date line; a date line while a duty is still open (checked in,
    not out) is the next morning of the same duty. */
 const RZ_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-const RZ_ACT=[[/\bHSBY\b|home\s*standby/i,"standby"],[/\bASBY\b|airport\s*standby/i,"asby"],[/airport\s*duty|\bADTY\b/i,"adty"],[/\bv\s?[tIl1|]\s?[o0]\b/i,"vto"],[/training|\bTRNG\b|\bSIM\b/i,"training"],[/\bSICK\b/i,"sick"],[/annual\s*leave|\bAL\b/,"leave"],[/\bOFF\b/,"off"]];
+const ALSO_LABEL={standby:"Home standby",asby:"Airport standby",adty:"Airport duty",vto:"VTO",training:"Training",sick:"Sick",leave:"Annual leave",off:"Day off",special:"Special duty",late:"Late"};
+const RZ_ACT=[[/special\s*du/i,"special"],[/\bLATE\b/i,"late"],[/\bHSBY\b|home\s*standby/i,"standby"],[/\bASBY\b|airport\s*standby/i,"asby"],[/airport\s*duty|\bADTY\b/i,"adty"],[/\bv\s?[tIl1|]\s?[o0]\b/i,"vto"],[/training|\bTRNG\b|\bSIM\b/i,"training"],[/\bSICK\b/i,"sick"],[/annual\s*leave|\bAL\b/,"leave"],[/\bOFF\b/,"off"]];
 function rpZ(txt){
   const L=String(txt||"").split(/\r?\n/).map(x=>x.replace(/\bCalendar\b|\bV\s?T\s?O\s*Hub\b|\bLegend\b|More\s*Actions\W*|\bRoster\b/gi," ").trim()).filter(Boolean),out=[];let cur=null,dayOff=false;
   const ZT=/(\d{1,2}:\d{2})\s*Z\b/g,FLT=/\b(FR|RK|LS|U2|EZY|BA|W6|N0)\s?(\d{1,4})\b/i;
@@ -1072,12 +1077,14 @@ function rpZ(txt){
     if(A.length>=2||fm){const mins=s=>{const [a,b]=s.split(":").map(Number);return a*60+b},dur=(mins(T[1])-mins(T[0])+1440)%1440,ok=dur>=20&&dur<=600;
       cur.sectors.push({flt:fm?(fm[1]+fm[2]).toUpperCase():"",from:A[0]||"",to:A[1]||"",dep:ok?T[0]:"",arr:ok?T[1]:"",reg:""});continue}
     const both=l+" "+(!/\d{1,2}:\d{2}\s*Z/.test(next)?next:"");const act=RZ_ACT.find(a=>a[0].test(both));
-    if(act)cur.acts.push({kind:act[1],from:T[0],to:T[1]})}
-  return out.map(e=>{let kind=e.sectors.length?"flying":"",rep=e.report,off=e.off;
-    if(!kind){const a=e.acts.find(x=>x.kind!=="off")||e.acts[0];if(a){kind=a.kind;if(!rep)rep=a.from;if(!off)off=a.to}}
+    if(act){const sub=(both.match(/\b(CRMS|SEP|CRM|RECURRENT|AD|DUTY TIME)\b/)||[])[1];cur.acts.push({kind:act[1],from:T[0],to:T[1],sub:act[1]==="training"&&sub&&sub!=="AD"?sub:""})}}
+  return out.map(e=>{let kind=e.sectors.length?"flying":"",rep=e.report,off=e.off,main=null;
+    if(!kind){main=e.acts.find(x=>!["off","special","late"].includes(x.kind))||e.acts.find(x=>x.kind==="off")||null;if(main){kind=main.kind;if(!rep)rep=main.from;if(!off)off=main.to}}
+    const also=e.acts.filter(a=>a!==main&&!(a.kind==="off"&&kind==="off")).map(a=>({label:ALSO_LABEL[a.kind]+(a.sub?" "+a.sub:""),from:a.from,to:a.to}));
+    if(main&&main.sub)also.unshift({label:"Training "+main.sub,from:main.from,to:main.to});
     if(!kind)kind=e.hdrOff?"off":(rep?"flying":"");
     if(["off","vto","leave","sick"].includes(kind)){rep="";off=""}
-    return kind?{date:e.date,kind,report:rep||"",off:off||"",sectors:e.sectors,note:e.sectors.length&&e.acts.some(a=>a.kind==="standby")?"Called from home standby":""}:null}).filter(Boolean)}
+    return kind?{date:e.date,kind,report:rep||"",off:off||"",sectors:e.sectors,also,note:e.sectors.length&&e.acts.some(a=>a.kind==="standby")?"Called from home standby":""}:null}).filter(Boolean)}
 function rpCareful(e){const old=S.roster[e.date];if(!old)return e;
   const hasOld=old.report||(old.sectors||[]).length,hasNew=e.report||(e.sectors||[]).some(x=>x.dep||x.flt);
   if(hasOld&&!hasNew&&e.kind!==old.kind)return null;          // nothing solid read for a day we already know: leave it
@@ -1103,7 +1110,9 @@ function rpApply(txt,careful){
     S.roster[e.date]=o;nc++});
   L.forEach(e=>{const sec=cleanSectors(e.sectors.map(x=>{const m=(!x.dep||!x.arr)&&(S.flights||{})[cleanFlt(x.flt)];const y=Object.assign({},x,{dep:z2roster(e.date,x.dep),arr:z2roster(e.date,x.arr)});if(m&&m.from===x.from&&m.to===x.to){y.dep=y.dep||m.dep;y.arr=y.arr||m.arr}return y}));learnFlights(sec,e.date);
     const K=e._keep;if(K){sec.forEach((x,i)=>{const o=(e.sectors[i]||{})._old;if(o){if(!x.dep)x.dep=o.dep;if(!x.arr)x.arr=o.arr}delete x._old})}
-    S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report))||(K&&K.report)||"",off:cleanTime(z2roster(e.date,e.off))||(K&&K.off)||"",dest:destFromSectors(sec),note:"",src:"paste",sectors:sec};nl++});
+    const also=(e.also||[]).map(a=>({label:a.label,from:cleanTime(z2roster(e.date,a.from)),to:cleanTime(z2roster(e.date,a.to))}));
+    S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report))||(K&&K.report)||"",off:cleanTime(z2roster(e.date,e.off))||(K&&K.off)||"",dest:destFromSectors(sec),note:e.note||"",src:"paste",sectors:sec};
+    if(also.length)S.roster[e.date].also=also;else if(K&&K.also)S.roster[e.date].also=K.also;nl++});
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
@@ -1348,7 +1357,7 @@ function viewWeek(){
   <section class="card" style="padding:10px">
     <div class="cal" role="grid" aria-label="Roster calendar">
       ${["M","T","W","T","F","S","S"].map(d=>`<span class="calh" aria-hidden="true">${d}</span>`).join("")}
-      ${G.cells.map(d=>{const x=S.roster[d],out=d.slice(0,7)!==G.ym;return `<button class="calc ${out?"out":""} ${d===t?"istoday":""} ${d===sel?"sel":""} ${x?"k-"+x.kind:""}" data-pick="${d}" aria-label="${esc(fmtDate(d,{weekday:"long",day:"numeric",month:"long"}))}${x?", "+KIND_NAME[x.kind]+(x.report?" "+x.report:""):""}" aria-pressed="${d===sel}"><span class="cd">${+d.slice(8)}</span>${x?`<span class="cb"></span>${x.report?`<span class="ct">${esc(x.report)}</span>`:""}${x.kind==="flying"&&(x.dest||(x.sectors||[]).length)?`<span class="cx">${esc(destCodes(x))}</span>`:KIND_CELL[x.kind]?`<span class="cx cxw">${KIND_CELL[x.kind]}</span>`:""}`:""}</button>`}).join("")}
+      ${G.cells.map(d=>{const x=S.roster[d],out=d.slice(0,7)!==G.ym;return `<button class="calc ${out?"out":""} ${d===t?"istoday":""} ${d===sel?"sel":""} ${x?"k-"+x.kind:""}" data-pick="${d}" aria-label="${esc(fmtDate(d,{weekday:"long",day:"numeric",month:"long"}))}${x?", "+KIND_NAME[x.kind]+(x.report?" "+x.report:""):""}" aria-pressed="${d===sel}"><span class="cd">${+d.slice(8)}</span>${x?`<span class="cb"></span>${x.report?`<span class="ct">${esc(x.report)}</span>`:""}${x.kind==="flying"&&(x.dest||(x.sectors||[]).length)?`<span class="cx">${esc(destCodes(x))}</span>`:KIND_CELL[x.kind]?`<span class="cx cxw">${KIND_CELL[x.kind]}</span>`:""}${(x.also||[]).length?`<span class="cx cxw" style="opacity:.8">+${esc(x.also.map(a=>a.label.split(" ")[0]).join(", "))}</span>`:""}`:""}</button>`}).join("")}
     </div>
     <div class="btns" style="justify-content:center;gap:14px;font-size:12px;color:var(--muted)"><span><span class="kind flying" style="padding:2px 6px">&nbsp;</span>Flying</span><span><span class="kind standby" style="padding:2px 6px">&nbsp;</span>Standby</span><span><span class="kind training" style="padding:2px 6px">&nbsp;</span>Training</span><span><span class="kind off" style="padding:2px 6px">&nbsp;</span>Day off</span></div>
     ${IS_PWA?`<div class="btns" style="justify-content:center">${calBtn("roster","Add this month to my calendar")}</div><p class="note" style="text-align:center"></p>`:""}
@@ -1356,6 +1365,7 @@ function viewWeek(){
   <section class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>${esc(fmtDate(sel,{weekday:"long",day:"numeric",month:"long"}))}</h2>${e&&isDutyK(e.kind)?`<button class="primary" data-useday="${sel}">Plan this day</button>`:""}</div>
     <div class="field"><span class="label">Day type</span><div class="btns" role="radiogroup" aria-label="Day type">${KINDS.map(k=>`<button class="pick" role="radio" aria-checked="${(e?e.kind:"")===k[0]}" aria-pressed="${(e?e.kind:"")===k[0]}" data-setkind="${k[0]}">${k[1]}</button>`).join("")}</div></div>
+    ${e&&(e.also||[]).length?`<div class="seccard"><span class="label">Also on this day</span>${e.also.map((a,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b>${esc(a.label)}</b> ${esc(a.from||"")}${a.to?"–"+esc(a.to):""}${RZ()?"Z":""}</span><button class="linkbtn" data-delalso="${sel}|${i}">Remove</button></div>`).join("")}</div>`:""}
     ${rosterFields(e,sel)}
     <div class="btns"><button class="primary" data-saveday="${sel}">Save day</button>${e?`<button data-clearday="${sel}">Clear day</button>`:""}<button data-copyday="${sel}">Copy to next day</button></div>
   </section>
@@ -3743,6 +3753,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.say){const [k,i]=b.dataset.say.split("|"),P=PHRASES[S.trip.country],C=CS[S.trip.country];const t=k==="cs"?(C||[])[+i]:(P&&P.p||[])[+i];if(P&&t)sayIt(P.lang,t);return}
   if(b.id==="chkupd"){const m=$("#updmsg");if(!navigator.onLine){if(m)m.textContent="You're offline. It checks again when you have signal.";return}
     if(m)m.textContent="Checking…";Promise.resolve(window.crewdayCheckUpdate?window.crewdayCheckUpdate():false).then(found=>{const m2=$("#updmsg");if(m2)m2.textContent=found?"New version found. It loads in a few seconds.":"You have the latest version."});return}
+  if(b.dataset.delalso){const [d,i]=b.dataset.delalso.split("|"),x=S.roster[d];if(x&&x.also){x.also.splice(+i,1);if(!x.also.length)delete x.also}render();save();return}
   if(b.id==="calsave"){const u=calLinkOk(($("#cal-u")||{}).value);if(!u){rosterMsg="That doesn't look like a calendar link. It should start with https:// or webcal://.";render();return}S.rosterLink={url:u,at:"",err:""};save();calLinkFetch(true);return}
   if(b.id==="calget"){const u=calLinkOk(($("#cal-u")||{}).value);if(u&&S.rosterLink)S.rosterLink.url=u;calLinkFetch(true);return}
   if(b.id==="caldel"){delete S.rosterLink;rosterMsg="Calendar link removed from this phone.";render();save();return}
