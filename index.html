@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.27.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.27.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -804,7 +804,11 @@ async function calLinkFetch(manual){const u=calLinkOk(S.rosterLink&&S.rosterLink
 function calLinkHTML(){const L=S.rosterLink||{};return `<div class="field"><label for="cal-u">Calendar link from your roster app</label><input id="cal-u" type="url" inputmode="url" autocomplete="off" placeholder="https://… .ics" value="${esc(L.url||"")}"></div>
     <div class="btns">${L.url?`<button class="primary" id="calget">Update now</button><button id="caldel">Remove link</button>`:`<button class="primary" id="calsave">Use this link</button>`}</div>
     <p class="note" style="margin:0">If your airline emails you a link to "add your roster to a calendar" (Jet2 does), paste it here. Your phone downloads the roster straight from the airline and updates it when you're online. The link is private, like a password: it stays on this phone only.${L.at?` Last updated ${esc(new Date(L.at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))}.`:""}</p>
-    ${L.err?`<details class="note"><summary>Link not working? Other ways in</summary><ul class="plain"><li>Open the link in Safari or Chrome. If it saves a .ics file, choose it under "Calendar file" below.</li><li>Or add the link to your phone's calendar, open any duty there and share it to Crew Day as a file.</li><li>Or copy the roster text from your crew app and paste it above.</li></ul></details>`:""}`}
+    ${L.err?`<details class="note" open><summary>Link blocked? Bring it in another way</summary>
+      <p style="margin:6px 0 0">Some airlines only let calendar apps read the link. Your phone can still fetch it for you, and it never goes anywhere else.</p>
+      <p style="margin:8px 0 0"><b>iPhone (Shortcuts app, set up once):</b></p>
+      <ol style="margin:4px 0 0;padding-left:20px"><li>Open Shortcuts, tap +, and add the action <b>Get Contents of URL</b>. Paste your roster link into it.</li><li>Add the action <b>Copy to Clipboard</b>. Name the shortcut "Crew Day roster".</li><li>Whenever your roster changes, run the shortcut, open Crew Day, paste into "Paste your roster" above and tap Read my roster.</li></ol>
+      <p style="margin:8px 0 0"><b>Android or a computer:</b> open the link in Chrome. It downloads a .ics file: choose it under "Calendar file" below.</p></details>`:""}`}
 function parseICS(text){
   const lines=text.replace(/\r\n[ \t]/g,"").replace(/\n[ \t]/g,"").split(/\r?\n/),events=[];let cur=null;
   for(const ln of lines){if(ln==="BEGIN:VEVENT")cur={};else if(ln==="END:VEVENT"){if(cur)events.push(cur);cur=null}else if(cur){const i=ln.indexOf(":");if(i<0)continue;const key=ln.slice(0,i).split(";")[0].toUpperCase(),params=ln.slice(0,i),val=ln.slice(i+1);cur[key]={val,params}}}
@@ -1206,7 +1210,7 @@ function fr24Airport(code,board){return "https://www.flightradar24.com/data/airp
 const AIRLINES=["Ryanair","Ryanair UK","Jet2","Norse","Other"];
 function isRyr(){return /^Ryanair/.test(S.profile.airline||"")}
 function isLongHaul(){return S.profile.airline==="Norse"}
-// Who sets the flight time rules: UK airlines follow the UK CAA (UK ORO.FTL, the same figures EASA uses); EU airlines follow EASA.
+// Who sets the flight time rules: UK airlines follow the UK CAA (UK ORO.FTL, kept from the EU rules at Brexit); EU airlines follow EASA.
 function regName(){const a=S.profile.airline;return a==="Jet2"||a==="Ryanair UK"?"UK CAA":a==="Ryanair"?"EASA":"EASA or UK CAA"}
 function idLabel(){return isRyr()?"Crew code":S.profile.airline==="Jet2"||S.profile.airline==="Norse"?"Staff number":"Staff number or crew code"}
 function jumpTo(d){const t=new Date(today()+"T00:00:00"),p=new Date(d+"T00:00:00");monthOff=(p.getFullYear()-t.getFullYear())*12+(p.getMonth()-t.getMonth());selDay=d}
@@ -1442,6 +1446,9 @@ async function makeFitNotePdf(btn){
 }
 
 /* ---------- Backup (installable app only) ---------- */
+// the chosen file and the restore message live outside the page, so a background refresh can't lose them
+let bkFile=null,rsMsg="";
+function setRs(t){rsMsg=t;const e=document.getElementById("rsmsg");if(e)e.textContent=t}
 function backupAge(){let last="";try{last=localStorage.getItem("crewday-lastbackup")||""}catch(e){}return last?daysBetween(last,today()):null}
 function backupHint(){const a=backupAge();return a==null?"No backup yet: save one":a>30?"Last backup "+a+" days ago: save a new one":"Last backup "+(a===0?"today":a===1?"yesterday":a+" days ago")}
 function viewBackup(){
@@ -1455,10 +1462,10 @@ function viewBackup(){
   </section>
   <section class="card">
     <h2>Restore from a backup</h2>
-    <div class="field"><label for="bk-file">Backup file (.json)</label><input id="bk-file" type="file" accept="application/json,.json"></div>
+    <div class="field"><label for="bk-file">Backup file (.json)</label><input id="bk-file" type="file" accept="application/json,.json">${bkFile?`<span class="note" style="margin:0">Chosen: ${esc(bkFile.name)}</span>`:""}</div>
     <div class="field" id="bk-pinw" hidden><label for="bk-pin">PIN or password for this backup</label><input id="bk-pin" type="password" autocomplete="off"></div>
     <div class="btns"><button id="dorestore">Restore</button></div>
-    <p class="note" id="rsmsg" role="status">Restoring replaces what's in the app now.</p>
+    <p class="note" id="rsmsg" role="status">${esc(rsMsg||"Restoring replaces what's in the app now.")}</p>
   </section>`;
 }
 
@@ -2140,7 +2147,7 @@ function sbFtlBody(){
       <li>If your standby starts between 23:00 and 07:00, the time between 23:00 and 07:00 doesn't count towards that reduction until you're contacted.</li>
       <li>Standby plus FDP shouldn't mean more than 18 hours awake. The app counts this from the start of standby (or from 07:00 or the call, if your standby starts overnight).</li>
       <li>25% of home standby time counts towards your duty hours.</li>
-    </ul><p class="note">${regName()==="UK CAA"?"Based on UK CAA rules (UK ORO.FTL and CS FTL.1.225, the same figures as EASA's).":"Based on EASA CS FTL.1.225 (the standard EU and UK scheme)."} Your airline's approved FTL scheme can differ, so check it and your roster.</p></details>`;
+    </ul><p class="note">${regName()==="UK CAA"?"Based on UK CAA rules (UK ORO.FTL and CS FTL.1.225).":"Based on EASA CS FTL.1.225 (the standard EU and UK scheme)."} Your airline's approved FTL scheme can differ, so check it and your roster.</p></details>`;
 }
 function rosterCheckBtn(){
   const s=S.standby,list=sbDated(),now=Date.now(),past=list.filter(x=>x.at.getTime()<=now).pop();
@@ -3634,10 +3641,10 @@ document.addEventListener("click",e=>{
     if(pw&&pw.length<6){const m=$("#bkmsg");if(m)m.textContent="Use a password of at least 6 characters, or leave it empty.";return}
     const pwLock=async()=>{const salt=crypto.getRandomValues(new Uint8Array(16)),key=await SEC.derive(pw,salt);return JSON.stringify({app:"crewday",v:2,locked:true,salt:SEC.b64(salt),data:"ENC1:"+SEC.b64(await SEC.enc(key,new TextEncoder().encode(plain)))})};
     (SEC.cfg()&&SEC.key?SEC.encText(plain).then(x=>JSON.stringify({app:"crewday",v:2,locked:true,salt:SEC.cfg().salt,data:x})):pw?pwLock():Promise.resolve(plain)).then(data=>offerFile("crew-day-backup-"+today()+".json",data,"application/json")).then(r=>{if(r!=="cancelled"){try{localStorage.setItem("crewday-lastbackup",today())}catch(e){}const m=$("#bkmsg");if(m)m.textContent="Backup saved"+(SEC.cfg()?", locked with your PIN":pw?", locked with your password":"")+". Keep it somewhere safe, like Google Drive or iCloud."}});return}
-  if(b.id==="dorestore"){const f=$("#bk-file").files[0],m=$("#rsmsg");if(!f){m.textContent="Choose your backup file first.";return}
-    if(pendingDel!=="restore"){pendingDel="restore";m.textContent="Tap Restore again to replace everything in the app with this backup.";return}
-    pendingDel=null;f.text().then(async t=>{let j=JSON.parse(t);if(j&&j.locked){const pin=($("#bk-pin")||{}).value||"";if(!pin){m.textContent="This backup is locked. Type the PIN or password it was made with, then tap Restore.";const w=$("#bk-pinw");if(w)w.hidden=false;throw "pin"}const key=await SEC.derive(pin,SEC.unb64(j.salt));try{j=JSON.parse(await SEC.decText(j.data,key))}catch(e){m.textContent="That PIN or password doesn't open this backup.";throw "pin"}}
-      if(!j||j.app!=="crewday"||!j.state||!j.state.duty)throw 0;S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)),j.state);render();save();const m2=$("#rsmsg");if(m2)m2.textContent="Restored."}).catch(e=>{if(e!=="pin")m.textContent="That doesn't look like a Crew Day backup."});return}
+  if(b.id==="dorestore"){const fi=$("#bk-file"),f=(fi&&fi.files[0])||bkFile;if(!f){setRs("Choose your backup file first.");return}bkFile=f;
+    if(pendingDel!=="restore"){pendingDel="restore";setRs("Tap Restore again to replace everything in the app with this backup.");return}
+    pendingDel=null;f.text().then(async t=>{let j=JSON.parse(t);if(j&&j.locked){const pin=($("#bk-pin")||{}).value||"";if(!pin){setRs("This backup is locked. Type the PIN or password it was made with, then tap Restore.");const w=$("#bk-pinw");if(w)w.hidden=false;throw "pin"}const key=await SEC.derive(pin,SEC.unb64(j.salt));try{j=JSON.parse(await SEC.decText(j.data,key))}catch(e){setRs("That PIN or password doesn't open this backup.");throw "pin"}}
+      if(!j||j.app!=="crewday"||!j.state||!j.state.duty)throw 0;S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)),j.state);bkFile=null;rsMsg="Restored.";render();save()}).catch(e=>{if(e!=="pin")setRs("That doesn't look like a Crew Day backup.")});return}
   if(b.dataset.sharefile){fileGet(b.dataset.sharefile).then(bl=>{if(bl)offerFile("fit-note.pdf",bl,"application/pdf")});return}
   if(b.dataset.sharesick){const ep=currentSick();if(ep)shareText(sickMessages(ep)[b.dataset.sharesick],"Crew Day");return}
   if(b.id==="etopen"){ET={open:!ET.open};render();window.scrollTo(0,0);return}
@@ -3736,7 +3743,9 @@ document.addEventListener("click",e=>{
   if(b.dataset.cccopy){const t=ccText(ccOpen),el=$("#cctext");Promise.resolve().then(()=>navigator.clipboard.writeText(t)).then(()=>{if(el)el.textContent=t+" (Copied)"},()=>{});return}
   if(b.dataset.chseen){if(S.rosterChanges)S.rosterChanges.seen=true;render();save();return}
   if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy Gemini prompt"},2000)};try{navigator.clipboard.writeText(GEMINI_PROMPT).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
-  if(b.id==="pasteroster"){const ta=$("#rost-p");rosterMsg=rpApply(ta?ta.value:"");render();save();return}
+  if(b.id==="pasteroster"){const ta=$("#rost-p"),v=ta?ta.value:"";
+    if(/BEGIN:VCALENDAR/i.test(v)){let days=[];try{days=parseICS(v)}catch(e){days=[]}const n=mergeRoster(days,"calendar");if(n)jumpTo(days.map(x=>x.date).sort()[0]);rosterMsg=n?`Imported ${n} day${n===1?"":"s"} from your calendar. Check them against your official roster.`:"That calendar had no roster days in it.";if(ta&&n)ta.value="";render();save();return}
+    rosterMsg=rpApply(v);render();save();return}
   if(b.dataset.dl){dlFetch(b.dataset.dl,b.dataset.dlc,true);return}
   if(b.dataset.coago!==undefined){S.standby.calledAt=new Date(Date.now()-(+b.dataset.coago)*60000).toISOString();render();save();return}
   if(b.id==="sball"){sbShowAll=!sbShowAll;render();return}
@@ -3861,6 +3870,7 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 document.addEventListener("change",e=>{
   const el=e.target;
   if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
+  if(el.id==="bk-file"){bkFile=el.files&&el.files[0]||null;rsMsg="";pendingDel=null;return}
   if(el.id==="sayslow"){S.slowSay=el.checked;save();return}
   if(el.id==="sb-al"){S.standby.startAlarm=el.checked;render();save();return}
   if(el.id==="lo-city"){S.layoverCity=el.value;render();save();return}

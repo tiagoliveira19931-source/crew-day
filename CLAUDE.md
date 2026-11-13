@@ -21,7 +21,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Test rosters in dev/tests are made up. Never put a real roster in the repo.
 - Data stays on the phone. Never add anything that sends rosters or personal details anywhere.
 - Look: white and teal, rounded friendly font, soft line drawings.
-- FTL figures follow EASA ORO.FTL and CS FTL.1 (UK airlines: UK CAA, UK ORO.FTL, same figures; the app names the right one via regName()) — don't change them without checking the regulation.
+- FTL figures follow EASA ORO.FTL and CS FTL.1 (UK airlines: UK CAA, UK ORO.FTL; core limits kept from the EU rules at Brexit, but EASA updated night-duty guidance in CS FTL.1 in late 2023, so check UK and EU texts separately; the app names the right one via regName()) — don't change them without checking the regulation.
 - Roster calendar links (Jet2 shares one by email) are private like passwords: fetched by the phone straight from the airline, kept only on the phone. Never log, store or open a real one anywhere else.
 
 ## Issue reports

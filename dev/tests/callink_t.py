@@ -23,7 +23,10 @@ with sync_playwright() as p:
     assert pg.locator("#calget").count()==1 and "Last updated" in pg.inner_text("main")
     # a link the phone can't read shows the other ways in
     pg.fill("#cal-u","https://crew.example/cal/broken.ics"); pg.click("#calget"); pg.wait_for_timeout(800)
-    m=pg.inner_text("#rostmsg"); print(m); assert "couldn't read" in m; assert "Other ways in" in pg.inner_text("main")
+    m=pg.inner_text("#rostmsg"); print(m); assert "couldn't read" in m; assert "another way" in pg.inner_text("main")
+    assert "Shortcuts" in pg.inner_text("main")
+    # calendar data pasted from an iPhone Shortcut imports like a file
+    pg.fill("#rost-p",ics); pg.click("#pasteroster"); pg.wait_for_timeout(300); m=pg.inner_text("#rostmsg"); print(m); assert "from your calendar" in m, m
     pg.click("#caldel"); pg.wait_for_timeout(100); assert pg.locator("#calsave").count()==1
     # UK CAA wording for Jet2
     pg.click("[data-tab=more]"); pg.click('[data-more=""]') if pg.locator('[data-more=""]').count() else None
