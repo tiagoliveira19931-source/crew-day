@@ -59,7 +59,7 @@ DUTY FLIGHT TIME: 3H 35M
 Calendar VTO Hub"""
 WANT={"2026-11-16":("flying","05:10","09:30",["FR5101","FR6102"]),"2026-11-17":("standby","04:00","15:00",[]),"2026-11-18":("vto","","",[]),
       "2026-11-19":("flying","18:20","00:03",["FR2301","FR2302"]),"2026-11-24":("off","","",[]),"2026-11-25":("training","08:00","17:25",[]),"2026-11-26":("adty","05:40","13:40",[])}
-STUB="<script>window.__r=%s;window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:window.__r.shift()||''}}),terminate:async()=>{}})};</script>"%json.dumps([PIC1,PIC2])
+STUB="<script>window.__r=%s;window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:window.__r.shift()||''}}),terminate:async()=>{}})};</script>"%json.dumps([PIC1,PIC2,PIC2])
 PAGE="<!doctype html><html><head><meta charset=utf-8></head><body>"+STUB+html+"</body></html>"
 DARK="<body style='margin:0;background:#212226;width:400px;height:120px'><div style='margin:30px;width:160px;height:56px;border-radius:10px;background:#607fbc;color:#242a3b;font:700 20px Arial;display:grid;place-items:center'>FR1234</div></body>"
 d=tempfile.mkdtemp()
@@ -89,6 +89,9 @@ with sync_playwright() as p:
     assert got.get("2026-11-27")==("flying","15:25","22:45",["FR1882","FR1883"]), ("known day kept",got.get("2026-11-27"))
     assert "2026-11-28" not in got, ("nav bar is not a VTO",got.get("2026-11-28"))
     assert "What the reader saw" in pg.inner_text("main")
+    # the same picture again: everything is already there, and the app says so (not "couldn't find")
+    pg.set_input_files("#ocr-f",[fp]); pg.wait_for_timeout(2500)
+    m=pg.inner_text("#rostmsg"); print("again:",m); assert "already in Crew Day" in m and "Couldn" not in pg.inner_text("main"), m
     assert got.get("2026-11-21",("",))[0]=="flying" and "2026-11-20" not in got, "21 Nov cut off; 20 Nov is the overnight end of 19 Nov"
     b.close()
 print("ERRORS:", errs or "none")

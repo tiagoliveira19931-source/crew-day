@@ -1101,7 +1101,12 @@ function rpApply(txt,careful){
   // screens read row by row by the on-phone reader: use the row reader when it finds more
   // screenshots read on the phone come row by row: always use the row reader for them
   const Zr=Gd.length?[]:rpZ(txt);if(Zr.length&&(careful||Zr.length>=L.length)){L=Zr;C=[]}
-  if(careful){L=L.map(rpCareful).filter(Boolean);C=C.filter(e=>!S.roster[e.date])}if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
+  let kept=[];
+  const sameDay=e=>{const o=S.roster[e.date];if(!o||o.kind!==e.kind)return false;const cv=v=>cleanTime(z2roster(e.date,v||""));
+    if(cv(e.report)&&cv(e.report)!==o.report)return false;if(cv(e.off)&&cv(e.off)!==o.off)return false;
+    return (e.sectors||[]).every(x=>{const y=(o.sectors||[]).find(z=>x.flt?cleanFlt(z.flt)===cleanFlt(x.flt):z.from===x.from&&z.to===x.to);return y&&(!x.dep||cv(x.dep)===y.dep)&&(!x.arr||cv(x.arr)===y.arr)})};
+  if(careful){const L2=[];L.forEach(e=>{if(sameDay(e)){kept.push(e.date);return}const r=rpCareful(e);if(r)L2.push(r);else kept.push(e.date)});L=L2;C=C.filter(e=>!S.roster[e.date]);
+    if(!L.length&&!C.length&&kept.length)return `Read ${kept.length} day${kept.length===1?"":"s"} (${kept.map(d=>fmtDate(d,{day:"numeric",month:"short"})).join(", ")}). ${kept.length===1?"It's":"They're"} already in Crew Day, the same or with more detail, so nothing was changed. Check against your official roster.`}if(!L.length&&!C.length)return "Nothing recognised. Copy all the text from the screenshot (the dates and times too) and paste it again.";
   rosterBackup=JSON.parse(JSON.stringify(S.roster));let nc=0,nl=0;const OLD=rosterBackup;
   C.forEach(e=>{const cur=S.roster[e.date];
     if(cur&&cur.kind===e.kind&&isDutyK(e.kind)&&(cur.report||(cur.sectors||[]).length))return;
@@ -1116,7 +1121,7 @@ function rpApply(txt,careful){
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
-  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
+  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+(kept.length?`${kept.length} day${kept.length===1?" was":"s were"} already up to date. `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
 }
 /* Read roster screenshots on this phone: a small text-recognition model (Tesseract, downloaded once, then kept offline)
    turns the pictures into text, and the app's own roster reader turns that into days. The pictures never leave the phone. */
@@ -1152,7 +1157,7 @@ window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{ocrPrep:f=>ocrPrep(f)
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
     for(let i=0;i<files.length;i++){ocrMsg=`Reading picture ${i+1} of ${files.length}…`;render();const src=await ocrPrep(files[i]);const r=await worker.recognize(src);all+="\n--- next picture ---\n"+((r&&r.data&&r.data.text)||"")}
-    all=ocrClean(all);ocrRaw=all.trim();const ta=$("#rost-p");rosterMsg=rpApply(all,true);ocrMsg=/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
+    all=ocrClean(all);ocrRaw=all.trim();const ta=$("#rost-p");rosterMsg=rpApply(all,true);ocrMsg=/^Read \d+ day/.test(rosterMsg)?"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.":/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
     if(ta&&/^Nothing/.test(rosterMsg))ta.value=all.trim();
   }catch(e){ocrMsg=String(e&&e.message)==="offline"?"The reader needs signal the first time, to download. Try again when you're online.":"Something went wrong reading the pictures. Try fewer at a time, or use your phone's AI below."}
   try{if(worker)await worker.terminate()}catch(e){}
