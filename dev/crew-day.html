@@ -578,7 +578,7 @@ const DUTY={
     tips:["Lay out uniform, pack your bag and check documents the evening before.","Go to bed at your planned time even if you don't feel sleepy. Dark, cool room, phone away.","Set two alarms on two devices for very early reports."]},
   day:{name:"Daytime duty",food:[
       "Normal breakfast before you leave, with some protein to keep you full.",
-      "Take a packed lunch or plan when you'll eat a crew meal.",
+      "Take a packed lunch from home: buying food at the airport or on board adds up fast.",
       "Keep sugary cabin snacks for emergencies: they give a quick high then a dip."],
     tips:["A normal night's sleep is your best prep.","Use the morning for a short walk or stretch rather than rushing.","Prep tomorrow's kit after you get home."]},
   late:{name:"Late duty",food:[
@@ -993,6 +993,82 @@ function pasteImportHTML(){return `<div class="field"><label for="rost-p">Paste 
       <p style="margin:4px 0"><b>No screenshots (Android, uses Google):</b> tap below, open your roster app, open Gemini, tap <b>Ask about screen</b>, paste the prompt and send. Copy the answer and paste it here. Your screen is sent to Google to read it.</p>
       <div class="btns" style="margin:4px 0"><button id="copygem">Copy Gemini prompt</button></div>
       <p style="margin:4px 0">The app itself reads everything on this phone; nothing is sent anywhere. Times marked Z are kept as Zulu. Always check the result against your roster.</p></div></details>`}
+/* ---------- Weekly meals and shopping list ---------- */
+// Ingredients per portion: [item, amount, unit ("g", "ml" or "" for a count), aisle]. keeps = days it lasts in the fridge.
+const AISLES=["Fruit and veg","Meat and fish","Fridge: dairy and eggs","Bakery","Cupboard","Frozen"];
+const RECIPES={
+ "Overnight oats":{keeps:2,ing:[["Oats",50,"g",4],["Milk",150,"ml",2],["Greek yoghurt",50,"g",2],["Berries",80,"g",0]],how:"Mix oats, milk and yoghurt in a jar, top with berries, fridge overnight."},
+ "Wholemeal wrap":{keeps:1,ing:[["Wholemeal wraps",1,"",3],["Cooked chicken",80,"g",1],["Spinach",20,"g",0],["Peppers",0.5,"",0]],how:"Fill, roll tight and wrap in foil."},
+ "Snack box":{keeps:2,ing:[["Mixed nuts",30,"g",4],["Oatcakes",4,"",4],["Cheddar",30,"g",2],["Grapes",80,"g",0]],how:"Pack into a box with compartments."},
+ "Breakfast burrito":{keeps:2,ing:[["Eggs",2,"",2],["Baked beans",100,"g",4],["Cheddar",20,"g",2],["Tortilla wraps",1,"",3]],how:"Scramble the eggs, add beans and cheese, wrap and foil."},
+ "Oat and banana bars":{keeps:4,ing:[["Oats",40,"g",4],["Bananas",1,"",0],["Mixed seeds",10,"g",4],["Raisins",15,"g",4]],how:"Mash, mix, press into a tin, bake 20 min at 180°C, cut into bars."},
+ "Bagel box":{keeps:1,ing:[["Bagels",1,"",3],["Cheddar",30,"g",2],["Ham",2,"slices",1],["Apples",1,"",0]],how:"Fill the bagel; apple on the side."},
+ "Eggs and oatcakes":{keeps:2,ing:[["Eggs",2,"",2],["Cherry tomatoes",80,"g",0],["Oatcakes",4,"",4]],how:"Boil the eggs 9 minutes, cool, pack with tomatoes and oatcakes."},
+ "Pasta salad":{keeps:2,ing:[["Wholewheat pasta",75,"g",4],["Tinned tuna",1,"tin",4],["Sweetcorn",50,"g",5],["Cherry tomatoes",80,"g",0]],how:"Cook and cool the pasta, mix everything in."},
+ "Egg muffins":{keeps:3,ing:[["Eggs",2,"",2],["Spinach",20,"g",0],["Peppers",0.5,"",0],["Cheddar",15,"g",2]],how:"Whisk, pour into a muffin tin, bake 20 min at 180°C."},
+ "Fruit and yoghurt pot":{keeps:1,ing:[["Greek yoghurt",150,"g",2],["Berries",80,"g",0],["Granola",25,"g",4]],how:"Layer in a small pot. Keep it under 100 ml or eat before security."},
+ "Chicken couscous salad":{keeps:2,ing:[["Couscous",60,"g",4],["Cooked chicken",80,"g",1],["Cucumber",0.25,"",0],["Peppers",0.5,"",0],["Lemons",0.5,"",0]],how:"Pour boiling water over the couscous, fluff, mix in the rest with lemon juice."},
+ "Quinoa, roast veg and feta":{keeps:3,ing:[["Quinoa",60,"g",4],["Courgettes",0.5,"",0],["Red onions",0.5,"",0],["Peppers",0.5,"",0],["Feta",40,"g",2]],how:"Roast the veg 25 min, mix with cooked quinoa and crumbled feta."},
+ "Rice balls (onigiri)":{keeps:1,ing:[["Sushi rice",80,"g",4],["Tinned tuna",0.5,"tin",4],["Nori sheets",1,"",4]],how:"Cook the rice, shape round a spoon of tuna, wrap in nori."},
+ "Falafel box":{keeps:2,ing:[["Falafel",4,"",2],["Salad leaves",30,"g",0],["Pitta bread",1,"",3],["Cucumber",0.25,"",0]],how:"Pack with the pitta; any sauce in a pot under 100 ml."},
+ "Cheese and crackers":{keeps:1,ing:[["Cheddar",40,"g",2],["Crackers",6,"",4],["Apples",1,"",0],["Grapes",80,"g",0]],how:"Slice and pack."},
+ "Rice bowl":{keeps:2,ing:[["Rice",75,"g",4],["Chicken breast",120,"g",1],["Frozen mixed veg",100,"g",5],["Soy sauce",10,"ml",4]],how:"Cook rice, fry chicken and veg, add soy."},
+ "Soup in a flask":{keeps:4,ing:[["Red lentils",50,"g",4],["Carrots",1,"",0],["Onions",0.5,"",0],["Veg stock cubes",0.5,"",4],["Tinned tomatoes",0.5,"tin",4]],how:"Simmer everything 25 min, blend. Freezes well."},
+ "Light snack for the drive home":{keeps:3,ing:[["Bananas",1,"",0],["Rice cakes",3,"",4],["Cereal bars",1,"",4]],how:"Keep in your bag."},
+ "Chicken traybake":{keeps:2,ing:[["Chicken thighs",150,"g",1],["Potatoes",200,"g",0],["Carrots",1,"",0],["Onions",0.5,"",0]],how:"Chop, toss in oil, roast 40 min at 200°C."},
+ "Pitta pizzas":{keeps:2,ing:[["Pitta bread",1,"",3],["Tomato purée",15,"g",4],["Mozzarella",40,"g",2],["Peppers",0.5,"",0]],how:"Spread, top, bake 10 min."},
+ "Noodle salad":{keeps:2,ing:[["Egg noodles",60,"g",4],["Frozen edamame",60,"g",5],["Carrots",1,"",0],["Spring onions",1,"",0],["Soy sauce",10,"ml",4],["Sesame oil",5,"ml",4]],how:"Cook noodles and edamame, cool, mix with grated carrot and dressing."},
+ "Meatballs and couscous":{keeps:2,ing:[["Turkey meatballs",6,"",1],["Couscous",60,"g",4],["Tinned tomatoes",0.5,"tin",4],["Spinach",20,"g",0]],how:"Cook meatballs in the tomatoes, serve on couscous."},
+ "Trail mix":{keeps:7,ing:[["Mixed nuts",30,"g",4],["Mixed seeds",10,"g",4],["Raisins",20,"g",4]],how:"Mix a week's worth in a jar."},
+ "Chilli or stew":{keeps:3,ing:[["Beef mince",125,"g",1],["Kidney beans",0.5,"tin",4],["Tinned tomatoes",0.5,"tin",4],["Onions",0.5,"",0],["Rice",75,"g",4]],how:"Brown the mince and onion, add beans and tomatoes, simmer 30 min. Eat at home."},
+ "Small sandwiches":{keeps:1,ing:[["Wholemeal bread",2,"slices",3],["Ham or turkey",2,"slices",1],["Cheddar",20,"g",2],["Salad leaves",10,"g",0]],how:"Make and cut into quarters."},
+ "Night snack box":{keeps:1,ing:[["Apples",1,"",0],["Eggs",1,"",2],["Cheddar",30,"g",2],["Crackers",4,"",4]],how:"Boil the egg, pack the rest."},
+ "Chicken and veg wrap halves":{keeps:1,ing:[["Wholemeal wraps",2,"",3],["Cooked chicken",80,"g",1],["Peppers",0.5,"",0],["Salad leaves",20,"g",0]],how:"Make two small wraps and cut in half."},
+ "Rice cakes with peanut butter":{keeps:1,ing:[["Rice cakes",4,"",4],["Peanut butter",30,"g",4],["Bananas",1,"",0]],how:"Spread at home, sandwich two together."},
+ "Fruit salad box":{keeps:2,ing:[["Melon",0.25,"",0],["Grapes",60,"g",0],["Berries",60,"g",0],["Kiwis",1,"",0]],how:"Chop and pack."},
+ "Savoury muffins":{keeps:3,ing:[["Self-raising flour",50,"g",4],["Eggs",1,"",2],["Cheddar",25,"g",2],["Courgettes",0.25,"",0],["Milk",40,"ml",2]],how:"Mix, spoon into a muffin tin, bake 20 min at 190°C."},
+ "Pesto pasta":{keeps:2,ing:[["Pasta",75,"g",4],["Pesto",30,"g",4],["Cherry tomatoes",60,"g",0],["Frozen peas",40,"g",5]],how:"Cook pasta and peas, stir in pesto and tomatoes."}
+};
+const ALL_MEALS=()=>[].concat(...Object.keys(MEALS).map(k=>MEALS[k].map(m=>m[0])));
+function weekStart(d){const x=new Date((d||today())+"T12:00:00");const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x.toISOString().slice(0,10)}
+function mealsState(){if(!S.meals)S.meals={week:"",plan:{},got:{},extra:[],off:{}};const M=S.meals;if(!M.plan)M.plan={};if(!M.got)M.got={};if(!M.extra)M.extra=[];if(!M.off)M.off={};return M}
+function dayTypeOf(d){const r=S.roster[d];if(!r||!isDutyK(r.kind)||!r.report)return null;return dutyType(r2lDT(d,r.report))}
+function dietOk(name){const tags=(RECIPES[name]?MEAL_TAGS[name]:[])||[];return !S.diet.some(dt=>(dt==="vegetarian"||dt==="vegan")&&(tags.includes("meat")||tags.includes("fish"))||(dt==="vegan"&&(tags.includes("dairy")||tags.includes("egg")))||(dt==="glutenfree"&&tags.includes("gluten")&&!MEAL_SWAPS.gluten)||(dt==="nutfree"&&tags.includes("nuts")))}
+// pick a meal for each duty day of the week, varied, diet-friendly, and reusing batch-friendly recipes
+function suggestWeek(ws){const M=mealsState(),used={};for(let i=0;i<7;i++){const d=addDays(ws,i),t=dayTypeOf(d);if(!t){delete M.plan[d];continue}
+  const opts=MEALS[t].map(m=>m[0]).filter(dietOk);const pool=opts.length?opts:MEALS[t].map(m=>m[0]);
+  const pick=pool.slice().sort((a,b)=>(used[a]||0)-(used[b]||0)||((i*7+a.length)%5)-((i*7+b.length)%5))[0];M.plan[d]=pick;used[pick]=(used[pick]||0)+1}
+  M.week=ws;M.got={}}
+function mealFor(d){const M=mealsState();return M.plan[d]||null}
+function shopList(ws){const M=mealsState(),tot={};for(let i=0;i<7;i++){const d=addDays(ws,i),m=M.plan[d],R=RECIPES[m];if(!R||M.off[d])continue;
+  R.ing.forEach(([it,q,u,a])=>{const k=it+"|"+u;if(!tot[k])tot[k]={it,u,a,q:0,for:[]};tot[k].q+=q;if(!tot[k].for.includes(m))tot[k].for.push(m)})}
+  return Object.values(tot).map(x=>{let q=x.q;if(x.u===""||x.u==="tin"||x.u==="slices")q=Math.ceil(q-1e-9);else q=Math.ceil(q/10)*10;return Object.assign(x,{q,key:x.it+"|"+x.u})}).sort((a,b)=>a.a-b.a||a.it.localeCompare(b.it))}
+function batchNotes(ws){const M=mealsState(),by={};for(let i=0;i<7;i++){const d=addDays(ws,i),m=M.plan[d];if(m&&!M.off[d])(by[m]=by[m]||[]).push(d)}
+  return Object.keys(by).map(m=>{const ds=by[m],k=(RECIPES[m]||{}).keeps||1;const groups=[];let cur=null;ds.forEach(d=>{if(!cur||daysBetween(cur[0],d)>=k){cur=[d];groups.push(cur)}else cur.push(d)});
+    return {m,n:ds.length,groups}}).filter(x=>x.n>0)}
+function viewMeals(){
+  const M=mealsState(),ws=S.mealWeek||weekStart(today());if(M.week!==ws&&!Object.keys(M.plan).some(d=>d>=ws&&d<addDays(ws,7)))suggestWeek(ws);
+  const names=ALL_MEALS(),days=[...Array(7)].map((_,i)=>addDays(ws,i)),list=shopList(ws),bn=batchNotes(ws);
+  const qty=x=>x.u===""?(x.q+" ×"):x.u==="tin"?x.q+" tin"+(x.q>1?"s":""):x.u==="slices"?x.q+" slices":x.q>=1000?(x.q/1000).toFixed(1).replace(/\.0$/,"")+(x.u==="g"?" kg":" l"):x.q+" "+x.u;
+  const left=list.filter(x=>!M.got[x.key]).length+M.extra.filter(x=>!x.d).length;
+  return `<section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><button class="ghost" data-mweek="-7" aria-label="Previous week">‹</button><h2 style="margin:0;text-align:center">Week of ${esc(fmtDate(ws,{day:"numeric",month:"short"}))}</h2><button class="ghost" data-mweek="7" aria-label="Next week">›</button></div>
+    <p class="note" style="margin:0">Meals are picked for your duty days from your roster and your food needs. Change any of them, or switch a day off if you'll eat out.</p>
+    <div>${days.map(d=>{const t=dayTypeOf(d),m=M.plan[d];return `<div class="ex" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);display:grid;gap:8px;align-items:center">
+      <span><b>${esc(fmtDate(d,{weekday:"short",day:"numeric"}))}</b><span class="note" style="display:block">${t?esc(DUTY[t].name):"No duty"}</span></span>
+      <div style="display:flex;gap:6px;align-items:center;min-width:0"><select data-mplan="${d}" aria-label="Meal for ${esc(d)}" style="min-width:0;flex:1"><option value="">${t?"Eating out / none":"Nothing planned"}</option>${names.map(n=>`<option ${m===n?"selected":""}>${esc(n)}</option>`).join("")}</select></div></div>`}).join("")}</div>
+    <div class="btns" style="margin:0"><button data-msuggest="${ws}">Suggest again</button></div>
+  </section>
+  ${bn.length?`<section class="card"><h2>Prep plan</h2><p class="note" style="margin:0">Make these in batches so you're not cooking every day.</p><div>${bn.map(x=>`<div class="ex"><b>${esc(x.m)}</b><span class="note">${x.groups.map(g=>g.length>1?`Make ${g.length} portions on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${g.map(d=>fmtDate(d,{weekday:"short"})).join(", ")}`:`Make on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${fmtDate(g[0],{weekday:"short"})}`).join(" · ")}. Keeps ${(RECIPES[x.m]||{}).keeps||1} day${((RECIPES[x.m]||{}).keeps||1)===1?"":"s"}.</span><span class="note">${esc((RECIPES[x.m]||{}).how||"")}</span></div>`).join("")}</div></section>`:""}
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Shopping list</h2><span class="chip">${left} to buy</span></div>
+    ${list.length?AISLES.map((a,ai)=>{const L=list.filter(x=>x.a===ai);return L.length?`<span class="label">${esc(a)}</span><div>${L.map(x=>`<label class="chk ${M.got[x.key]?"done":""}"><input type="checkbox" ${M.got[x.key]?"checked":""} data-mgot="${esc(x.key)}"><span>${esc(x.it)} <b>${esc(qty(x))}</b><span class="note" style="display:block">${esc(x.for.join(", "))}</span></span></label>`).join("")}</div>`:""}).join(""):`<p class="note">Pick some meals above and the list fills in.</p>`}
+    ${M.extra.length?`<span class="label">Your extras</span><div>${M.extra.map(x=>`<label class="chk ${x.d?"done":""}"><input type="checkbox" ${x.d?"checked":""} data-mxtra="${x.id}"><span>${esc(x.t)}</span><button class="ghost" aria-label="Remove ${esc(x.t)}" data-mxdel="${x.id}">${ICON.x}</button></label>`).join("")}</div>`:""}
+    <div class="row"><div class="field"><label for="mx-t">Add something else</label><input id="mx-t" type="text" placeholder="e.g. Milk, coffee, toothpaste"></div><div class="field" style="align-content:end"><button id="mxadd">Add</button></div></div>
+    <p class="note" style="margin:0">Amounts are for one person. Cupboard items like oil, salt and spices aren't listed. Tick things off as you shop; the list works offline.</p>
+    <div class="btns" style="margin:0"><button class="ghost" id="mclear">Clear ticks</button></div>
+  </section>`;
+}
 function readDayForm(d){const cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual",sectors:[]};
   const r=$("#rw-r"),o=$("#rw-o"),de=$("#rw-d"),n=$("#rw-n"),l=$("#rw-l");if(r)cur.report=cleanTime(r.value);if(o)cur.off=cleanTime(o.value);if(de)cur.dest=cityFrom(de.value);if(n)cur.note=n.value.trim().slice(0,120);if(l)cur.loc=l.value.trim().slice(0,80);
   const sec=[];for(let i=0;i<10;i++){const f=$("#sc-flt-"+i);if(!f)break;const old=(cur.sectors||[])[i]||{};sec.push(Object.assign({},old,{flt:old.typ==="gt"?f.value.slice(0,8):f.value,reg:($("#sc-reg-"+i)||{}).value||old.reg||"",from:$("#sc-from-"+i).value,to:$("#sc-to-"+i).value,dep:$("#sc-dep-"+i).value,arr:$("#sc-arr-"+i).value}))}
@@ -2715,8 +2791,8 @@ function dayPlanBody(p,x){
     <ul class="plain">${D.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`;
 }
 function foodBody(p){
-  const type=dutyType(p.rep),D=DUTY[type];
-  return `<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+  const type=dutyType(p.rep),D=DUTY[type],dk=p.rep.getFullYear()+"-"+String(p.rep.getMonth()+1).padStart(2,"0")+"-"+String(p.rep.getDate()).padStart(2,"0"),mine=on("more_meals")?mealFor(dk):null,R=mine&&RECIPES[mine];
+  return `${mine?`<div class="seccard"><span class="label">Your meal for this duty</span><b>${esc(mine)}</b>${R?`<span class="note" style="margin:0">${esc(R.how)}</span><span class="note" style="margin:0">${esc(R.ing.map(i=>i[0]).join(", "))}</span>`:""}${MEAL_LIQUID.includes(mine)?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}<div class="btns" style="margin:0"><button class="linkbtn" data-goto="more:meals">Change or see the shopping list</button></div></div>`:on("more_meals")?`<p class="note" style="margin:0">Plan the week's meals and get one shopping list in <button class="linkbtn" data-goto="more:meals">Meals and shopping</button>.</p>`:""}`+`<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
     <p class="note" style="margin:0">Your food needs: <b>${S.diet.length?esc(DIETS.filter(d=>S.diet.includes(d[0])).map(d=>d[1]).join(", ")):"none set"}</b>. <button class="linkbtn" data-goto="more:profile">Change in Profile</button></p>
     ${S.diet.some(d=>DIET_LINKS[d])?`<div class="links">${[...new Set(S.diet.filter(d=>DIET_LINKS[d]).map(d=>DIET_LINKS[d][1]))].map(u=>{const k=S.diet.find(d=>DIET_LINKS[d]&&DIET_LINKS[d][1]===u);return `<a href="${u}" target="_blank" rel="noopener">${esc(DIET_LINKS[k][0])} ↗</a>`}).join("")}</div>`:""}
     <span class="label">Easy meals to prep</span>
@@ -2724,7 +2800,7 @@ function foodBody(p){
       const card=m=>{const sw=mealSwaps(m[0]),liq=MEAL_LIQUID.includes(m[0]);return `<div class="ex"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(m[0])}</b><span class="note" style="font-family:var(--mono);white-space:nowrap">${esc(m[2])}</span></div><span class="note">${esc(m[1])}</span>${liq?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${sw.map(s=>`<span style="font-size:13px;color:var(--accent);font-weight:600">${esc(s)}</span>`).join("")}</div>`};
       return `<div>${rot.slice(0,4).map(card).join("")}</div>${rot.length>4?`<details><summary class="note"><b>More ideas (${rot.length-4})</b></summary><div>${rot.slice(4).map(card).join("")}</div></details>`:""}`})()}
     <span class="label">Security</span>
-    <p class="note" style="margin:0">Yoghurt, soup, stew, hummus, dips, sauces, dressings, jam, nut butter and smoothies count as liquids. At Stansted, as at most airports, each must be in a container of 100 ml or less inside your liquids bag. Otherwise eat them at home, mix them in before you leave, or buy them airside. Solid food like sandwiches, wraps, fruit and snacks is fine. Destination airports may be stricter on the way back.</p>
+    <p class="note" style="margin:0">Yoghurt, soup, stew, hummus, dips, sauces, dressings, jam, nut butter and smoothies count as liquids. At Stansted, as at most airports, each must be in a container of 100 ml or less inside your liquids bag. Otherwise eat them at home or mix them in before you leave, and pack solid food for the duty: sandwiches, wraps, fruit, boiled eggs and snack boxes all go through. Airport food is expensive, so every idea here is made at home. Destination airports may be stricter on the way back, so pack the return leg's food solid too.</p>
     <p class="note">General tips, not medical advice.${S.diet.includes("nutfree")?" With an allergy, always check labels and tell the crew you're working with.":""}</p>`;
 }
 function todoBody(){
@@ -2844,6 +2920,15 @@ function dutyOff(){const d=S.duty,r=S.roster[d.date]||{},sec=(r.sectors||[]).fil
   let post=30;if(r.off){const m=Math.round((at(r.off)-at(last.arr))/60000);if(m>=0&&m<=120)post=m}
   if(last.onb)return {at:new Date(at(last.onb).getTime()+post*60000),actual:true};
   const e=homeEnd();return e?{at:new Date(e.getTime()+60*60000),actual:false}:null}
+// when yesterday's duty is really over: home (by the train or bus you'd catch, or by car) + 30 minutes.
+// Until then Today keeps showing it, so a crew member landing after midnight still sees getting home.
+function holdUntil(){try{const d=S.duty;if(!d.date)return 0;
+  if(d.kind==="standby"){const w=sbWindow();return w&&w.end?w.end.getTime():0}
+  const o=dutyOff(),off=o&&o.actual?o.at:(homeEnd()||(o&&o.at)||fdpEnd());if(!off)return 0;let home=new Date(off.getTime()+((+d.commute||0)+(+d.buffer||0)/2)*60000);
+  const m=modeOf(d.date);if(m!=="car"&&ttCount(tt("back",m))){const T=R(m),ready=new Date(off.getTime()+tBuf(m)*60000);
+    const L=tList(d.date,"back",m).concat(tList(addDays(d.date,1),"back",m)).filter(x=>x.dep>=ready).sort((a,b)=>a.dep-b.dep);
+    if(L[0]&&L[0].dep-ready<=3*3600000)home=new Date(L[0].arr.getTime()+(+T.walk||0)*60000)}
+  return home.getTime()+30*60000}catch(e){return 0}}
 function homeEnd(){const e=homeEndSched();if(!e||hasEnd(S.duty.kind))return e;const sh=dayShift();return sh?new Date(e.getTime()+sh.min*60000):e}
 function homeCard(){
   const m=modeOf(S.duty.date);if(m==="car")return "";const T=R(m),v=tt("back",m);if(!ttCount(v))return "";const end=homeEnd();if(!end)return "";
@@ -3097,7 +3182,7 @@ const TOGGLES=[
   ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","News"]]],
   ["Plan",[["planday","Tonight and sleep"],["evening","Evening prep and grooming"],["kitcheck","Kit check"],["packing","Packing"],["weather","Weather"],["todo","To do"],["food","Food and meals"]]],
   ["Me",[["more_wellbeing","Mood and energy"],["me_selfcare","My routine"],["me_fitness","Fitness"]]],
-  ["More",[["tool_roster","Roster"],["tool_money","Money"],["more_hours","FTL and hours"],["more_notes","Layover"],["kitlist","Grooming and kit"],["more_care","Uniform care"],["perks","Crew discounts"]]],
+  ["More",[["tool_roster","Roster"],["tool_money","Money"],["more_hours","FTL and hours"],["more_notes","Layover"],["more_meals","Meals and shopping"],["kitlist","Grooming and kit"],["more_care","Uniform care"],["perks","Crew discounts"]]],
   ["Money",[["m_bills","Bills"],["m_sales","Sales commission"],["m_expenses","Expenses"],["m_savings","Savings tips"]]]
 ];
 const THEMES=[["teal", "Calm teal", "#3D7F86"], ["sage", "Sage", "#557A59"], ["sky", "Sky", "#3A6EA5"], ["lavender", "Lavender", "#6A62A6"], ["rose", "Rose", "#A35D6E"], ["amber", "Amber", "#C77A0A"]];
@@ -3120,6 +3205,7 @@ const TOOLS=[
   ["money","Money","tool_money","What you should be paid, your bills and what's left.",()=>"Est. take-home "+money(estimate().net),viewMoney],
   ["layover","Layover","more_notes","Local tips, guides and your own notes for each city.",()=>{const c=S.layoverCity||S.trip.city;return c?"Tips for "+c:"Pick a city"},viewLayover],
   ["hours","FTL and hours","more_hours","Flight time limits, rest and duty hours.",()=>"Limits, rest, flight hours",viewHours],
+  ["meals","Meals and shopping","more_meals","Weekly meals for your duties and one shopping list.",()=>{const M=mealsState(),ws=weekStart(today()),n=Object.keys(M.plan).filter(d=>d>=ws&&d<addDays(ws,7)&&M.plan[d]).length;return n?n+" meals planned this week":"Plan your week's food"},viewMeals],
   ["kit","Grooming and kit","kitlist","Build the kit list you tick off in Plan.",()=>S.kit.length+" items",viewKitList],
   ["care","Uniform care","more_care","Recurring jobs for your uniform.",()=>{const n=S.care.filter(c=>!c.last||daysBetween(today(),addDays(c.last,+c.days||1))<=0).length;return n?n+" due":"All done"},viewCare],
   ["sick","Sick leave","more_sick","Fit notes, sick days and getting back to work.",()=>{const ep=currentSick();return ep&&today()<=ep.to?"Off until "+fmtDate(ep.to,{day:"numeric",month:"short"}):"Nothing logged"},viewSick],
@@ -3256,11 +3342,12 @@ function render(){
   /* Today's open/closed sections reset each day so they follow the duty again */
   const t=today();if(S.foldDay!==t){S.foldDay=t;S.layoverCity="";Object.keys(S.fold).forEach(k=>{if(k.includes("|"))delete S.fold[k]})}
   /* the planned next duty becomes today's duty on the day; otherwise today's roster fills it in */
-  if(S.next&&S.next.date===t&&(S.duty.date||"")<t){S.duty.date=t;S.duty.report=S.next.report;S.duty.kind=S.next.kind;if(hasEnd(S.next.kind))S.duty.end=S.next.end||(S.next.kind==="asby"?"13:00":"17:00");if(S.next.kind==="training")S.duty.loc=S.next.loc||"";if(S.next.kind==="standby"){S.standby.start=S.next.report;if(S.next.end)S.standby.end=S.next.end}
+  const holding=(S.duty.date||"")<t&&S.duty.date>=addDays(t,-1)&&Date.now()<holdUntil();
+  if(!holding&&S.next&&S.next.date===t&&(S.duty.date||"")<t){S.duty.date=t;S.duty.report=S.next.report;S.duty.kind=S.next.kind;if(hasEnd(S.next.kind))S.duty.end=S.next.end||(S.next.kind==="asby"?"13:00":"17:00");if(S.next.kind==="training")S.duty.loc=S.next.loc||"";if(S.next.kind==="standby"){S.standby.start=S.next.report;if(S.next.end)S.standby.end=S.next.end}
     if(S.next.kind!=="standby"&&(S.next.flt||S.next.dep)&&!S.roster[t]){const dc=cityFrom(S.next.dest);S.roster[t]={kind:"flying",report:l2r(t,S.next.report),off:"",dest:dc,note:"",src:"manual",sectors:cleanSectors([{flt:S.next.flt||"",from:S.profile.base,to:codeOf(dc),dep:l2r(t,S.next.dep||""),arr:""}])}}
     const nc=cityFrom(S.next.dest)||dutyCity(S.next),c=CITIES.find(x=>x.name===nc);if(c){S.trip.city=c.name;S.trip.country=c.country}else if(nc)S.trip.city=nc;S.next=null}
-  if(S.next&&S.next.date<=t)S.next=null;
-  const rt=S.roster[t];if((S.duty.date||"")<t&&rt&&isDutyK(rt.kind)&&rt.report)useDay(t);
+  if(!holding&&S.next&&S.next.date<=t)S.next=null;
+  const rt=S.roster[t];if(!holding&&(S.duty.date||"")<t&&rt&&isDutyK(rt.kind)&&rt.report)useDay(t);
   if(S.tab!=="today"&&S.tab!=="more"&&!on("tab_"+S.tab))S.tab="today";
   const app=document.querySelector(".app");if(app)app.className="app c-"+(S.ui.color||"teal")+(RZ()?" tzL":"");
   {const m=S.ui.mode||"light",r=document.documentElement;if(m==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",m)}
@@ -3379,6 +3466,11 @@ document.addEventListener("click",e=>{
   if(b.id==="ftgo"){const {t,secs,i}=ftState(),est=parseHM(($("#ft-est")||{}).value);if(!est){const v=$("#ft-est");if(v){v.setCustomValidity("Type the block time, e.g. 2:35");v.reportValidity();v.oninput=()=>v.setCustomValidity("")}return}
     const now=new Date();S.ft={date:t,i,start:now.getTime(),est};if(i>=0&&secs[i]){secs[i].offb=(RZ()?hmZ:hm)(now);secs[i].est=est;secs[i].onb=""}render();save();return}
   if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+  if(b.dataset.mweek){S.mealWeek=addDays(S.mealWeek||weekStart(today()),+b.dataset.mweek);render();save();return}
+  if(b.dataset.msuggest){suggestWeek(b.dataset.msuggest);render();save();return}
+  if(b.id==="mxadd"){const t=($("#mx-t").value||"").trim().slice(0,60);if(!t)return;mealsState().extra.push({id:uid(),t,d:false});render();save();return}
+  if(b.dataset.mxdel){const M=mealsState();M.extra=M.extra.filter(x=>x.id!==b.dataset.mxdel);render();save();return}
+  if(b.id==="mclear"){const M=mealsState();M.got={};M.extra=M.extra.filter(x=>!x.d);render();save();return}
   if(b.id==="newsrf"){newsFetch(true);return}
   if(b.dataset.newscat){S.newsCat=b.dataset.newscat;render();save();return}
   if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
@@ -3567,6 +3659,9 @@ document.addEventListener("change",e=>{
   if(el.dataset.k==="standby.start"&&S.duty.kind==="standby")S.duty.report=el.value;
   if(el.dataset.fx){S.fx[el.dataset.fx]=parseFloat(el.value)||"";render();save();return}
   if(el.dataset.bill){const k=S.bills.find(x=>x.id===el.dataset.bill);k.paidMonth=el.checked?today().slice(0,7):"";render();save();return}
+  if(el.dataset.mplan){const M=mealsState();if(el.value)M.plan[el.dataset.mplan]=el.value;else delete M.plan[el.dataset.mplan];M.week=S.mealWeek||weekStart(today());render();save();return}
+  if(el.dataset.mgot!==undefined){const M=mealsState();if(el.checked)M.got[el.dataset.mgot]=true;else delete M.got[el.dataset.mgot];render();save();return}
+  if(el.dataset.mxtra){const M=mealsState(),x=M.extra.find(y=>y.id===el.dataset.mxtra);if(x)x.d=el.checked;render();save();return}
   if(el.dataset.todo){const k=S.todo.find(x=>x.id===el.dataset.todo);k.d=el.checked;render();save();return}
   if(el.dataset.core){const k=S.core.items.find(x=>x.id===el.dataset.core);k.d=el.checked;render();save();return}
   if(el.dataset.kit){const k=S.kit.find(x=>x.id===el.dataset.kit);k.d=el.checked;render();save();return}
