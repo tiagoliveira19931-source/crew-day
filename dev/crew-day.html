@@ -542,16 +542,21 @@ function plan(x){
   let leave=new Date(rep.getTime()-base);
   const parts={journey:+S.duty.commute||0,buffer:+S.duty.buffer||0,weather:S.wxExtra&&+S.wxExtra[d.date]||0,peak:0};
   if(+S.duty.peak&&isPeak(leave)){leave=new Date(leave.getTime()-(+S.duty.peak)*60000);parts.peak=+S.duty.peak}
-  let tr=null,skipped=null;const dd=d.date||today(),tm=d._mode||(d._car?"car":modeOf(dd));if(tm!=="car"){const o=tOptions(dd,tDeadline(rep,tm),(S.tpick||{})[dd+"|"+tm]||(S.tpick||{})[dd],tm);if(o&&o.chosen){const wait=(tDeadline(rep,tm)-o.chosen.arr)/60000;
-      // a bus or train that gets you there hours early means the timetable is missing later ones: don't build the morning round it
-      if(wait>180&&!((S.tpick||{})[dd+"|"+tm]||(S.tpick||{})[dd])){skipped={rk:tm,o,wait}}
-      else{tr=o;tr.rk=tm;leave=new Date(o.chosen.dep.getTime()-((+R(tm).walk||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000)}}
-    else if(o&&!o.chosen)skipped={rk:tm,o,none:true}}
+  let tr=null,skipped=null;const dd=d.date||today(),tm=d._mode||(d._car?"car":modeOf(dd));
+  // try the chosen train or bus; if it has nothing that fits, fall back to the other one (train preferred), then the car
+  const tryMode=rk=>{const pk=(S.tpick||{})[dd+"|"+rk]||(S.tpick||{})[dd],o=tOptions(dd,tDeadline(rep,rk),pk,rk);if(!o)return null;if(!o.chosen)return {skipped:{rk,o,none:true}};
+    const wait=(tDeadline(rep,rk)-o.chosen.arr)/60000;
+    // one that gets you there hours early means the timetable is missing later ones: don't build the morning round it
+    if(wait>180&&!pk)return {skipped:{rk,o,wait}};o.rk=rk;return {tr:o}};
+  if(tm!=="car"){const first=tryMode(tm);if(first&&first.tr)tr=first.tr;else{skipped=first?first.skipped:null;
+      if(!d._mode)for(const rk of RK.filter(r=>r!==tm&&tHas(r))){const alt=tryMode(rk);if(alt&&alt.tr){tr=alt.tr;tr.fallback=tm;break}}}
+    if(tr){skipped=tr.fallback?skipped:null;leave=new Date(tr.chosen.dep.getTime()-((+R(tr.rk).walk||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000)}}
   let t=leave.getTime();const times=[];
   for(let i=S.steps.length-1;i>=0;i--){t-=(+S.steps[i].min||0)*60000;times[i]=new Date(t)}
   return {rep,leave,times,first:times[0]||leave,tr,parts,skipped};
 }
 function leaveWhy(p){if(!p||!p.parts)return "";
+  if(p.tr&&p.tr.fallback&&p.tr.chosen){const c=p.tr.chosen,w=RNAME[p.tr.fallback]||p.tr.fallback;return `<p class="note" style="margin:-4px 0 0">No ${esc(w)} fits this report, so the ${p.tr.rk==="bus"?"bus":"train"}: ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}
   if(p.skipped){const k=p.skipped,w=RNAME[k.rk]||k.rk,c=k.o.chosen;return `<p class="note" style="margin:0;padding:10px 12px;border:1px solid var(--danger);border-radius:12px;color:var(--ink)"><b>No good ${esc(w)} in your timetable.</b> ${k.none?`None gets you there in time.`:`The last one before report is ${esc(c.t)}, which would get you there ${hmDur(k.wait)} early, so your timetable is probably missing the later ones.`} Times below are for the car. <button class="linkbtn" data-goto="plan">Add the later ${esc(w==="bus"?"buses":w+"s")} or pick one in Plan</button></p>`}
   if(p.tr&&p.tr.chosen){const c=p.tr.chosen;return `<p class="note" style="margin:-4px 0 0">${p.tr.rk==="bus"?"Bus":"Train"} ${esc(c.t)}${c.n?" ("+esc(c.n)+")":""}, arrives ${hm(c.arr)}. <button class="linkbtn" data-goto="plan">Change</button></p>`}const q=p.parts,tot=Math.round((p.rep-p.leave)/60000);
   const bits=[q.journey?"journey "+q.journey:"",q.buffer?"buffer "+q.buffer:"",q.weather?"weather "+q.weather:"",q.peak?"rush hour "+q.peak:""].filter(Boolean).join(" + ");
@@ -2925,12 +2930,25 @@ function dutyOff(){const d=S.duty,r=S.roster[d.date]||{},sec=(r.sectors||[]).fil
 function holdUntil(){try{const d=S.duty;if(!d.date)return 0;
   if(d.kind==="standby"){const w=sbWindow();return w&&w.end?w.end.getTime():0}
   const o=dutyOff(),off=o&&o.actual?o.at:(homeEnd()||(o&&o.at)||fdpEnd());if(!off)return 0;let home=new Date(off.getTime()+((+d.commute||0)+(+d.buffer||0)/2)*60000);
-  const m=modeOf(d.date);if(m!=="car"&&ttCount(tt("back",m))){const T=R(m),ready=new Date(off.getTime()+tBuf(m)*60000);
-    const L=tList(d.date,"back",m).concat(tList(addDays(d.date,1),"back",m)).filter(x=>x.dep>=ready).sort((a,b)=>a.dep-b.dep);
-    if(L[0]&&L[0].dep-ready<=3*3600000)home=new Date(L[0].arr.getTime()+(+T.walk||0)*60000)}
+  if(modeOf(d.date)!=="car"||RK.includes(d.mode)){const H=homeOptions(off,true);if(H.best)home=H.best.home}
   return home.getTime()+30*60000}catch(e){return 0}}
 function homeEnd(){const e=homeEndSched();if(!e||hasEnd(S.duty.kind))return e;const sh=dayShift();return sh?new Date(e.getTime()+sh.min*60000):e}
+// trains and buses home together, train preferred unless the bus gets you home a lot sooner
+function homeOptions(end,fixed){const d0=S.duty.date,out=[];RK.filter(rk=>ttCount(tt("back",rk))).forEach(rk=>{const T=R(rk),ready=new Date((fixed?end.getTime():Math.max(end.getTime(),Date.now()))+tBuf(rk)*60000);
+    tList(d0,"back",rk).concat(tList(addDays(d0,1),"back",rk)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).forEach(x=>out.push(Object.assign({},x,{rk,ready,home:new Date(x.arr.getTime()+(+T.walk||0)*60000)})))});
+  out.sort((a,b)=>a.dep-b.dep);const firstHome=out.length?Math.min(...out.map(x=>x.home.getTime())):0;
+  const best=out.filter(x=>x.rk==="train"&&x.home.getTime()<=firstHome+30*60000).sort((a,b)=>a.home-b.home)[0]||out.slice().sort((a,b)=>a.home-b.home)[0]||null;
+  return {list:out,best}}
 function homeCard(){
+  const m=modeOf(S.duty.date);if(m==="car"&&!RK.includes(S.duty.mode))return "";if(!RK.some(rk=>ttCount(tt("back",rk))))return "";const end=homeEnd();if(!end)return "";
+  const H=homeOptions(end),L=H.list.slice(0,4),b=H.best,nm=x=>(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:"");
+  return `<section class="card"><h2>Getting home</h2>
+    <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}.</p>
+    ${b?`<p style="margin:0"><b>Take the ${esc(nm(b).toLowerCase())} at ${b.t}</b>: home about ${hm(b.home)}.${b.rk==="bus"&&H.list.every(x=>x.rk==="bus"||x.home>b.home)?" No train gets you home sooner.":""}</p>`:""}
+    ${L.length?`<div>${L.map(x=>`<div class="tip"><span class="t clk">${x.t}</span><span>${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span></div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
+  </section>`;
+}
+function homeCardOld(){
   const m=modeOf(S.duty.date);if(m==="car")return "";const T=R(m),v=tt("back",m);if(!ttCount(v))return "";const end=homeEnd();if(!end)return "";
   const ready=new Date(Math.max(end.getTime(),Date.now())+tBuf(m)*60000),d0=S.duty.date;
   const L=tList(d0,"back",m).concat(tList(addDays(d0,1),"back",m)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).slice(0,3),w=RNAME[m];
