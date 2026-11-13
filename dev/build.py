@@ -41,7 +41,17 @@ img{{max-width:100%}}
 """
 tail = """
 <script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+/* updates: never use a cached copy of sw.js, check again whenever the app comes back to the screen,
+   and load the new version straight away when it arrives (unless someone is typing). */
+if("serviceWorker" in navigator){
+  const hadSW=!!navigator.serviceWorker.controller;let reloaded=false;
+  window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
+    window.crewdayCheckUpdate=()=>reg.update().then(()=>!!(reg.installing||reg.waiting)).catch(()=>false);
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{})});
+  }).catch(()=>{})});
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadSW||reloaded)return;
+    const go=()=>{const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return setTimeout(go,5000);reloaded=true;location.reload()};go()});
+}
 </script>
 </body>
 </html>
@@ -83,7 +93,7 @@ const RUNTIME_HOSTS=["cdnjs.cloudflare.com","cdn.jsdelivr.net","fonts.googleapis
 self.addEventListener("install",e=>{{
   e.waitUntil((async()=>{{
     const c=await caches.open(CACHE);
-    await c.addAll(SHELL);
+    await c.addAll(SHELL.map(u=>new Request(u,{{cache:"reload"}})));
     await Promise.all(CDN.map(u=>fetch(u,{{mode:"no-cors"}}).then(r=>c.put(u,r)).catch(()=>{{}})));
     await self.skipWaiting();
   }})());
@@ -99,7 +109,7 @@ self.addEventListener("fetch",e=>{{
   const url=new URL(req.url);
   if(req.mode==="navigate"){{
     /* app page: try the network for updates, fall back to the saved copy offline */
-    e.respondWith(fetch(req).then(r=>{{const copy=r.clone();caches.open(CACHE).then(c=>c.put("./index.html",copy));return r}}).catch(()=>caches.match("./index.html")));
+    e.respondWith(fetch(req.url,{{cache:"no-cache",credentials:"same-origin"}}).then(r=>{{if(!r.ok)throw 0;const copy=r.clone();caches.open(CACHE).then(c=>c.put("./index.html",copy));return r}}).catch(()=>caches.match("./index.html")));
     return;
   }}
   if(url.origin===location.origin){{

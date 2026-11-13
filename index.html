@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.26.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.26.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -3408,7 +3408,8 @@ function viewMore(){
   const t=TOOLS.find(x=>x[0]===S.moreView&&toolOn(x));
   if(!t)return `<header><h1>More</h1><p class="sub">Set things up here and the main tabs keep themselves up to date.</p></header>
     <div class="tiles">${TOOLS.filter(toolOn).map(x=>`<button class="tile" data-more="${x[0]}"><b>${x[1]}</b><span>${esc(x[4]())}</span></button>`).join("")}</div>
-    <p class="note" style="text-align:center;margin:16px 0 0">Crew Day ${esc(window.CREWDAY_VERSION?"version "+window.CREWDAY_VERSION:"preview")}</p>`;
+    <p class="note" style="text-align:center;margin:16px 0 0">Crew Day ${esc(window.CREWDAY_VERSION?"version "+window.CREWDAY_VERSION:"preview")}</p>
+    ${IS_PWA?`<div class="btns" style="justify-content:center;margin:4px 0 0"><button class="linkbtn" id="chkupd">Check for an update</button></div><p class="note" id="updmsg" role="status" style="text-align:center;margin:0"></p>`:""}`;
   return `<button class="back" data-more="">‹ More</button><header><h1>${t[1]}</h1>${t[3]?`<p class="sub">${t[3]}</p>`:""}</header>${t[5]()}`;
 }
 
@@ -3601,6 +3602,8 @@ document.addEventListener("click",e=>{
     render();save();return}
   if(b.id==="called"){S.standby.calledAt=new Date().toISOString();render();window.scrollTo(0,0);save();return}
   if(b.dataset.say){const [k,i]=b.dataset.say.split("|"),P=PHRASES[S.trip.country],C=CS[S.trip.country];const t=k==="cs"?(C||[])[+i]:(P&&P.p||[])[+i];if(P&&t)sayIt(P.lang,t);return}
+  if(b.id==="chkupd"){const m=$("#updmsg");if(!navigator.onLine){if(m)m.textContent="You're offline. It checks again when you have signal.";return}
+    if(m)m.textContent="Checking…";Promise.resolve(window.crewdayCheckUpdate?window.crewdayCheckUpdate():false).then(found=>{const m2=$("#updmsg");if(m2)m2.textContent=found?"New version found. It loads in a few seconds.":"You have the latest version."});return}
   if(b.id==="uncalled"){S.standby.calledAt=null;render();save();return}
   if(b.id==="latefromcall"){const el=$("#lt-m");if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.focus()}return}
   if(b.id==="dobackup"){const plain=JSON.stringify({app:"crewday",v:1,saved:new Date().toISOString(),state:S},null,1),pw=(($("#bk-pw")||{}).value||"");
@@ -3945,7 +3948,17 @@ try{const q=new URLSearchParams(location.search);if(q.get("called")==="1"){histo
 </script>
 
 <script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+/* updates: never use a cached copy of sw.js, check again whenever the app comes back to the screen,
+   and load the new version straight away when it arrives (unless someone is typing). */
+if("serviceWorker" in navigator){
+  const hadSW=!!navigator.serviceWorker.controller;let reloaded=false;
+  window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
+    window.crewdayCheckUpdate=()=>reg.update().then(()=>!!(reg.installing||reg.waiting)).catch(()=>false);
+    document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{})});
+  }).catch(()=>{})});
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadSW||reloaded)return;
+    const go=()=>{const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return setTimeout(go,5000);reloaded=true;location.reload()};go()});
+}
 </script>
 </body>
 </html>
