@@ -996,25 +996,27 @@ function changesNote(scope){
 
 // Simple one-line-per-day format (what the Gemini prompt asks for):
 // 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
-const GEMINI_PROMPT=`I'm sending screenshots of my airline work roster. Read every screenshot. Reply with one line per day and nothing else, in exactly this format:
+const todayLong=()=>new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+const rosterPrompt=()=>`Today is ${todayLong()}. I'm sending screenshots of my airline work roster. Read every screenshot. Reply with one line per day and nothing else, in exactly this format:
 YYYY-MM-DD | CODE | check-in | check-out | flights
 Rules:
 - One line per date, in date order. If a day is in more than one screenshot, write it once with all its details.
 - CODE is the duty code shown (DUTY, HSBY, ASBY, OFF, VTO, TRNG, L, SICK). If only a number of flights is shown, write DUTY.
 - Use the times exactly as the roster shows them (Z/UTC when both are shown). Leave a time empty if it isn't shown. Never guess.
 - Flights separated by ; as: flight number, from-to airports, departure-arrival, aircraft registration if shown. Like: FR1234 STN-LIS 16:10-19:00 EIEKL
-- Take the year from the roster; if it isn't shown, use ${new Date().getFullYear()}.
+- Take the year from the roster; if it isn't shown, use the year that makes the dates closest to today.
 - Leave out names, crew codes and staff numbers.
 Example:
 2026-11-13 | DUTY | 15:25 | 22:45 | FR1882 STN-LIS 16:10-19:00 EIEKL; FR1883 LIS-STN 19:25-22:15 EIEKL
 2026-11-14 | OFF | | |`;
+const GEMINI_PROMPT=rosterPrompt();
 // AI apps crew can use: the prompt is copied, the app opens, the crew member adds the screenshots. Nothing goes through Crew Day.
 const AI_APPS=[["Gemini","https://gemini.google.com/app"],["ChatGPT","https://chatgpt.com/"],["Claude","https://claude.ai/new"]];
 let ttShown="";
 function aiLinks(){return `<div class="links" style="font-size:13px;margin:0">${AI_APPS.map(a=>`<a href="${a[1]}" target="_blank" rel="noopener">Open ${a[0]} ↗</a>`).join("")}</div>`}
 // timetable prompt for the train or the bus, both ways, in the layout the timetable box reads
 function ttPrompt(rk){const T=R(rk),bus=rk==="bus",ap=((BASES[S.profile.base]||BASES.STN).airport||"London Stansted Airport"),from=T.from||(bus?"[my bus stop]":"[my station]");
-  return `Look up the current ${bus?"bus and coach":"train"} timetable between ${from} and ${ap}, both ways. Use the operator's or National Rail's current timetable; if you can't check it, say so instead of guessing.
+  return `Today is ${todayLong()}. Look up the ${bus?"bus and coach":"train"} timetable between ${from} and ${ap}, both ways, that applies from today. Use the operator's or National Rail's timetable; if you can't check it, say so instead of guessing. If the timetable changes within the next 4 weeks (UK timetables usually change in mid-December and mid-May), say the date it changes on the first line.
 Reply with the timetable only, in exactly this layout:
 Monday to Friday
 05:28 → 05:39
@@ -1044,7 +1046,7 @@ function rpLines(txt){
   });
   return out;
 }
-function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<textarea id="gemp" readonly rows="6" style="width:100%;box-sizing:border-box;font:500 13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:6px">${esc(GEMINI_PROMPT)}</textarea>`);const t=$("#gemp");t.focus();t.select()}
+function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<textarea id="gemp" readonly rows="6" style="width:100%;box-sizing:border-box;font:500 13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:6px">${esc(rosterPrompt())}</textarea>`);const t=$("#gemp");t.focus();t.select()}
 /* Roster screens read row by row (on-phone text reader): each row is "time Z  airport  [badge]  [airport]  [time Z]"
    or "time Z airport CHECK IN/OUT". Days start at a date line; a date line while a duty is still open (checked in,
    not out) is the next morning of the same duty. */
@@ -1087,7 +1089,7 @@ function rpCareful(e){const old=S.roster[e.date];if(!old)return e;
   if(os.length&&sec.length<os.length&&sec.some(x=>!x.dep||!x.arr))return null;   // fewer, half-read flights: keep what we have
   return Object.assign({},e,{report:e.report||"",off:e.off||"",sectors:sec,_keep:old})}
 function rpApply(txt,careful){
-  txt=String(txt||"").split(GEMINI_PROMPT).join("");const G=rpLines(txt),Gd=G.filter(e=>e.report||e.sectors.length),Gc=G.filter(e=>!(e.report||e.sectors.length));
+  txt=String(txt||"").split(rosterPrompt()).join("").split(GEMINI_PROMPT).join("");const G=rpLines(txt),Gd=G.filter(e=>e.report||e.sectors.length),Gc=G.filter(e=>!(e.report||e.sectors.length));
   let L=rpList(txt).concat(Gd),C=rpCal(txt).concat(Gc);
   // screens read row by row by the on-phone reader: use the row reader when it finds more
   // screenshots read on the phone come row by row: always use the row reader for them
@@ -3852,7 +3854,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.cccopy){const t=ccText(ccOpen),el=$("#cctext");Promise.resolve().then(()=>navigator.clipboard.writeText(t)).then(()=>{if(el)el.textContent=t+" (Copied)"},()=>{});return}
   if(b.dataset.chseen){if(S.rosterChanges)S.rosterChanges.seen=true;render();save();return}
   if(b.dataset.ttprompt){const txt=ttPrompt(b.dataset.ttprompt),lab=b.textContent;const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent=lab},2000)};const show=()=>{ttShown=b.dataset.ttprompt;render();const t=document.getElementById("ttp-"+ttShown);if(t){t.focus();t.select()}};try{navigator.clipboard.writeText(txt).then(done,show)}catch(e){show()}return}
-  if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy roster prompt"},2000)};try{navigator.clipboard.writeText(GEMINI_PROMPT).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
+  if(b.id==="copygem"){const done=()=>{b.textContent="Copied";setTimeout(()=>{b.textContent="Copy roster prompt"},2000)};try{navigator.clipboard.writeText(rosterPrompt()).then(done,()=>showGem(b))}catch(e){showGem(b)}return}
   if(b.id==="pasteroster"){const ta=$("#rost-p"),v=ta?ta.value:"";
     if(/BEGIN:VCALENDAR/i.test(v)){let days=[];try{days=parseICS(v)}catch(e){days=[]}const n=mergeRoster(days,"calendar");if(n)jumpTo(days.map(x=>x.date).sort()[0]);rosterMsg=n?`Imported ${n} day${n===1?"":"s"} from your calendar. Check them against your official roster.`:"That calendar had no roster days in it.";if(ta&&n)ta.value="";render();save();return}
     rosterMsg=rpApply(v);render();save();return}

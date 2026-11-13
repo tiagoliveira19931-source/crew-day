@@ -35,7 +35,7 @@ with sync_playwright() as p:
     btn=pg.locator('[data-ttprompt="train"]'); assert btn.count()==1
     btn.click(); pg.wait_for_timeout(300); print("after click:", pg.evaluate("document.activeElement.tagName"), pg.locator("textarea[readonly]").count(), errs)
     clip=pg.input_value('#ttp-train')
-    print(clip[:140]); assert "Bishop's Stortford" in clip and "Stansted" in clip and "Return" in clip
+    print(clip[:140]); assert "Today is" in clip; assert "Bishop's Stortford" in clip and "Stansted" in clip and "Return" in clip
     pg.fill("#tr-out-train",ANS); pg.locator("#tr-out-train").dispatch_event("change"); pg.wait_for_timeout(200)
     out=pg.locator("#tr-out-train").locator("xpath=..").inner_text(); back=pg.locator("#tr-back-train").locator("xpath=..").inner_text(); back_val=pg.input_value("#tr-back-train")
     print("out:",out.split("Read:")[-1][:120]); print("back value:",back_val[:60])
