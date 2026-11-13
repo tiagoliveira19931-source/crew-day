@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.1";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.19.3";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -3080,6 +3080,20 @@ function syncMyIssues(){if(!db||!myId)return;return db.doc("issues/"+myId).set({
 function loadAllIssues(){if(!db||!isOwnerV||allIssues)return;allIssues=[];
   Promise.all([db.collection("issues").get(),db.doc("issueStatus/main").get()]).then(([q,st])=>{issueStatus=st.exists?Object.assign({},st.data().st||{}):{};
     allIssues=[];q.docs.forEach(d=>{const x=d.data()||{};(x.reports||[]).forEach(r=>allIssues.push(Object.assign({},r,{who:x.name||"",airline:x.airline||""})))});allIssues.sort((a,b)=>b.date<a.date?-1:1);render()}).catch(()=>{allIssues=null})}
+// Reports wait in an outbox on the phone and are sent to the app team's Google Form when there's signal.
+const REPORT_FORM={url:"https://docs.google.com/forms/d/e/1FAIpQLSdGnhejge3XsXq7JzygFcMscdp6jE2Fn1VM1ohsqO2p9gwBgQ/formResponse",kind:"entry.1174379702",area:"entry.1749055299",text:"entry.332676450",ver:"entry.1508774776",airline:"entry.477438142"}; // Crew Day reports (Google Form)
+function formReady(){return !!(REPORT_FORM.url&&REPORT_FORM.text)}
+let outboxBusy=false;
+function sendOutbox(){
+  if(!formReady()||outboxBusy||navigator.onLine===false)return;const q=(S.issues||[]).filter(r=>!r.sent);if(!q.length)return;
+  outboxBusy=true;
+  const one=r=>{const f=new URLSearchParams();const add=(k,v)=>{if(REPORT_FORM[k])f.append(REPORT_FORM[k],v)};
+    add("kind",r.kind==="idea"?"Idea":"Problem");add("area",r.area||"");add("text",r.text||"");add("ver",(window.CREWDAY_VERSION||"preview")+" · "+r.date);add("airline",S.profile.airline||"");
+    return fetch(REPORT_FORM.url,{method:"POST",mode:"no-cors",body:f}).then(()=>{r.sent=today()})};
+  q.reduce((p,r)=>p.then(()=>one(r)),Promise.resolve()).catch(()=>{}).finally(()=>{outboxBusy=false;save();if(S.moreView==="issues")render()});
+}
+window.addEventListener("online",()=>setTimeout(sendOutbox,1500));setTimeout(sendOutbox,4000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(sendOutbox,2000)});
 function viewIssues(){
   if(!S.issues)S.issues=[];if(!S.issueDraft)S.issueDraft={kind:"problem",area:"Today"};
   const dr=S.issueDraft,mine=S.issues.slice().reverse();
@@ -3091,11 +3105,11 @@ function viewIssues(){
     <div class="field"><label for="is-a">Which part of the app?</label><select id="is-a">${ISSUE_AREAS.map(a=>`<option ${dr.area===a?"selected":""}>${a}</option>`).join("")}</select></div>
     <div class="field"><label for="is-t">${dr.kind==="idea"?"What would help?":"What happened?"}</label><textarea id="is-t" rows="4" style="width:100%;box-sizing:border-box;font:500 15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px" placeholder="${dr.kind==="idea"?"e.g. A reminder to charge my phone the night before":"e.g. The standby countdown showed the wrong time"}"></textarea></div>
     <div class="btns"><button class="primary" id="issend">Send</button></div>
-    <p class="note" style="margin:0" role="status">${esc(issueMsg||(db?"Reports go to the app team and are reviewed every month.":"Reports are saved on this phone. Tap Copy below to send them to the app team."))}</p>
+    <p class="note" style="margin:0" role="status">${esc(issueMsg||(db||formReady()?"Reports go to the app team and are reviewed every month. Works offline: they're sent when you have signal.":"Reports are saved on this phone. Tap Copy below to send them to the app team."))}</p>
   </section>
   ${mine.length?`<section class="card"><h2>Your reports</h2>
-    <div>${mine.map(r=>`<div class="chk"><span><span class="label">${r.kind==="idea"?"Idea":"Problem"} · ${esc(r.area)} · ${esc(fmtDate(r.date,{day:"numeric",month:"short"}))}</span><br>${esc(r.text)}</span>${issueStatus[r.id]?`<span class="chip">${ISSUE_ST[issueStatus[r.id]]}</span>`:""}</div>`).join("")}</div>
-    ${!db?`<div class="btns"><button id="iscopy">Copy my reports</button></div>`:""}</section>`:""}
+    <div>${mine.map(r=>`<div class="chk"><span><span class="label">${r.kind==="idea"?"Idea":"Problem"} · ${esc(r.area)} · ${esc(fmtDate(r.date,{day:"numeric",month:"short"}))}</span><br>${esc(r.text)}</span>${issueStatus[r.id]?`<span class="chip">${ISSUE_ST[issueStatus[r.id]]}</span>`:!db&&formReady()?`<span class="chip">${r.sent?"Sent":"Waiting for signal"}</span>`:""}</div>`).join("")}</div>
+    ${!db&&!formReady()?`<div class="btns"><button id="iscopy">Copy my reports</button></div>`:""}</section>`:""}
   ${isOwnerV&&db?`<section class="card"><h2>All reports</h2>${allIssues===null?`<p class="note">Couldn't load reports.</p>`:!allIssues.length?`<p class="note">No reports yet.</p>`:months.map(m=>`<span class="label">${esc(fmtDate(m+"-01",{month:"long",year:"numeric"}))} · ${allIssues.filter(r=>r.date.slice(0,7)===m).length}</span>
       <div>${allIssues.filter(r=>r.date.slice(0,7)===m).map(r=>`<div class="seccard" style="margin-bottom:8px"><span class="label">${r.kind==="idea"?"Idea":"Problem"} · ${esc(r.area)} · ${esc(r.who||"Crew")}${r.airline?" ("+esc(r.airline)+")":""}</span><span>${esc(r.text)}</span>
         <div class="btns">${Object.keys(ISSUE_ST).map(k=>`<button class="pick" aria-pressed="${(issueStatus[r.id]||"open")===k}" data-ist="${r.id}:${k}">${ISSUE_ST[k]}</button>`).join("")}</div></div>`).join("")}</div>`).join("")}</section>`:""}`;
@@ -3297,7 +3311,7 @@ function setPath(path,val){const k=path.split("."),last=k.pop();let o=S;k.forEac
 
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
-  if(b.dataset.tab){S.tab=b.dataset.tab;render();window.scrollTo(0,0);save();return}
+  if(b.dataset.tab){if(b.dataset.tab==="more"&&S.tab==="more")S.moreView="";S.tab=b.dataset.tab;render();window.scrollTo(0,0);save();return}
   if(b.dataset.bell){const s=S.steps.find(x=>x.id===b.dataset.bell);s.alarm=!s.alarm;render();save();return}
   if(b.dataset.delstep){S.steps=S.steps.filter(x=>x.id!==b.dataset.delstep);render();save();return}
   if(b.id==="addstep"){S.steps.push({id:uid(),label:"New step",min:10,alarm:false});render();save();return}
@@ -3388,7 +3402,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.ftdel){S.fit=S.fit.filter(f=>f.id!==b.dataset.ftdel);render();save();return}
   if(b.dataset.wxextra!==undefined){const n=nextDuty();S.wxExtra=Object.assign({},S.wxExtra||{});if(+b.dataset.wxextra)S.wxExtra[n.date]=+b.dataset.wxextra;else delete S.wxExtra[n.date];render();save();return}
   if(b.dataset.ikind){S.issueDraft=Object.assign({},S.issueDraft||{},{kind:b.dataset.ikind});render();return}
-  if(b.id==="issend"){const t=$("#is-t").value.trim();if(!t){issueMsg="Write a few words first.";render();return}S.issues=(S.issues||[]).concat({id:uid(),date:today(),kind:(S.issueDraft||{}).kind||"problem",area:$("#is-a").value,text:t.slice(0,1000)});issueMsg="Thanks, sent. "+(db?"It's in the list for this month's review.":"Copy your reports to send them.");render();save();Promise.resolve(syncMyIssues()).then(()=>{if(allIssues){allIssues=null;render()}});return}
+  if(b.id==="issend"){const t=$("#is-t").value.trim();if(!t){issueMsg="Write a few words first.";render();return}S.issues=(S.issues||[]).concat({id:uid(),date:today(),kind:(S.issueDraft||{}).kind||"problem",area:$("#is-a").value,text:t.slice(0,1000)});issueMsg=db?"Thanks, sent. It's in the list for this month's review.":formReady()?(navigator.onLine===false?"Saved. It will be sent automatically when you have signal.":"Thanks, sending now."):"Saved on this phone. Tap Copy below to send it.";render();save();sendOutbox();Promise.resolve(syncMyIssues()).then(()=>{if(allIssues){allIssues=null;render()}});return}
   if(b.id==="iscopy"){const txt=(S.issues||[]).map(r=>r.date+" · "+(r.kind==="idea"?"Idea":"Problem")+" · "+r.area+"\n"+r.text).join("\n\n");Promise.resolve().then(()=>navigator.clipboard.writeText("Crew Day reports\n\n"+txt)).then(()=>{issueMsg="Copied. Paste it into a message to the app team.";render()},()=>{issueMsg="Couldn't copy. Select the text above instead.";render()});return}
   if(b.dataset.ist){const [id,k]=b.dataset.ist.split(":");issueStatus[id]=k;render();if(db)db.doc("issueStatus/main").set({st:issueStatus}).catch(()=>{});return}
   if(b.dataset.rtz){S.profile.rosterTz=b.dataset.rtz==="Z"?"Z":"local";if(S.duty.date&&S.roster[S.duty.date])useDay(S.duty.date);render();save();return}

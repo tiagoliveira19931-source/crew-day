@@ -1,0 +1,30 @@
+import sys,datetime
+from playwright.sync_api import sync_playwright
+html=open(sys.argv[1]).read(); errs=[]
+with sync_playwright() as p:
+    b=p.chromium.launch(); pg=b.new_page(viewport={"width":390,"height":844})
+    pg.on("pageerror",lambda e:errs.append(str(e)))
+    pg.route("**/*",lambda r:r.abort() if r.request.url.startswith("http") else r.continue_())
+    pg.clock.install(time=datetime.datetime(2026,11,11,18,0))
+    pg.set_content("<!doctype html><html><head><meta charset=utf-8></head><body>"+html+"</body></html>")
+    pg.fill("#pr-n","T"); pg.fill("#pr-s","A"); pg.select_option("#t-mode","train"); pg.wait_for_timeout(100)
+    pg.fill("#tr-from-train","Bishop's Stortford"); pg.locator("#tr-from-train").dispatch_event("change")
+    pg.fill("#tr-walk-train","12"); pg.locator("#tr-walk-train").dispatch_event("change"); pg.fill("#tr-ride-train","9"); pg.locator("#tr-ride-train").dispatch_event("change")
+    pg.fill("#tr-out-train","04:12 04:42 05:12 05:42 06:12 06:42 07:12 10:12 10:42 11:12 11:42 12:12"); pg.locator("#tr-out-train").dispatch_event("change")
+    pg.fill("#t-buf","15"); pg.locator("#t-buf").dispatch_event("change")
+    pg.click("#setupdone"); pg.click("[data-tab=plan]")
+    pg.fill("#n-rep","05:45"); pg.locator("#n-rep").dispatch_event("change")
+    card=lambda: pg.locator(".seccard").filter(has_text="Your train").first.inner_text().replace("\n"," | ")
+    print("plan 05:45:",card())
+    pg.click('[data-tpick="2026-11-12|train|04:42"]'); print("picked 04:42:",card())
+    if pg.locator('[data-fold="alarms"][aria-expanded="false"]').count(): pg.click('[data-fold="alarms"]')
+    print("first alarm hint:",pg.locator('[data-fold="alarms"]').inner_text().replace("\n"," "))
+    pg.fill("#n-rep","04:30"); pg.locator("#n-rep").dispatch_event("change"); print("plan 04:30:",pg.locator(".seccard").first.inner_text().replace("\n"," | ")[:200])
+    # HSBY
+    pg.clock.set_system_time(datetime.datetime(2026,11,13,10,0)); pg.click("[data-tab=today]")
+    pg.click("#etopen"); pg.click('[data-etkind="standby"]'); pg.fill("#et-s","09:00"); pg.fill("#et-e","17:00"); pg.click("#etsave")
+    print("HSBY:",pg.locator("section.card").filter(has_text="Been called?").inner_text().replace("\n"," | "))
+    pg.click("#called"); pg.wait_for_timeout(100)
+    print("called:",pg.locator(".nudges").inner_text().replace("\n"," | ")[-260:])
+    print("pass:",pg.inner_text(".pass").replace("\n"," ") if pg.locator(".pass").count() else "")
+    print("ERRORS:",errs or "none")

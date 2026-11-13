@@ -1,0 +1,29 @@
+Monday to Friday (Standard Timetable)
+Early Morning & Morning Peak:
+05:28 → 05:39
+05:46 → 05:57
+06:01 → 06:14
+06:16 → 06:27
+06:46 → 06:59
+07:17 → 07:29
+07:46 → 07:59
+08:14 → 08:23
+08:43 → 08:54
+Daytime & Evening Pattern (09:00 – 22:00):
+Trains depart twice per hour at consistent clockface intervals:
+xx:13 → xx:23 (approx. 10 mins)
+xx:43 → xx:55 (approx. 12 mins)
+Late Night Services:
+22:13 → 22:23
+22:43 → 22:55
+23:13 → 23:23
+23:59 → 00:09
+Saturday
+First train: 05:28
+Daytime frequency: Every 30 minutes (xx:13 and xx:43)
+Last train: 23:59
+Sunday
+First train: 05:26 / 07:41 (earlier limited regional services, full schedule from 07:41)
+Daytime departures: xx:14 and xx:43 past each hour
+Last train: 23:59
+(Journey duration is typically 9 to 13 minutes. Engineering works may alter Sunday late-night and early-morning schedules.)

@@ -1,0 +1,63 @@
+CREW DAY: PUT THE APP ONLINE AND INSTALL IT
+============================================
+
+You only do steps 1 to 4 once. It's free and takes about 15 minutes.
+Works from your Pixel, or quicker from a computer.
+
+WHAT'S IN THIS ZIP
+- Folder "crew-day-app": the 7 app files. These are what you upload.
+- This guide (don't upload it).
+
+
+1. MAKE A FREE GITHUB ACCOUNT
+   Go to github.com and sign up. GitHub hosts the app for free.
+
+2. CREATE A HOME FOR THE APP
+   - Tap the + (top right) > New repository.
+   - Repository name: crewday
+   - Choose Public (only the app's code is public; nobody's data is ever stored there).
+   - Tick "Add a README file", then tap Create repository.
+
+3. UPLOAD THE APP FILES
+   - First unzip this file on your phone (Files app > tap the zip > Extract).
+   - In your crewday repository, tap Add file > Upload files.
+   - Select ALL 7 files from inside the "crew-day-app" folder:
+       index.html, sw.js, manifest.webmanifest,
+       icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+   - Tap Commit changes.
+
+4. SWITCH ON THE WEBSITE
+   - In the repository, go to Settings > Pages.
+   - Under "Branch", choose "main" and "/ (root)", then Save.
+   - Wait 1 to 2 minutes. Your app's address will be:
+       https://YOUR-GITHUB-NAME.github.io/crewday/
+
+
+INSTALL ON YOUR PIXEL (ANDROID)
+   - Open the address in Chrome.
+   - Tap the menu (three dots) > Install app (or Add to home screen).
+   - Open it once while online, so it saves itself for offline use.
+
+INSTALL ON IPHONE (YOUR PARTNER)
+   - Open the address in Safari (it must be Safari).
+   - Tap Share (square with arrow) > Add to Home Screen > Add.
+   - Open it once while online.
+
+
+GOOD TO KNOW
+- Everyone's data stays on their own phone. Nothing is sent anywhere.
+- Set a PIN in More > Privacy and lock. It locks the app and encrypts
+  everything saved on the phone. Forget the PIN and the data is gone,
+  so keep a backup (the backup is locked with the same PIN).
+- Use More > Backup now and then, and keep the file in Google Drive or iCloud.
+  Deleting the app or clearing browser data erases what's on the phone.
+- Alarms: Plan shows your alarm times for tomorrow. Set them in your phone's
+  clock app (the app can't ring by itself when it's closed).
+- Weather reminders (umbrella, frost, wind) need internet; everything else
+  works offline once the app has been opened online.
+- The fit-note PDF maker needs internet the first time you use it.
+
+UPDATING LATER
+   When Claude gives you new files, upload them the same way (Add file >
+   Upload files) and replace the old ones. Everyone's app updates itself the
+   next time they open it online. Their data is kept.
