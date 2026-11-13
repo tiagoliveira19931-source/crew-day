@@ -1061,18 +1061,46 @@ function rpApply(txt){
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
   return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
 }
-function pasteImportHTML(){return `<div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
+/* Read roster screenshots on this phone: a small text-recognition model (Tesseract, downloaded once, then kept offline)
+   turns the pictures into text, and the app's own roster reader turns that into days. The pictures never leave the phone. */
+const OCR_LIB="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+let ocrBusy=false,ocrMsg="";
+function loadOCR(){if(window.Tesseract)return Promise.resolve(window.Tesseract);return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src=OCR_LIB;sc.onload=()=>window.Tesseract?ok(window.Tesseract):no(new Error("no lib"));sc.onerror=()=>no(new Error("offline"));document.head.appendChild(sc)})}
+// dark-mode screenshots (light text on dark) read badly: flip them to dark-on-light first, and enlarge small ones
+function ocrPrep(file){return new Promise(res=>{const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{try{const k=im.width<900?2:1,c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;const x=c.getContext("2d");x.drawImage(im,0,0,c.width,c.height);
+    const d=x.getImageData(0,0,c.width,c.height),p=d.data;let sum=0;for(let i=0;i<p.length;i+=40)sum+=p[i]+p[i+1]+p[i+2];if(sum/(p.length/40)/3<110){for(let i=0;i<p.length;i+=4){p[i]=255-p[i];p[i+1]=255-p[i+1];p[i+2]=255-p[i+2]}x.putImageData(d,0,0)}
+    URL.revokeObjectURL(url);res(c)}catch(e){URL.revokeObjectURL(url);res(file)}};im.onerror=()=>{URL.revokeObjectURL(url);res(file)};im.src=url})}
+// common text-recognition slips on roster screens: O for 0 inside times, airport codes stuck to times ("STN05:55"),
+// an extra digit before a time ("0O9:00"), and arrows read as "=" or "—"
+function ocrClean(t){return String(t||"").split("\n").map(l=>l
+  .replace(/[O0-9]{1,3}[:.][O0-9]{2}\b/g,m=>{let x=m.replace(/O/g,"0");const [h,mi]=x.split(/[:.]/);return (h.length===3?h.slice(1):h)+":"+mi})
+  .replace(/\b([A-Z]{3})(?=\d{1,2}:\d{2}\b)/g,"$1 ")
+  .replace(/\s[=—–]+\s/g," → ")).join("\n")}
+async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
+  try{const T=await loadOCR();worker=await T.createWorker("eng");let all="";
+    for(let i=0;i<files.length;i++){ocrMsg=`Reading picture ${i+1} of ${files.length}…`;render();const src=await ocrPrep(files[i]);const r=await worker.recognize(src);all+="\n"+((r&&r.data&&r.data.text)||"")}
+    all=ocrClean(all);const ta=$("#rost-p");rosterMsg=rpApply(all);ocrMsg=/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
+    if(ta&&/^Nothing/.test(rosterMsg))ta.value=all.trim();
+  }catch(e){ocrMsg=String(e&&e.message)==="offline"?"The reader needs signal the first time, to download. Try again when you're online.":"Something went wrong reading the pictures. Try fewer at a time, or use your phone's AI below."}
+  try{if(worker)await worker.terminate()}catch(e){}
+  ocrBusy=false;render();save()}
+function pasteImportHTML(){return `<div class="seccard" style="margin-bottom:8px"><span class="label">Read screenshots on this phone</span>
+      <p class="note" style="margin:0">Take screenshots of your whole roster (the calendar and the roster list, a screen at a time), then choose them all here. Crew Day reads them on your phone: the pictures never leave it. Check the days it finds against your roster.</p>
+      <div class="field"><label for="ocr-f">Roster screenshots</label><input id="ocr-f" type="file" accept="image/*" multiple ${ocrBusy?"disabled":""}></div>
+      ${ocrMsg?`<p class="note" role="status" style="margin:0">${esc(ocrMsg)}</p>`:""}</div>
+    <div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
     <details open><summary class="note"><b>How to bring in your roster</b></summary><div class="note" style="margin:6px 0;display:grid;gap:10px">
-      <div><p style="margin:0"><b>1. Screenshots and your phone's AI (works with any airline)</b></p>
+      <div><p style="margin:0"><b>1. Read screenshots on this phone</b> (above). Quickest and most private. If it misses days, try the next way.</p></div>
+      <div><p style="margin:0"><b>2. Screenshots and your phone's AI (works with any airline)</b></p>
       <ol style="margin:4px 0 0;padding-left:20px"><li>In your roster app, take a screenshot of every part of the month: the calendar, then the roster list, scrolling a screen at a time so every day is in a picture.</li><li>Tap <b>Copy roster prompt</b> below, then open your AI app.</li><li>Add <b>all</b> the screenshots to one message, paste the prompt and send.</li><li>Copy its answer, paste it in the box above and tap <b>Read my roster</b>.</li></ol>
       <div class="btns" style="margin:6px 0 4px"><button id="copygem">Copy roster prompt</button></div>${aiLinks()}
       <p style="margin:4px 0 0">Your screenshots go to that AI company, not to Crew Day. Crop out your name and crew code if you like, and delete the screenshots afterwards.</p></div>
-      <div><p style="margin:0"><b>2. A calendar link (Jet2 and others)</b></p>
+      <div><p style="margin:0"><b>3. A calendar link (Jet2 and others)</b></p>
       <p style="margin:4px 0 0">If your roster app emails you a link to add your roster to a calendar, paste it under "Calendar link" below. If the airline blocks it, Crew Day shows how to fetch it with an iPhone Shortcut or Chrome on Android.</p></div>
-      <div><p style="margin:0"><b>3. A calendar file (.ics)</b></p>
+      <div><p style="margin:0"><b>4. A calendar file (.ics)</b></p>
       <p style="margin:4px 0 0">If your roster app can export or email a calendar file, choose it under "Calendar file" below.</p></div>
-      <div><p style="margin:0"><b>4. Copy the text yourself</b></p>
+      <div><p style="margin:0"><b>5. Copy the text yourself</b></p>
       <p style="margin:4px 0 0"><b>Android:</b> screenshot the roster (tap <b>Capture more</b> for the long list), open it in Google Photos, tap <b>Lens</b> → <b>Text</b> → <b>Select all</b> → <b>Copy</b>, and paste above. <b>iPhone:</b> open the screenshot, long-press the text → <b>Select All</b> → <b>Copy</b>.</p></div>
       <p style="margin:0">Crew Day reads everything on this phone; nothing is sent anywhere. Times marked Z are kept as Zulu. Always check the result against your roster.</p></div></details>`}
 /* ---------- Weekly meals and shopping list ---------- */
@@ -3889,6 +3917,7 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 document.addEventListener("change",e=>{
   const el=e.target;
   if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
+  if(el.id==="ocr-f"){const f=[...(el.files||[])];if(f.length)ocrRead(f);return}
   if(el.id==="bk-file"){bkFile=el.files&&el.files[0]||null;rsMsg="";pendingDel=null;return}
   if(el.id==="sayslow"){S.slowSay=el.checked;save();return}
   if(el.id==="sb-al"){S.standby.startAlarm=el.checked;render();save();return}
