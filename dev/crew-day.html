@@ -820,7 +820,7 @@ function rosterFields(e,sel){
     <div style="display:grid;gap:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="label">Flights${secs.length?" · "+secs.length+" · "+fmtMins(blk)+" block":""}</span><button data-addsec="${sel}">Add flight</button></div>
     ${secs.map((x,i)=>`<div class="seccard">
       <div class="seg" role="tablist" aria-label="Sector type">${[["op","Operating"],["dh","Deadhead"],["gt","Ground transfer"]].map(t=>`<button role="tab" aria-selected="${(x.typ||"op")===t[0]}" data-sectyp="${i}:${t[0]}" data-secday="${sel}">${t[1]}</button>`).join("")}</div>
-      <div class="row2"><div class="field"><label for="sc-flt-${i}">${x.typ==="gt"?"Transport (optional)":"Flight number"}</label><input id="sc-flt-${i}" type="text" value="${esc(x.flt)}" placeholder="${S.profile.airline==="Jet2"?"LS123":"FR8123"}" autocapitalize="characters"></div><div class="field"><label for="sc-reg-${i}">${x.typ==="gt"?"Vehicle / notes":"Aircraft reg"}</label><input id="sc-reg-${i}" type="text" value="${esc(x.reg||"")}" placeholder="e.g. EI-DCL" autocapitalize="characters"></div></div>
+      <div class="row2"><div class="field"><label for="sc-flt-${i}">${x.typ==="gt"?"Transport (optional)":"Flight number"}</label><input id="sc-flt-${i}" type="text" value="${esc(x.flt)}" placeholder="${S.profile.airline==="Jet2"?"LS123":S.profile.airline==="Ryanair UK"?"RK1234":S.profile.airline==="Norse"?"N0701":"FR8123"}" autocapitalize="characters"></div><div class="field"><label for="sc-reg-${i}">${x.typ==="gt"?"Vehicle / notes":"Aircraft reg"}</label><input id="sc-reg-${i}" type="text" value="${esc(x.reg||"")}" placeholder="e.g. EI-DCL" autocapitalize="characters"></div></div>
       <p class="note" id="sc-fn-${i}" style="margin:0" ${x.guess?"":"hidden"}>${x.guess?`Return flight number guessed as ${esc(x.flt)}${(S.flights||{})[x.flt]?" and filled from last time":""}. Check it.`:""}</p>
       <div class="row2"><div class="field"><label for="sc-from-${i}">From</label><input id="sc-from-${i}" type="text" value="${esc(x.from)}" placeholder="STN" maxlength="3" autocapitalize="characters"></div><div class="field"><label for="sc-to-${i}">To</label><input id="sc-to-${i}" type="text" value="${esc(x.to)}" placeholder="AGP" maxlength="3" autocapitalize="characters"></div></div>
       <div class="row2"><div class="field"><label for="sc-dep-${i}">Departs${RZ()?" (Z)":""}</label><input id="sc-dep-${i}" type="time" value="${esc(x.dep)}"></div><div class="field"><label for="sc-arr-${i}">Arrives${RZ()?" (Z)":""}</label><input id="sc-arr-${i}" type="time" value="${esc(x.arr)}"></div></div>
@@ -830,7 +830,7 @@ function rosterFields(e,sel){
 }
 
 // Flight number auto-fill: learns from flights already entered, plus an online route lookup.
-const ICAO_AL={FR:"RYR",RK:"RUK",LS:"EXS",U2:"EZY",W6:"WZZ",BA:"BAW",EI:"EIN",VY:"VLG"};
+const ICAO_AL={FR:"RYR",RK:"RUK",LS:"EXS",N0:"NBT",U2:"EZY",W6:"WZZ",BA:"BAW",EI:"EIN",VY:"VLG"};
 function learnFlights(secs,date){S.flights=S.flights||{};(secs||[]).forEach(x=>{const f=cleanFlt(x.flt);if(!f||x.typ==="gt"||!x.from||!x.to)return;const o=S.flights[f]||{};S.flights[f]={from:x.from,to:x.to,dep:x.dep||o.dep||"",arr:x.arr||o.arr||"",d:date||o.d||"",n:(o.n||0)+1}});
   const k=Object.keys(S.flights);if(k.length>400)k.sort((a,b)=>(S.flights[a].d||"").localeCompare(S.flights[b].d||"")).slice(0,k.length-400).forEach(x=>delete S.flights[x])}
 function fltNote(i,html){const el=$("#sc-fn-"+i);if(el){el.innerHTML=html;el.hidden=!html}}
@@ -890,7 +890,7 @@ function rpList(txt){
     const head=body.slice(0,Math.min(body.length,(body.search(/\d{1,2}:\d\d/)+1||81)-1,80)),tail=before.slice(-45);
     const kindA=rpKindOf(head),kindB=rpKindOf(tail);
     const times=[];const tr=/\b([01]?\d|2[0-3]):([0-5]\d)\b(\s*(LT|L\b|LCL))?/gi;let x;while((x=tr.exec(body))){if(!x[4])times.push(rpPad(+x[1])+":"+x[2])}
-    const flts=(body.match(/\b(FR|RK|LS|EXS|RYR|RUK|U2|EZY|BA|W6)\s?\d{1,4}[A-Z]?\b/gi)||[]).map(f=>f.toUpperCase().replace(/\s/g,""));
+    const flts=(body.match(/\b(FR|RK|LS|EXS|RYR|RUK|U2|EZY|BA|W6|N0|NBT)\s?\d{1,4}[A-Z]?\b/gi)||[]).map(f=>f.toUpperCase().replace(/\s/g,""));
     const aps=(body.replace(/\b(CHECK|IN|OUT|LT|DUTY|FLIGHT|TIME|MORE|ACTIONS|OFF|HSBY|ASBY|TRNG|VTO|SBY|UTC|THU|FRI|SAT|SUN|MON|TUE|WED|AND|THE|FOR|ARR|DEP)\b/g," ").match(/\b[A-Z]{3}\b/g)||[]).filter(a=>!/^(FR|RK|LS|EXS|RYR|RUK|EZY)/.test(a)||a.length===3).filter(a=>IATA_OK(a));
     const regs=(body.match(/\b(9H[A-Z]{3}|EI[A-Z]{3}|G[A-Z]{4}|SP[A-Z]{3}|OE[A-Z]{3}|9H-[A-Z]{3}|EI-[A-Z]{3}|G-[A-Z]{4})\b/g)||[]).map(r=>r.replace("-",""));
     const kind=kindA||kindB||(flts.length?"flying":"");
@@ -1161,7 +1161,11 @@ function codeOf(city){const k=Object.keys(IATA).find(c=>IATA[c]===city);return k
 function cleanFlt(f){return String(f||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
 function fr24Flight(f){return "https://www.flightradar24.com/data/flights/"+encodeURIComponent(String(f).toLowerCase())}
 function fr24Airport(code,board){return "https://www.flightradar24.com/data/airports/"+encodeURIComponent(String(code||"stn").toLowerCase())+(board?"/"+board:"")}
-function idLabel(){return S.profile.airline==="Ryanair"?"Crew code":S.profile.airline==="Jet2"?"Staff number":"Staff number or crew code"}
+// Airlines the app knows. Ryanair UK is part of the Ryanair group (same app, crew codes, 1-hour call-out); Norse flies long-haul.
+const AIRLINES=["Ryanair","Ryanair UK","Jet2","Norse","Other"];
+function isRyr(){return /^Ryanair/.test(S.profile.airline||"")}
+function isLongHaul(){return S.profile.airline==="Norse"}
+function idLabel(){return isRyr()?"Crew code":S.profile.airline==="Jet2"||S.profile.airline==="Norse"?"Staff number":"Staff number or crew code"}
 function jumpTo(d){const t=new Date(today()+"T00:00:00"),p=new Date(d+"T00:00:00");monthOff=(p.getFullYear()-t.getFullYear())*12+(p.getMonth()-t.getMonth());selDay=d}
 function monthGrid(){const t=new Date(today()+"T00:00:00"),first=new Date(t.getFullYear(),t.getMonth()+monthOff,1);
   const ym=first.getFullYear()+"-"+String(first.getMonth()+1).padStart(2,"0"),start=mondayOf(ym+"-01"),cells=[];
@@ -1433,7 +1437,7 @@ function newsText(h){const d=document.createElement("div");d.innerHTML=String(h|
 function newsFetch(force){
   if(newsBusy||navigator.onLine===false)return;const c=newsCache();if(!force&&c&&Date.now()-c.at<3*3600000)return;
   newsBusy=true;if(force)render();
-  const feeds=NEWS_FEEDS.filter(f=>f[2]!=="airline"||(S.profile.airline==="Ryanair"&&/ryanair/i.test(f[0]))||(S.profile.airline==="Jet2"&&/jet2/i.test(f[0])));
+  const feeds=NEWS_FEEDS.filter(f=>f[2]!=="airline"||(isRyr()&&/ryanair/i.test(f[0]))||(S.profile.airline==="Jet2"&&/jet2/i.test(f[0])));
   Promise.allSettled(feeds.map(([n,u,cat])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,8).map(x=>{
       const full=newsText(x.content||""),sum=newsText(x.description||""),lim=NEWS_FULL.includes(cat)?20000:5000;
       return {src:n,cat,t:newsText(x.title).replace(/\s+/g," ").slice(0,200),d:(full.length>sum.length?full:sum).slice(0,lim),u:String(x.link||""),dt:String(x.pubDate||"")}}))))
@@ -1455,13 +1459,13 @@ function newsSaved(){
 }
 function viewNews(){
   const L=(n,u)=>`<a href="${u}" target="_blank" rel="noopener">${esc(n)} ↗</a>`;
-  return newsSaved()+`<details><summary class="note">More sources (need signal)</summary><div class="links" style="font-size:13px">${L("FlightGlobal","https://www.flightglobal.com/")}${L("Reuters: Aerospace","https://www.reuters.com/business/aerospace-defense/")}${L("Eurocontrol network","https://www.eurocontrol.int/")}${L("Met Office warnings","https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings")}${L("UK CAA newsroom","https://www.caa.co.uk/newsroom/")}${S.profile.airline==="Ryanair"?L("Ryanair newsroom","https://corporate.ryanair.com/news/"):S.profile.airline==="Jet2"?L("Jet2 plc news","https://www.jet2plc.com/"):""}</div></details>`;
+  return newsSaved()+`<details><summary class="note">More sources (need signal)</summary><div class="links" style="font-size:13px">${L("FlightGlobal","https://www.flightglobal.com/")}${L("Reuters: Aerospace","https://www.reuters.com/business/aerospace-defense/")}${L("Eurocontrol network","https://www.eurocontrol.int/")}${L("Met Office warnings","https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings")}${L("UK CAA newsroom","https://www.caa.co.uk/newsroom/")}${isRyr()?L("Ryanair newsroom","https://corporate.ryanair.com/news/"):S.profile.airline==="Jet2"?L("Jet2 plc news","https://www.jet2plc.com/"):""}</div></details>`;
 }
 
 function standbyTimes(o){const s=o||S.standby,[sh,sm]=(s.start||"05:00").split(":").map(Number),[eh,em]=(s.end||"13:00").split(":").map(Number);let a=sh*60+sm,b=eh*60+em;if(b<=a)b+=1440;const step=Math.max(15,+s.interval||60),out=[];for(let t=a;t<=b;t+=step){const m=t%1440;out.push(String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"))}return out}
 function nextCheck(){const now=new Date(),n=now.getHours()*60+now.getMinutes();return standbyTimes().find(t=>{const [h,m]=t.split(":").map(Number);return h*60+m>=n&&!S.standby.checked.includes(t)})}
 const READY=[["volume","Phone volume on, not on silent or Do Not Disturb"],["signal","Good signal or Wi-Fi at home"],["battery","Phone charged, charger nearby"],["uniform","Uniform ready to put on"],["bag","Flight bag packed, passport and crew ID in it"],["travel","Car fuelled or travel to the airport sorted"]];
-function calloutMins(){const s=S.standby;if(+s.calloutMins>0)return +s.calloutMins;return S.profile.airline==="Jet2"?120:S.profile.airline==="Ryanair"?60:90}
+function calloutMins(){const s=S.standby;if(+s.calloutMins>0)return +s.calloutMins;return S.profile.airline==="Jet2"?120:isRyr()?60:90}
 function nextDeps(rk,by){const T=R(rk),dl=tDeadline(by,rk),walk=(+T.walk||0)*60000,next=tList(today(),"out",rk).concat(tList(addDays(today(),1),"out",rk)).filter(x=>x.dep.getTime()-walk>=Date.now()).slice(0,4),ok=next.filter(x=>x.arr<=dl);
   return {rk,next,dl,walk,leave:ok.length?new Date(ok[0].dep.getTime()-walk):next[0]?new Date(next[0].dep.getTime()-walk):null,okArr:ok.length?ok[0].arr:null}}
 function calloutInfo(){const s=S.standby;if(!s.calledAt)return null;const at=new Date(s.calledAt),by=new Date(at.getTime()+calloutMins()*60000);let leave=new Date(by.getTime()-((+S.duty.commute||0)+(+S.duty.buffer||0))*60000);
@@ -1537,6 +1541,7 @@ function viewFTL(){
     <p class="note">From the sectors in your Roster.</p>
   </section>
   <section class="card" style="background:var(--bg)">
+    ${isLongHaul()?`<p class="note" style="margin:0"><b>Long-haul isn't covered yet.</b> These are short-haul figures. Long-haul duties with extra crew, in-flight rest and big time-zone changes follow other rules, so use your company's FTL scheme for now.</p>`:""}
     <p class="note" style="margin:0"><b>A guide only.</b> Based on ORO.FTL.205 Table 2 (acclimatised crew), ORO.FTL.210 and ORO.FTL.235, without extensions, split duty or commander's discretion. Your airline's approved FTL scheme and your rostering team always have the final say. If you think a duty breaks FTL, raise it through your airline's process.</p>
   </section>`;
 }
@@ -2043,7 +2048,7 @@ function sbSettingsBody(o){
     <div class="field"><label for="sb-i">Check my roster every</label><select id="sb-i" data-k="standby.interval">${[30,45,60,90,120].map(m=>`<option value="${m}" ${+s.interval===m?"selected":""}>${m<60?m+" minutes":m===60?"hour":m/60+" hours"}</option>`).join("")}</select></div>
     <label class="chk" style="border:0;padding:0"><input type="checkbox" id="sb-al" ${s.startAlarm!==false?"checked":""}><span>Alarm at the start of standby, to check for calls or messages</span></label>
     ${s.startAlarm!==false?`<div class="row"><div class="field"><label for="sb-alm">Ring</label><select id="sb-alm" data-k="standby.startAlarmMins">${[[0,"At the start"],[10,"10 min before"],[15,"15 min before"],[30,"30 min before"]].map(x=>`<option value="${x[0]}" ${(+s.startAlarmMins||0)===x[0]?"selected":""}>${x[1]}</option>`).join("")}</select></div><div class="field" style="align-content:end"><span style="font:700 22px var(--mono);color:var(--accent)">${standbyAlarm(start)}</span></div></div>`:""}
-    <div class="field"><label for="co-m">Time to report if called (minutes)</label><input id="co-m" class="num" type="number" min="15" step="15" inputmode="numeric" value="${calloutMins()}" data-k="standby.calloutMins"><span class="note">Usually ${S.profile.airline==="Jet2"?"2 hours at Jet2":S.profile.airline==="Ryanair"?"1 hour at Ryanair":"set by your airline"}. Check your own contract.</span></div>
+    <div class="field"><label for="co-m">Time to report if called (minutes)</label><input id="co-m" class="num" type="number" min="15" step="15" inputmode="numeric" value="${calloutMins()}" data-k="standby.calloutMins"><span class="note">Usually ${S.profile.airline==="Jet2"?"2 hours at Jet2":isRyr()?"1 hour at "+S.profile.airline:"set by your airline"}. Check your own contract.</span></div>
     <div class="btns"><button id="copysb" data-which="${o?"next":""}">Copy alarm and check times</button>${calBtn(o?"standbynext":"standby","Add to calendar")}</div>
     <p class="note" id="sbmsg"></p>`;
 }
@@ -2952,7 +2957,7 @@ function viewPlan(){
 /* ---------- ME: your details and wellbeing ---------- */
 function pfAbout(){
   return `<div class="seg" role="tablist" aria-label="Your role">${[["cabin","Cabin crew"],["pilot","Pilot"]].map(r=>`<button role="tab" aria-selected="${S.profile.role===r[0]}" data-role="${r[0]}">${r[1]}</button>`).join("")}</div>
-    <div class="row"><div class="field"><label for="pr-al">Airline</label><select id="pr-al" data-k="profile.airline">${["Ryanair","Jet2","Other"].map(a=>`<option ${S.profile.airline===a?"selected":""}>${a}</option>`).join("")}</select></div>
+    <div class="row"><div class="field"><label for="pr-al">Airline</label><select id="pr-al" data-k="profile.airline">${AIRLINES.map(a=>`<option ${S.profile.airline===a?"selected":""}>${a}</option>`).join("")}</select></div>
     <div class="field"><label for="pr-b">Base</label><select id="pr-b" data-k="profile.base"><option value="STN" selected>London Stansted (STN)</option></select></div></div>
     <div class="row"><div class="field"><label for="pr-n">Your name</label><input id="pr-n" type="text" autocomplete="name" value="${esc(S.me.name)}" data-k="me.name"></div>
     <div class="field"><label for="pr-s">${idLabel()}</label><input id="pr-s" type="text" value="${esc(S.me.staffNo)}" data-k="me.staffNo"></div></div>
@@ -3127,7 +3132,7 @@ function timesFields(noTravel){
     <p class="note" style="margin:0">On late reports your wake-up alarm follows this, not the report, so you get the morning to yourself. Early reports still wake you in time.</p>
     ${noTravel?"":`<span class="label">Getting to work</span>`+travelFieldsInner()}
     <span class="label">Home standby</span>
-    <div class="row">${num("t-co","standby.calloutMins",calloutMins(),"Time to report if called (min)",S.profile.airline==="Jet2"?"Jet2: usually 120":S.profile.airline==="Ryanair"?"Ryanair: usually 60":"",15)}
+    <div class="row">${num("t-co","standby.calloutMins",calloutMins(),"Time to report if called (min)",S.profile.airline==="Jet2"?"Jet2: usually 120":isRyr()?S.profile.airline+": usually 60":S.profile.airline==="Norse"?"Norse: check your company manual":"",15)}
     <div class="field"><label for="t-si">Check roster every</label><select id="t-si" data-k="standby.interval">${[30,45,60,90,120].map(m=>`<option value="${m}" ${+s.interval===m?"selected":""}>${m<60?m+" min":m===60?"hour":m/60+" hours"}</option>`).join("")}</select></div></div>
     <label class="chk" style="border:0;padding:0"><input type="checkbox" id="sb-al" ${s.startAlarm!==false?"checked":""}><span>Alarm at the start of standby</span></label>`;
 }
@@ -3678,7 +3683,7 @@ document.addEventListener("click",e=>{
     const text=($("#rost-t")||{}).value?.trim()||"",imgEl=$("#rost-img"),img=imgEl&&imgEl.files[0];
     if(!text&&!img){rosterMsg="Paste your roster text"+(sampleImages?" or choose a screenshot":"")+" first.";render();return}
     const ctl=new AbortController();rosterBusy=ctl;rosterMsg="Reading your roster. This can take up to a minute.";render();
-    const prompt=`You are reading an airline cabin crew member's work roster. Today's date is ${today()}. Their base is London Stansted (STN).
+    const prompt=`You are reading an airline cabin crew member's work roster. Today's date is ${today()}. Their base is ${esc((BASES[S.profile.base]||BASES.STN).airport||"London Stansted")} (${esc(S.profile.base||"STN")}).
 Extract every day shown. Reply with only a JSON array, one object per day:
 {"date":"YYYY-MM-DD","kind":"flying"|"standby"|"off"|"leave"|"vto"|"sick"|"other","report":"HH:MM" or "","off":"HH:MM" or "","dest":"main destination as an airport code or city, or empty","note":"short note, or empty","sectors":[{"flt":"flight number","from":"airport code","to":"airport code","dep":"HH:MM off-blocks or departure","arr":"HH:MM on-blocks or arrival"}]}
 Rules: use 24-hour local times. "report" is the report or sign-on time, "off" is the off-duty or sign-off time. Days off and rest days are "off". Annual leave or holiday is "leave". Voluntary time off (VTO) is "vto". Sickness is "sick". Home or airport standby or reserve is "standby". If a day has several flights, list each one in "sectors", give the first report time and the last off-duty time, and use the furthest destination from base as "dest". If the year is not shown, pick the year that puts the date closest to today. Skip anything you cannot read rather than guessing.

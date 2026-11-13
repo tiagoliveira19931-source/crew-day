@@ -16,7 +16,9 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Plain words: write "VTO" (never "veto"); no abbreviations like HSBY/ASBY in the interface (say Home standby, Airport standby).
 - Roster times are entered in Zulu; everything else shows local time marked "L".
 - No sales targets, no swap market, no training or annual-leave planner, no payslip storage. Selling staff travel is illegal: never support it.
-- Home standby call-out: Ryanair 1 hour, Jet2 2 hours. Ryanair uses a crew code, Jet2 a staff number.
+- Airlines in Profile: Ryanair, Ryanair UK, Jet2, Norse, Other. Home standby call-out: Ryanair and Ryanair UK 1 hour, Jet2 2 hours, Norse not set (crew check their manual). Ryanair group uses a crew code, Jet2 and Norse a staff number.
+- Norse is long-haul: the FTL tools are short-haul only and say so for Norse. Long-haul FTL needs checking against the regulation with Tiago before it's built.
+- Test rosters in dev/tests are made up. Never put a real roster in the repo.
 - Data stays on the phone. Never add anything that sends rosters or personal details anywhere.
 - Look: white and teal, rounded friendly font, soft line drawings.
 - FTL figures follow EASA ORO.FTL and CS FTL.1 — don't change them without checking the regulation.
