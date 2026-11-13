@@ -1393,18 +1393,21 @@ async function makeFitNotePdf(btn){
 }
 
 /* ---------- Backup (installable app only) ---------- */
+function backupAge(){let last="";try{last=localStorage.getItem("crewday-lastbackup")||""}catch(e){}return last?daysBetween(last,today()):null}
+function backupHint(){const a=backupAge();return a==null?"No backup yet: save one":a>30?"Last backup "+a+" days ago: save a new one":"Last backup "+(a===0?"today":a===1?"yesterday":a+" days ago")}
 function viewBackup(){
   let last="";try{last=localStorage.getItem("crewday-lastbackup")||""}catch(e){}
   return `<section class="card">
     <h2>Back up your data</h2>
     <p class="note">Everything is saved on this phone only. Save a backup now and then, especially before changing phones or clearing your browser.${last?" Last backup: "+esc(fmtDate(last,{day:"numeric",month:"short",year:"numeric"}))+".":""}</p>
+    ${SEC.cfg()?"":`<div class="field"><label for="bk-pw">Lock it with a password (recommended)</label><input id="bk-pw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><span class="note" style="margin:0">Then nobody who finds the file can read your roster. Without the password the backup can't be opened, so remember it.</span></div>`}
     <div class="btns"><button class="primary" id="dobackup">Save a backup</button></div>
     <p class="note" id="bkmsg" role="status">Photos, receipts and fit notes aren't included in the backup file.${SEC.cfg()?" With your PIN on, the backup is locked with it too.":""}</p>
   </section>
   <section class="card">
     <h2>Restore from a backup</h2>
     <div class="field"><label for="bk-file">Backup file (.json)</label><input id="bk-file" type="file" accept="application/json,.json"></div>
-    <div class="field" id="bk-pinw" hidden><label for="bk-pin">PIN for this backup</label><input id="bk-pin" type="password" inputmode="numeric" autocomplete="off"></div>
+    <div class="field" id="bk-pinw" hidden><label for="bk-pin">PIN or password for this backup</label><input id="bk-pin" type="password" autocomplete="off"></div>
     <div class="btns"><button id="dorestore">Restore</button></div>
     <p class="note" id="rsmsg" role="status">Restoring replaces what's in the app now.</p>
   </section>`;
@@ -3348,7 +3351,7 @@ const TOOLS=[
   ["security","Privacy and lock",null,"Lock the app with a PIN and keep your data private.",()=>SEC.cfg()?"PIN lock on":"PIN lock off",viewSecurity],
   ["issues","Report an issue",null,"Tell us what's not working or what you'd like.",()=>{const n=(S.issues||[]).length;return n?n+" sent":"Problems and ideas"},viewIssues],
   ["perks","Crew discounts","perks","Staff schemes and deals you use.",()=>S.perks.length+" saved",viewPerks],
-  ["backup","Backup",null,"",()=>"Save or restore your data",()=>viewBackup()]
+  ["backup","Backup",null,"",()=>backupHint(),()=>viewBackup()]
 ];
 function toolOn(x){if(x[0]==="backup"&&!IS_PWA)return false;return !x[2]||on(x[2])}
 function viewMore(){
@@ -3539,10 +3542,13 @@ document.addEventListener("click",e=>{
   if(b.id==="called"){S.standby.calledAt=new Date().toISOString();render();window.scrollTo(0,0);save();return}
   if(b.id==="uncalled"){S.standby.calledAt=null;render();save();return}
   if(b.id==="latefromcall"){const el=$("#lt-m");if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.focus()}return}
-  if(b.id==="dobackup"){const plain=JSON.stringify({app:"crewday",v:1,saved:new Date().toISOString(),state:S},null,1);(SEC.cfg()&&SEC.key?SEC.encText(plain).then(x=>JSON.stringify({app:"crewday",v:2,locked:true,salt:SEC.cfg().salt,data:x})):Promise.resolve(plain)).then(data=>offerFile("crew-day-backup-"+today()+".json",data,"application/json")).then(r=>{if(r!=="cancelled"){try{localStorage.setItem("crewday-lastbackup",today())}catch(e){}const m=$("#bkmsg");if(m)m.textContent="Backup saved"+(SEC.cfg()?", locked with your PIN":"")+". Keep it somewhere safe, like Google Drive or iCloud."}});return}
+  if(b.id==="dobackup"){const plain=JSON.stringify({app:"crewday",v:1,saved:new Date().toISOString(),state:S},null,1),pw=(($("#bk-pw")||{}).value||"");
+    if(pw&&pw.length<6){const m=$("#bkmsg");if(m)m.textContent="Use a password of at least 6 characters, or leave it empty.";return}
+    const pwLock=async()=>{const salt=crypto.getRandomValues(new Uint8Array(16)),key=await SEC.derive(pw,salt);return JSON.stringify({app:"crewday",v:2,locked:true,salt:SEC.b64(salt),data:"ENC1:"+SEC.b64(await SEC.enc(key,new TextEncoder().encode(plain)))})};
+    (SEC.cfg()&&SEC.key?SEC.encText(plain).then(x=>JSON.stringify({app:"crewday",v:2,locked:true,salt:SEC.cfg().salt,data:x})):pw?pwLock():Promise.resolve(plain)).then(data=>offerFile("crew-day-backup-"+today()+".json",data,"application/json")).then(r=>{if(r!=="cancelled"){try{localStorage.setItem("crewday-lastbackup",today())}catch(e){}const m=$("#bkmsg");if(m)m.textContent="Backup saved"+(SEC.cfg()?", locked with your PIN":pw?", locked with your password":"")+". Keep it somewhere safe, like Google Drive or iCloud."}});return}
   if(b.id==="dorestore"){const f=$("#bk-file").files[0],m=$("#rsmsg");if(!f){m.textContent="Choose your backup file first.";return}
     if(pendingDel!=="restore"){pendingDel="restore";m.textContent="Tap Restore again to replace everything in the app with this backup.";return}
-    pendingDel=null;f.text().then(async t=>{let j=JSON.parse(t);if(j&&j.locked){const pin=($("#bk-pin")||{}).value||"";if(!pin){m.textContent="This backup is locked. Type the PIN it was made with, then tap Restore.";const w=$("#bk-pinw");if(w)w.hidden=false;throw "pin"}const key=await SEC.derive(pin,SEC.unb64(j.salt));try{j=JSON.parse(await SEC.decText(j.data,key))}catch(e){m.textContent="Wrong PIN for this backup.";throw "pin"}}
+    pendingDel=null;f.text().then(async t=>{let j=JSON.parse(t);if(j&&j.locked){const pin=($("#bk-pin")||{}).value||"";if(!pin){m.textContent="This backup is locked. Type the PIN or password it was made with, then tap Restore.";const w=$("#bk-pinw");if(w)w.hidden=false;throw "pin"}const key=await SEC.derive(pin,SEC.unb64(j.salt));try{j=JSON.parse(await SEC.decText(j.data,key))}catch(e){m.textContent="That PIN or password doesn't open this backup.";throw "pin"}}
       if(!j||j.app!=="crewday"||!j.state||!j.state.duty)throw 0;S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)),j.state);render();save();const m2=$("#rsmsg");if(m2)m2.textContent="Restored."}).catch(e=>{if(e!=="pin")m.textContent="That doesn't look like a Crew Day backup."});return}
   if(b.dataset.sharefile){fileGet(b.dataset.sharefile).then(bl=>{if(bl)offerFile("fit-note.pdf",bl,"application/pdf")});return}
   if(b.dataset.sharesick){const ep=currentSick();if(ep)shareText(sickMessages(ep)[b.dataset.sharesick],"Crew Day");return}
