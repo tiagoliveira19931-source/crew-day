@@ -517,7 +517,7 @@ const TTC={};function tt(which,rk){rk=rk||"train";const T=R(rk);let txt=T[which]
 function ttCount(v){return v.wk.length+v.sat.length+v.sun.length}
 function tHas(rk){return rk?ttCount(tt("out",rk))>0:RK.some(r=>tHas(r))}
 /* how you're going on a given day: your pick for that day, or your usual way; "car" when no timetable */
-function modeOf(date){const c=(S.tmode||{})[date||today()];if(c==="car")return "car";if(c&&tHas(c))return c;const u=S.duty.mode;if(RK.includes(u)&&tHas(u))return u;if(u==="transit")return RK.find(r=>tHas(r))||"car";return "car"}
+function modeOf(date){const c=(S.tmode||{})[date||today()];if(c==="car")return "car";if(c&&tHas(c))return c;const u=S.duty.mode;if(RK.includes(u)&&tHas(u))return u;if(u==="transit"){const pf=tPref();return pf!=="fastest"&&tHas(pf)?pf:RK.find(r=>tHas(r))||"car"}return "car"}
 function useT(date){return modeOf(date)!=="car"}
 function tOn(){return useT(S.duty.date||today())}
 function tList(date,which,rk){rk=rk||"train";const v=tt(which||"out",rk),w=new Date(date+"T12:00:00").getDay(),L=w===6?(v.sat.length?v.sat:v.wk):w===0?(v.sun.length?v.sun:v.sat.length?v.sat:v.wk):v.wk;
@@ -1340,27 +1340,42 @@ function viewBackup(){
 
 /* ---------- Aviation news (links: live headlines need a news feed in the full app) ---------- */
 // Headlines saved for offline reading (fetched through rss2json, which allows apps to read news feeds)
-const NEWS_FEEDS=[["Simple Flying","https://simpleflying.com/feed/","industry"],["AeroTime","https://www.aerotime.aero/feed","industry"],["Aviation Week","https://aviationweek.com/awn/rss.xml","industry"],
+// UK and Europe first: crew want these most, and for them the whole article is saved to read offline.
+const NEWS_FEEDS=[
+  ["UK Aviation News","https://www.ukaviation.news/feed/","uk"],["Independent Travel","https://www.independent.co.uk/travel/rss","uk"],["UK CAA","https://www.caa.co.uk/newsroom/news/rss/","uk"],
+  ["AeroTime","https://www.aerotime.aero/feed","europe"],["Aviation24.be","https://www.aviation24.be/feed/","europe"],["Euronews Travel","https://www.euronews.com/rss?level=vertical&name=travel","europe"],
   ["AirLive","https://www.airlive.net/feed/","disruption"],["Met Office warnings","https://www.metoffice.gov.uk/public/data/PWSCache/WarningsRSS/Region/UK","disruption"],
-  ["UK CAA","https://www.caa.co.uk/newsroom/news/rss/","uk"],["Ryanair newsroom","https://corporate.ryanair.com/feed/","airline"],["Jet2 news","https://www.jet2plc.com/en/news/rss","airline"]];
-const NEWS_CATS=[["all","All"],["industry","Industry"],["disruption","Disruption"],["uk","UK and rules"],["airline","Your airline"]];
+  ["Simple Flying","https://simpleflying.com/feed/","industry"],["Aviation Week","https://aviationweek.com/awn/rss.xml","industry"],
+  ["Ryanair newsroom","https://corporate.ryanair.com/feed/","airline"],["Jet2 news","https://www.jet2plc.com/en/news/rss","airline"]];
+const NEWS_CATS=[["all","All"],["uk","UK"],["europe","Europe"],["disruption","Disruption"],["industry","Industry"],["airline","Your airline"]];
+const NEWS_FULL=["uk","europe"]; // whole article saved for these
+// news is public, so it's kept in its own store (not with your private data) and can be larger
+let NEWSC=null;
+function newsCache(){if(NEWSC)return NEWSC;try{NEWSC=JSON.parse(localStorage.getItem("crewday_news")||"null")}catch(e){NEWSC=null}if(!NEWSC&&S.newsCache)NEWSC=S.newsCache;return NEWSC}
+function newsStore(c){NEWSC=c;try{localStorage.setItem("crewday_news",JSON.stringify(c))}catch(e){try{c.items=c.items.slice(0,25).map(x=>Object.assign({},x,{d:(x.d||"").slice(0,8000)}));localStorage.setItem("crewday_news",JSON.stringify(c))}catch(e2){}}if(S.newsCache){delete S.newsCache;save()}}
 let newsBusy=false;
+function newsText(h){const d=document.createElement("div");d.innerHTML=String(h||"").replace(/<\/(p|h\d|li|div|blockquote)>/gi,"\n\n").replace(/<br\s*\/?>/gi,"\n");return (d.textContent||"").replace(/[ \t]+/g," ").replace(/\n\s*\n\s*/g,"\n\n").trim()}
 function newsFetch(force){
-  if(newsBusy||navigator.onLine===false)return;const c=S.newsCache;if(!force&&c&&Date.now()-c.at<3*3600000)return;
+  if(newsBusy||navigator.onLine===false)return;const c=newsCache();if(!force&&c&&Date.now()-c.at<3*3600000)return;
   newsBusy=true;if(force)render();
-  const strip=h=>{const d=document.createElement("div");d.innerHTML=String(h||"");return (d.textContent||"").replace(/\s+/g," ").trim()};
   const feeds=NEWS_FEEDS.filter(f=>f[2]!=="airline"||(S.profile.airline==="Ryanair"&&/ryanair/i.test(f[0]))||(S.profile.airline==="Jet2"&&/jet2/i.test(f[0])));
-  // keep the whole article text the feed gives (most news sites send it), so it can be read offline
-  Promise.allSettled(feeds.map(([n,u,c])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,8).map(x=>{const full=strip(x.content||""),sum=strip(x.description||"");return {src:n,cat:c,t:strip(x.title).slice(0,200),d:(full.length>sum.length?full:sum).slice(0,5000),u:String(x.link||""),dt:String(x.pubDate||"")}}))))
-  .then(rs=>{const items=rs.filter(r=>r.status==="fulfilled").flatMap(r=>r.value).filter(x=>x.t&&/^https:\/\//.test(x.u));
-    newsBusy=false;if(items.length){items.sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));S.newsCache={at:Date.now(),items:items.slice(0,40)};save()}else if(force){S.newsCache=Object.assign({},S.newsCache||{items:[]},{err:Date.now()})}render()});
+  Promise.allSettled(feeds.map(([n,u,cat])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,8).map(x=>{
+      const full=newsText(x.content||""),sum=newsText(x.description||""),lim=NEWS_FULL.includes(cat)?20000:5000;
+      return {src:n,cat,t:newsText(x.title).replace(/\s+/g," ").slice(0,200),d:(full.length>sum.length?full:sum).slice(0,lim),u:String(x.link||""),dt:String(x.pubDate||"")}}))))
+  .then(async rs=>{let items=rs.filter(r=>r.status==="fulfilled").flatMap(r=>r.value).filter(x=>x.t&&/^https:\/\//.test(x.u));
+    const old=(c&&c.items)||[];items.forEach(x=>{const o=old.find(y=>y.u===x.u);if(o&&o.full&&(o.d||"").length>(x.d||"").length){x.d=o.d;x.full=true}});
+    // UK and Europe: where the feed only gives a summary, fetch the full article text (reader service) so it can be read offline
+    const need=items.filter(x=>NEWS_FULL.includes(x.cat)&&!x.full&&(x.d||"").length<1500).slice(0,12);
+    for(const x of need){try{const r=await fetch("https://r.jina.ai/"+x.u,{headers:{Accept:"text/plain"}});if(r.ok){let t=await r.text();t=t.replace(/^(Title|URL Source|Published Time|Markdown Content):.*$/gim,"").replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/^#+\s*/gm,"").replace(/\n{3,}/g,"\n\n").trim();if(t.length>(x.d||"").length){x.d=t.slice(0,20000);x.full=true}}}catch(e){}}
+    items.forEach(x=>{if(NEWS_FULL.includes(x.cat)&&(x.d||"").length>=1500)x.full=true});
+    newsBusy=false;if(items.length){items.sort((a,b)=>(b.dt||"").localeCompare(a.dt||""));newsStore({at:Date.now(),items:items.slice(0,60)})}else if(force){newsStore(Object.assign({},c||{items:[]},{err:Date.now()}))}render()});
 }
 function newsSaved(){
-  newsFetch(false);const c=S.newsCache,all=(c&&c.items)||[],cat=S.newsCat||"all",items=all.filter(x=>cat==="all"||(x.cat||"industry")===cat);
+  newsFetch(false);const c=newsCache(),all=(c&&c.items)||[],cat=S.newsCat||"all",items=all.filter(x=>cat==="all"||(x.cat||"industry")===cat);
   const ago=c&&c.at?Math.round((Date.now()-c.at)/60000):null,n=k=>all.filter(x=>k==="all"||(x.cat||"industry")===k).length;
   return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="note" style="margin:0">${all.length?`Saved ${ago<1?"just now":ago<60?ago+" min ago":ago<1440?Math.round(ago/60)+"h ago":Math.round(ago/1440)+" days ago"}: readable offline`:"Not saved yet"}</span><button class="pick" id="newsrf" ${newsBusy?"disabled":""}>${newsBusy?"Loading…":"Refresh"}</button></div>
     <div class="btns" role="tablist" aria-label="News type" style="margin:0">${NEWS_CATS.filter(k=>k[0]==="all"||n(k[0])).map(k=>`<button class="pick" role="tab" aria-pressed="${cat===k[0]}" aria-selected="${cat===k[0]}" data-newscat="${k[0]}">${k[1]}${k[0]!=="all"?" ("+n(k[0])+")":""}</button>`).join("")}</div>
-    ${items.length?`<div>${items.map(x=>`<details class="ex"><summary><b>${esc(x.t)}</b><span class="note" style="display:block">${esc(x.src)}${x.dt?" · "+esc(x.dt.slice(0,16)):""}</span></summary>${x.d?`<p style="margin:6px 0;white-space:pre-line;overflow-wrap:anywhere;font-size:15px;line-height:1.5">${esc(x.d)}</p>`:""}<a href="${esc(x.u)}" target="_blank" rel="noopener" class="linkbtn">Open on the website ↗</a></details>`).join("")}</div>`
+    ${items.length?`<div>${items.map(x=>`<details class="ex"><summary><b>${esc(x.t)}</b><span class="note" style="display:block">${esc(x.src)}${x.dt?" · "+esc(x.dt.slice(0,16)):""}${x.full?" · full article saved":""}</span></summary>${x.d?`<p style="margin:6px 0;white-space:pre-line;overflow-wrap:anywhere;font-size:15px;line-height:1.5">${esc(x.d)}</p>`:""}<a href="${esc(x.u)}" target="_blank" rel="noopener" class="linkbtn">Open on the website ↗</a></details>`).join("")}</div>`
     :`<p class="note" style="margin:0">${c&&c.err?"Couldn't load the news. ":""}Open this once with signal and the latest industry news, disruption alerts and UK rule changes are saved here to read offline${IS_PWA?"":" (works in the installed app)"}.</p>`}`;
 }
 function viewNews(){
@@ -2632,7 +2647,7 @@ function viewTrip(){
   ${on("destfacts")?fold("destfacts","Facts and what's on",factsBody,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
   ${on("words")?fold("words","Useful words",wordsBody,false,P?esc(P.lang):""):""}
   ${on("more_currency")?fold("currency","Currency",viewCurrency,false,(CURRENCY[S.trip.country]||"")):""}
-  ${on("more_news")?fold("news","News",viewNews,false,(S.newsCache&&S.newsCache.items||[]).length?(S.newsCache.items.length+" saved for offline"):""):""}`;
+  ${on("more_news")?fold("news","News",viewNews,false,((newsCache()||{}).items||[]).length?(newsCache().items.length+" saved for offline"):""):""}`;
 }
 function addM(t,m){const [h,mi]=t.split(":").map(Number);let x=((h*60+mi+m)%1440+1440)%1440;return String(Math.floor(x/60)).padStart(2,"0")+":"+String(x%60).padStart(2,"0")}
 function vsSched(t,sta){let d=blockMins({dep:sta,arr:t});if(d>720)d-=1440;return d===0?"on time":Math.abs(d)+" min "+(d>0?"late":"early")}
@@ -2938,10 +2953,14 @@ function holdUntil(){try{const d=S.duty;if(!d.date)return 0;
   return home.getTime()+30*60000}catch(e){return 0}}
 function homeEnd(){const e=homeEndSched();if(!e||hasEnd(S.duty.kind))return e;const sh=dayShift();return sh?new Date(e.getTime()+sh.min*60000):e}
 // trains and buses home together, train preferred unless the bus gets you home a lot sooner
+// which public transport you prefer: "train", "bus" or "fastest" (set in Profile › Getting to work)
+function tPref(){const v=(S.me&&S.me.tpref)||"train";return ["train","bus","fastest"].includes(v)?v:"train"}
+function pickRide(list){if(!list.length)return null;const fastest=list.slice().sort((a,b)=>a.home-b.home)[0],pf=tPref();if(pf==="fastest")return fastest;
+  return list.filter(x=>x.rk===pf&&x.home.getTime()<=fastest.home.getTime()+30*60000).sort((a,b)=>a.home-b.home)[0]||fastest}
 function homeOptions(end,fixed){const d0=S.duty.date,out=[];RK.filter(rk=>ttCount(tt("back",rk))).forEach(rk=>{const T=R(rk),ready=new Date((fixed?end.getTime():Math.max(end.getTime(),Date.now()))+tBuf(rk)*60000);
     tList(d0,"back",rk).concat(tList(addDays(d0,1),"back",rk)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).forEach(x=>out.push(Object.assign({},x,{rk,ready,home:new Date(x.arr.getTime()+(+T.walk||0)*60000)})))});
   out.sort((a,b)=>a.dep-b.dep);const firstHome=out.length?Math.min(...out.map(x=>x.home.getTime())):0;
-  const best=out.filter(x=>x.rk==="train"&&x.home.getTime()<=firstHome+30*60000).sort((a,b)=>a.home-b.home)[0]||out.slice().sort((a,b)=>a.home-b.home)[0]||null;
+  const best=pickRide(out);
   return {list:out,best}}
 // the train or bus home: picked (or the suggested one), then caught — by a tap, or automatically 15 min after it leaves
 const rideKey=x=>x.rk+"|"+x.dep.getTime();
@@ -2955,13 +2974,13 @@ function homeCard(){
     <p style="margin:0"><b>On the ${esc(h.name.toLowerCase())} that left at ${hm(dep)}</b>. Home about ${hm(home)}.</p>
     <div class="btns" style="margin:0"><button class="ghost" data-hmiss="1">Not on it? Pick another way</button></div></section>`}
   const H0=homeOptions(end),list=H0.list.filter(x=>!missed.includes(rideKey(x))&&!(h&&h.missedAt&&x.dep.getTime()<=h.missedAt)),L=list.slice(0,5);
-  const sug=list.filter(x=>x.rk==="train"&&x.home.getTime()<=Math.min(...list.map(y=>y.home.getTime()))+30*60000).sort((a,b)=>a.home-b.home)[0]||list.slice().sort((a,b)=>a.home-b.home)[0]||null;
+  const sug=pickRide(list);
   const pick=h&&h.dep&&h.manual?L.find(x=>rideKey(x)===h.key)||null:null,b=pick||sug;
   if(b&&(!h||h.key!==rideKey(b))&&!h?.manual){S.homeRide={date:S.duty.date,key:rideKey(b),rk:b.rk,name:nm(b),dep:b.dep.getTime(),home:b.home.getTime(),missed,manual:false}}
   const H={list:L,best:b};
   return `<section class="card"><h2>Getting home</h2>
     <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}.</p>
-    ${b?`<p style="margin:0"><b>${pick&&h.manual?"Your pick":"Take"}: ${esc(nm(b).toLowerCase())} at ${b.t}</b>, home about ${hm(b.home)}.${b.rk==="bus"&&!pick&&L.every(x=>x.rk==="bus"||x.home>b.home)?" No train gets you home sooner.":""}</p>
+    ${b?`<p style="margin:0"><b>${pick&&h.manual?"Your pick":"Take"}: ${esc(nm(b).toLowerCase())} at ${b.t}</b>, home about ${hm(b.home)}.${!pick&&tPref()!=="fastest"&&b.rk!==tPref()&&L.every(x=>x.rk===b.rk||x.home>b.home)?` No ${tPref()} gets you home in time.`:""}</p>
       <div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>
       <p class="note" style="margin:0">If you don't tap, it's marked as caught 15 min after it leaves. You can still change it after.</p>`:""}
     ${L.length?`<div>${L.map(x=>`<div class="tip" style="align-items:center"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
@@ -2998,6 +3017,8 @@ function transitCard(n,pn,rk){rk=rk||"train";
     ${live}</div>`;
 }
 function travelFieldsInner(){
+  return `<div class="field"><span class="label">When both a train and a bus could work</span><div class="seg" role="tablist" aria-label="Preferred transport">${[["train","Prefer the train"],["bus","Prefer the bus"],["fastest","Whichever is faster"]].map(x=>`<button role="tab" aria-selected="${tPref()===x[0]}" data-tpref="${x[0]}">${x[1]}</button>`).join("")}</div><span class="note" style="margin:0">The app suggests your choice unless only the other gets you there or home in time (within 30 minutes).</span></div>`+travelFieldsCore()}
+function travelFieldsCore(){
   const d=S.duty,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
   return `    <div class="field"><label for="t-ap">Report at</label><input id="t-ap" type="text" value="${esc(d.airport)}" data-k="duty.airport"></div>
     <div class="row"><div class="field"><label for="t-mode">Usually travel by</label><select id="t-mode" data-k="duty.mode">${[["train","Train"],["bus","Bus or coach"],["driving","Car"],["taxi","Taxi"],["shuttle","Staff car park + shuttle"]].map(o=>`<option value="${o[0]}" ${d.mode===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
@@ -3503,6 +3524,7 @@ document.addEventListener("click",e=>{
   if(b.id==="ftgo"){const {t,secs,i}=ftState(),est=parseHM(($("#ft-est")||{}).value);if(!est){const v=$("#ft-est");if(v){v.setCustomValidity("Type the block time, e.g. 2:35");v.reportValidity();v.oninput=()=>v.setCustomValidity("")}return}
     const now=new Date();S.ft={date:t,i,start:now.getTime(),est};if(i>=0&&secs[i]){secs[i].offb=(RZ()?hmZ:hm)(now);secs[i].est=est;secs[i].onb=""}render();save();return}
   if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+  if(b.dataset.tpref){S.me.tpref=b.dataset.tpref;render();save();return}
   if(b.dataset.hpick){const end=homeEnd(),x=end&&homeOptions(end).list.find(y=>rideKey(y)===b.dataset.hpick);if(x){const h=homeRide()||{};S.homeRide={date:S.duty.date,key:rideKey(x),rk:x.rk,name:(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:""),dep:x.dep.getTime(),home:x.home.getTime(),missed:h.missed||[],manual:true}}render();save();return}
   if(b.dataset.hcaught){const h=homeRide();if(h){h.caught=true;h.manual=true}render();save();return}
   if(b.dataset.hmiss){const h=homeRide();if(h){h.missed=(h.missed||[]).concat(h.key?[h.key]:[]);if(h.dep)h.missedAt=Math.max(h.missedAt||0,h.dep);h.caught=false;h.key="";h.dep=0;h.manual=false}render();save();return}
