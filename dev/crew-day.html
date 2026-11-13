@@ -3447,8 +3447,18 @@ document.addEventListener("pointerdown",()=>{ptrDown=true},true);
 function flushR(){ptrDown=false;if(pendingR){pendingR=false;render()}}
 window.addEventListener("click",flushR);/* after the app's own click handler (window hears it last) */
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{setTimeout(flushR,250)},true));
+// A background update (a download finishing, a timer) must never wipe what someone is halfway through typing.
+// Re-renders from a tap or change run inside an event and handle their own fields; the others keep typed text and focus.
 function render(){
   if(ptrDown){pendingR=true;return}
+  if(window.event){renderNow();return}
+  const kept=[];document.querySelectorAll("main input[id], main textarea[id]").forEach(el=>{if(/^(text|search|password|number|email|tel|url|textarea)$/.test(el.type)&&el.value!==el.defaultValue)kept.push([el.id,el.value])});
+  const f=document.activeElement,fid=f&&f.id&&/^(INPUT|TEXTAREA)$/.test(f.tagName)?f.id:"",sel=fid?[f.selectionStart,f.selectionEnd]:null;
+  renderNow();
+  kept.forEach(([id,v])=>{const el=document.getElementById(id);if(el&&el.value===el.defaultValue)el.value=v});
+  if(fid){const el=document.getElementById(fid);if(el&&document.activeElement!==el){el.focus();try{if(sel&&sel[0]!=null)el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+}
+function renderNow(){
   if(S.transit){S.routes=S.routes||{};const k=S.transit.kind==="bus"?"bus":"train",T=Object.assign({},S.transit);delete T.kind;S.routes[k]=T;if(S.duty.mode==="transit")S.duty.mode=k;delete S.transit}
   if(!S.profile){S.profile={airline:"Ryanair",base:"STN"};S.perks=JSON.parse(JSON.stringify(DEFAULT.perks));if(!S.duty.airport||/Gatwick/.test(S.duty.airport))S.duty.airport=BASES.STN.airport}
   if(!S.perks)S.perks=JSON.parse(JSON.stringify(DEFAULT.perks));
