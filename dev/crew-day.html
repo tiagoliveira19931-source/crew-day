@@ -277,6 +277,7 @@ textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <script>
 (function(){
 const ICON={
+  speaker:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
   today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3 2 6M19 3l3 3"/></svg>',
   kit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2M9 13l2 2 4-4"/></svg>',
   water:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>',
@@ -2696,10 +2697,26 @@ const CS={
 "Croatia":["Dobrodošli na let","Mogu li vidjeti vašu kartu za ukrcaj, molim?","Vaše sjedalo je ovuda","Molim stavite prtljagu u pretinac iznad sjedala","Molim vežite pojas","Molim prebacite mobitel u način rada u zrakoplovu","Želite li nešto za jelo ili piće?","Primamo samo kartice","Trebate li pomoć?","Molim ostanite sjediti","Hvala, doviđenja!"],
 "Netherlands":["Welkom aan boord","Mag ik uw instapkaart zien, alstublieft?","Uw stoel is deze kant op","Wilt u uw bagage in het bagagevak boven u leggen?","Wilt u uw riem vastmaken?","Wilt u uw telefoon in vliegtuigmodus zetten?","Wilt u iets eten of drinken?","We accepteren alleen kaartbetalingen","Heeft u hulp nodig?","Wilt u blijven zitten?","Dank u wel, tot ziens!"]
 };
+/* Hear a phrase: the phone's own voices (Web Speech), so it works offline and nothing is sent anywhere. */
+const LANG_CODE={Spanish:"es-ES",Portuguese:"pt-PT",Italian:"it-IT",French:"fr-FR",German:"de-DE",Greek:"el-GR",Polish:"pl-PL",Turkish:"tr-TR",Croatian:"hr-HR",Dutch:"nl-NL"};
+const canSpeak=()=>typeof speechSynthesis!=="undefined"&&typeof SpeechSynthesisUtterance!=="undefined";
+function voiceFor(code){if(!canSpeak())return null;const V=speechSynthesis.getVoices(),base=code.slice(0,2).toLowerCase(),m=V.filter(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(base));
+  return m.find(v=>v.localService&&v.lang.replace("_","-")===code)||m.find(v=>v.localService)||m.find(v=>v.lang.replace("_","-")===code)||m[0]||null}
+// "Obrigado (man) / Obrigada (woman)" → "Obrigado, Obrigada"
+function sayText(t){return String(t).replace(/\([^)]*\)/g,"").replace(/\s*\/\s*/g,", ").replace(/\s+/g," ").trim()}
+let sayMsg="";
+function sayIt(lang,text){const code=LANG_CODE[lang];if(!canSpeak()||!code){sayMsg="This phone can't read phrases aloud.";render();return}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(sayText(text)),v=voiceFor(code);u.lang=code;if(v)u.voice=v;u.rate=S.slowSay===false?0.95:0.75;
+  const had=sayMsg;sayMsg=(speechSynthesis.getVoices().length&&!v)?`No ${lang} voice on this phone yet. Add one in your phone's settings: on Android, Text-to-speech; on iPhone, Accessibility › Spoken Content › Voices.`:"";if(had!==sayMsg)render();
+  speechSynthesis.speak(u)}
+if(canSpeak())try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 function wordsBody(){const P=PHRASES[S.trip.country],C=CS[S.trip.country];if(!P)return `<p class="note">Pick a destination country above to see handy words in the local language.</p>`;
-  const row=(k,v)=>`<div class="ex" style="grid-template-columns:minmax(0,2fr) minmax(0,3fr);display:grid;gap:10px"><span class="note">${esc(k)}</span><b style="overflow-wrap:anywhere">${esc(v)}</b></div>`;
-  return `${C?`<span class="label">On board · ${esc(P.lang)}</span><div>${CS_KEYS.map((k,i)=>row(k,C[i])).join("")}</div>`:""}
-  <span class="label">Out and about</span><div>${PHRASE_KEYS.map((k,i)=>row(k,P.p[i])).join("")}</div>`}
+  const sp=canSpeak()&&LANG_CODE[P.lang];
+  const row=(k,v,key)=>`<div class="ex" style="grid-template-columns:minmax(0,2fr) minmax(0,3fr)${sp?" 40px":""};display:grid;gap:10px;align-items:center"><span class="note">${esc(k)}</span><b style="overflow-wrap:anywhere">${esc(v)}</b>${sp?`<button class="bell" data-say="${key}" aria-label="Hear ${esc(k)} in ${esc(P.lang)}">${ICON.speaker}</button>`:""}</div>`;
+  return `${sp?`<p class="note" style="margin:0">Tap the speaker to hear it in ${esc(P.lang)}. Works offline, using your phone's own voice.</p><label class="chk" style="border:0;padding:0"><input type="checkbox" id="sayslow" ${S.slowSay!==false?"checked":""}><span>Speak slowly</span></label>`:""}
+  ${sayMsg?`<p class="note" style="margin:0" role="status">${esc(sayMsg)}</p>`:""}
+  ${C?`<span class="label">On board · ${esc(P.lang)}</span><div>${CS_KEYS.map((k,i)=>row(k,C[i],"cs|"+i)).join("")}</div>`:""}
+  <span class="label">Out and about</span><div>${PHRASE_KEYS.map((k,i)=>row(k,P.p[i],"p|"+i)).join("")}</div>`}
 function viewTrip(){
   const ph=phaseOf(),now=new Date(),r=S.roster[S.duty.date],sec=(r&&r.kind==="flying"&&r.sectors)||[],first=sec.find(x=>x.flt);
   const w=S.water,dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:""),P=PHRASES[S.trip.country];
@@ -3557,6 +3574,7 @@ document.addEventListener("click",e=>{
     S.pay.dutyHours=Math.round(days.filter(([d,x])=>isDutyK(x.kind)&&x.report&&x.off).reduce((n,[d,x])=>n+dutyHours(x),0)*100)/100;
     render();save();return}
   if(b.id==="called"){S.standby.calledAt=new Date().toISOString();render();window.scrollTo(0,0);save();return}
+  if(b.dataset.say){const [k,i]=b.dataset.say.split("|"),P=PHRASES[S.trip.country],C=CS[S.trip.country];const t=k==="cs"?(C||[])[+i]:(P&&P.p||[])[+i];if(P&&t)sayIt(P.lang,t);return}
   if(b.id==="uncalled"){S.standby.calledAt=null;render();save();return}
   if(b.id==="latefromcall"){const el=$("#lt-m");if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.focus()}return}
   if(b.id==="dobackup"){const plain=JSON.stringify({app:"crewday",v:1,saved:new Date().toISOString(),state:S},null,1),pw=(($("#bk-pw")||{}).value||"");
@@ -3790,6 +3808,7 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 document.addEventListener("change",e=>{
   const el=e.target;
   if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
+  if(el.id==="sayslow"){S.slowSay=el.checked;save();return}
   if(el.id==="sb-al"){S.standby.startAlarm=el.checked;render();save();return}
   if(el.id==="lo-city"){S.layoverCity=el.value;render();save();return}
   if(el.dataset.tog){if(el.checked)delete S.hide[el.dataset.tog];else S.hide[el.dataset.tog]=true;render();save();return}
