@@ -3165,6 +3165,8 @@ function wordsBody(){const P=PHRASES[S.trip.country],C=CS[S.trip.country];if(!P)
   ${C?`<span class="label">On board · ${esc(P.lang)}</span><div>${CS_KEYS.map((k,i)=>row(k,C[i],"cs|"+i)).join("")}</div>`:""}
   <span class="label">Out and about</span><div>${PHRASE_KEYS.map((k,i)=>row(k,P.p[i],"p|"+i)).join("")}</div>`}
 // the destination comes from today's flights (first place away from base); crew can still change it in Facts
+// the place picker stays open while it's being used (a country pick refreshes the screen)
+let chgPlaceOpen=false;document.addEventListener("toggle",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("chgplace"))chgPlaceOpen=e.target.open},true);
 function tripAutoDest(){try{const d=S.duty;if(!d.date)return;const c=dutyCity(d);if(!c)return;const k=d.date+"|"+c;if(S.trip.auto===k)return;
   const m=CITIES.find(x=>(x.name||x[0])===c);S.trip.city=c;if(m)S.trip.country=m.country||m[1];S.trip.auto=k}catch(e){}}
 function viewTrip(){
@@ -3195,7 +3197,7 @@ function viewTrip(){
   ${on("notebook")?fold("notebook","Notebook",notebookBody,false,(()=>{const N=nbOf(nbKey()),left=N.items.filter(x=>!x.done).length;return N.items.length?left+" to do":N.text?"Notes saved":"Notes and lists"})()):""}
   ${on("timers")?fold("timers","Timers",timersBody,running>0,running?running+" running":""):""}
   ${on("moves")?fold("moves","Exercises and stretches",movesBody,false,"On board, after, layover"):""}
-  ${on("destfacts")?fold("destfacts","Facts and what's on",()=>factsBody()+`<details class="chgplace"${dest?"":" open"}><summary>${dest?"Change place ("+esc(dest)+")":"Choose a place"}</summary>${destPick}</details>`,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
+  ${on("destfacts")?fold("destfacts","Facts and what's on",()=>factsBody()+`<details class="chgplace"${dest&&!chgPlaceOpen?"":" open"}><summary>${dest?"Change place ("+esc(dest)+")":"Choose a place"}</summary>${destPick}</details>`,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
   ${on("words")?fold("words","Useful words",wordsBody,false,P?esc(P.lang):""):""}
   ${on("more_currency")?fold("currency","Currency",viewCurrency,false,(CURRENCY[S.trip.country]||"")):""}
   ${on("more_news")?fold("news","News",viewNews,false,((newsCache()||{}).items||[]).length?(newsCache().items.length+" saved for offline"):""):""}`;
