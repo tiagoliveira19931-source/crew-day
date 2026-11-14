@@ -249,6 +249,7 @@ a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:4
 .wkform{grid-column:1/-1;display:grid;gap:10px;background:var(--bg);border-radius:12px;padding:12px}
 .tip{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .tip:last-child{border-bottom:0}
+.tip.ride{grid-template-columns:62px minmax(0,1fr) auto;align-items:center}.tip.ride .pick{white-space:nowrap}
 .tip .t{font:700 15px var(--mono);font-variant-numeric:tabular-nums;color:var(--accent)}
 .chip{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:99px;justify-self:start}
 ul.plain{margin:0;padding-left:18px;display:grid;gap:6px}
@@ -448,8 +449,10 @@ const SEC={key:null,locked:false,fails:0,until:0,hiddenAt:0,
 let secSaving=Promise.resolve();
 // a small "Saved" note after anything you change, so you know it's kept (not for background saves)
 let savedT=0;
-function savedFlash(){const ev=window.event;if(!ev||!/^(change|click|input|submit|keydown)$/.test(ev.type))return;let el=document.getElementById("savedpill");
-  if(!el){el=document.createElement("div");el.id="savedpill";el.setAttribute("role","status");el.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--accent);color:#fff;font:600 13px var(--body);padding:6px 14px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.15);z-index:50;transition:opacity .3s;pointer-events:none";document.body.appendChild(el)}
+function savedFlash(){const ev=window.event;if(!ev||!/^(change|click|input|submit|keydown)$/.test(ev.type))return;
+  const tg=ev.target&&ev.target.closest?ev.target.closest("[data-tab],[data-more],[data-fold],[data-goto],#etopen,.fold"):null;if(tg)return; // just moving around, nothing changed
+  let el=document.getElementById("savedpill");
+  if(!el){el=document.createElement("div");el.id="savedpill";el.setAttribute("role","status");el.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--accent);color:#fff;font:600 13px var(--body);padding:6px 14px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.15);z-index:50;transition:opacity .3s;pointer-events:none";(document.querySelector(".app")||document.body).appendChild(el)}
   el.textContent="✓ Saved on this phone";el.style.opacity="1";clearTimeout(savedT);savedT=setTimeout(()=>{el.style.opacity="0"},1400)}
 function save(){
   savedFlash();
@@ -2656,7 +2659,7 @@ function saveToday(){
 }
 function viewToday(){
   const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",now=new Date(),F=k=>k+"|"+ph;
-  const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p></div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
+  const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p></div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none;position:relative;z-index:1;background:var(--surface);border:1px solid var(--line)">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
   /* nothing on today */
   if(ph==="none"||ph==="future"||ph==="done"){
     const n=on("tab_plan")?nextDuty():null;
@@ -3429,8 +3432,8 @@ function homeEndSched(){const d=S.duty,r=S.roster[d.date]||{};if(hasEnd(d.kind))
 function dayShift(){const d=S.duty,r=S.roster[d.date]||{},sec=r.sectors||[],t=d.date,st=plan().rep;
   const at=v=>{let x=r2lDT(t,v);if(x<st)x=new Date(x.getTime()+86400000);return x};
   for(let i=sec.length-1;i>=0;i--){const x=sec[i];if(!x.arr)continue;
-    if(x.onb)return {min:Math.round((at(x.onb)-at(x.arr))/60000),why:"actual on blocks "+hm(at(x.onb))+" ("+(x.flt||x.to)+")"};
-    if(x.offb){const bm=x.est||blockMins(x)||0;if(bm){const exp=new Date(at(x.offb).getTime()+bm*60000);return {min:Math.round((exp-at(x.arr))/60000),why:"off blocks "+hm(at(x.offb))+" ("+(x.flt||x.to)+"), landing ~"+hm(exp)}}}}
+    if(x.onb)return {min:Math.round((at(x.onb)-at(x.arr))/60000),why:"actual on blocks "+hmL(at(x.onb))+" ("+(x.flt||x.to)+")"};
+    if(x.offb){const bm=x.est||blockMins(x)||0;if(bm){const exp=new Date(at(x.offb).getTime()+bm*60000);return {min:Math.round((exp-at(x.arr))/60000),why:"off blocks "+hmL(at(x.offb))+" ("+(x.flt||x.to)+"), landing ~"+hmL(exp)}}}}
   return null}
 // when duty really ends: last actual on blocks + the post-flight time on the roster (usually 30 min)
 function dutyOff(){const d=S.duty,r=S.roster[d.date]||{},sec=(r.sectors||[]).filter(x=>x.arr);if(!sec.length||hasEnd(d.kind))return null;
@@ -3479,9 +3482,9 @@ function homeCard(){
   return `<section class="card"><h2>Getting home</h2>
     <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}.</p>
     ${b?`<p style="margin:0"><b>${pick&&h.manual?"Your pick":"Take"}: ${esc(nm(b).toLowerCase())} at ${b.t}</b>, home about ${hm(b.home)}.${!pick&&tPref()!=="fastest"&&b.rk!==tPref()&&L.every(x=>x.rk===b.rk||x.home>b.home)?` No ${tPref()} gets you home in time.`:""}</p>
-      <div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>
-      <p class="note" style="margin:0">If you don't tap, it's marked as caught 15 min after it leaves. You can still change it after.</p>`:""}
-    ${L.length?`<div>${L.map(x=>`<div class="tip" style="align-items:center"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}${x.quick?" (if you're off quickly)":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
+      ${(pick&&h.manual)||Date.now()>=Math.min(b.dep.getTime()-30*60000,end.getTime()-60*60000)?`<div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>
+      <p class="note" style="margin:0">If you don't tap, it's marked as caught 15 min after it leaves. You can still change it after.</p>`:`<p class="note" style="margin:0">It updates by itself if you land early or late.</p>`}`:""}
+    ${L.length?`<div>${L.map(x=>`<div class="tip ride"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}${x.quick?" (if you're off quickly)":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"<span></span>":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
   </section>`;
 }
 function homeCardOld(){
