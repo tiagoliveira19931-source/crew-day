@@ -23,8 +23,7 @@ Reports from More › Report an issue that have been handled. The repo is public
 | 13/11/2026 23:25:31 | Trip: timer should start at taxi, not pushback | Asked Tiago |
 | 13/11/2026 23:41:54 | Report an issue: hide reports once they're dealt with | Asked Tiago (the app can't see what happens to a report without fetching from the sheet) |
 
-## 14 Nov 2026 (1.35.1)
-- Idea (Jet2): wants reassurance that changes are saved. Done: a short "✓ Saved on this phone" note appears after each change.
-- Problem (Ryanair): with a flight key, the timer should use online times rather than buttons. Done: with a key the Start/On blocks buttons are hidden, block end follows the online estimate and the timer stops by itself at the online on-block time. "Start by hand instead" stays for no signal; without a key nothing changes.
-- 1.35.2: with a flight key, empty Off/On blocks fields are filled from the online times (never over typed times).
-- 1.35.3: Getting home tidy-up: Take this buttons beside each row, times marked L, Caught it/Missed it only near off duty, Change button readable over the drawing, Saved note not shown when just moving between screens.
+| 14/11/2026 10:37:56 | Jet2 idea: reassurance that changes are saved | Fixed in 1.35.1: "✓ Saved on this phone" note after each change (1.35.3: not shown when just moving between screens) |
+| 14/11/2026 15:14:51 | With a flight key, timer should run from online times, not buttons | Fixed in 1.35.1 and 1.35.2: buttons hidden with a key, stops itself at online on blocks, empty block times filled from online |
+
+Also 1.35.3 (from a screenshot Tiago sent): Getting home tidy-up: Take this buttons beside each row, times marked L, Caught it/Missed it only near off duty, Change button readable over the drawing.
