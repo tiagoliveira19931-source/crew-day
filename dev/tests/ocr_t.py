@@ -59,7 +59,7 @@ DUTY FLIGHT TIME: 3H 35M
 Calendar VTO Hub"""
 WANT={"2026-11-16":("flying","05:10","09:30",["FR5101","FR6102"]),"2026-11-17":("standby","04:00","15:00",[]),"2026-11-18":("vto","","",[]),
       "2026-11-19":("flying","18:20","00:03",["FR2301","FR2302"]),"2026-11-24":("off","","",[]),"2026-11-25":("training","08:00","17:25",[]),"2026-11-26":("adty","05:40","13:40",[])}
-STUB="<script>window.__r=%s;window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:window.__r.shift()||''}}),terminate:async()=>{}})};</script>"%json.dumps([PIC1,PIC2,PIC2])
+STUB="<script>window.__r=%s;window.Tesseract={createWorker:async()=>({setParameters:async()=>{},recognize:async()=>({data:{text:window.__r.shift()||''}}),terminate:async()=>{}})};</script>"%json.dumps([PIC1,"Calendar VTO Hub\nLegend",PIC2,PIC2])
 PAGE="<!doctype html><html><head><meta charset=utf-8></head><body>"+STUB+html+"</body></html>"
 DARK="<body style='margin:0;background:#212226;width:400px;height:120px'><div style='margin:30px;width:160px;height:56px;border-radius:10px;background:#607fbc;color:#242a3b;font:700 20px Arial;display:grid;place-items:center'>FR1234</div></body>"
 d=tempfile.mkdtemp()

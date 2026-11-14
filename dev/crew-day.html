@@ -1122,7 +1122,7 @@ function rpApply(txt,careful){
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
   if(ch.length)S.rosterChanges={at:Date.now(),items:ch,seen:false};
-  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+(kept.length?`${kept.length} day${kept.length===1?" was":"s were"} already up to date. `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in. Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
+  return (ch.length?`${ch.length} day${ch.length===1?" has":"s have"} changed (see below). `:"")+(kept.length?`${kept.length} day${kept.length===1?" was":"s were"} already up to date. `:"")+[nc?`${nc} day${nc===1?"":"s"} from the calendar`:"",nl?`${nl} day${nl===1?"":"s"} with times${L.some(e=>e.sectors&&e.sectors.length)?" and flights":""}`:""].filter(Boolean).join(" and ")+" brought in"+(careful&&L.length?" ("+L.map(e=>fmtDate(e.date,{day:"numeric",month:"short"})+" "+(KIND_NAME[e.kind]||"").toLowerCase()).join(", ")+")":"")+". Check them against your official roster."+(C.length&&!L.length?" Now paste the Roster screen for each flying day to add the flights and times.":"");
 }
 /* Read roster screenshots on this phone: a small text-recognition model (Tesseract, downloaded once, then kept offline)
    turns the pictures into text, and the app's own roster reader turns that into days. The pictures never leave the phone. */
@@ -1157,7 +1157,14 @@ function ocrClean(t){return String(t||"").split("\n").map(l=>l
 window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),careful:t=>rpZ(t).map(rpCareful)});
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
-    for(let i=0;i<files.length;i++){ocrMsg=`Reading picture ${i+1} of ${files.length}…`;render();const src=await ocrPrep(files[i]);const r=await worker.recognize(src);all+="\n--- next picture ---\n"+((r&&r.data&&r.data.text)||"")}
+    // each picture: read the cleaned-up version; if no roster days come out, try again another way and keep the best
+    const daysIn=t=>rpZ(ocrClean(t)).filter(e=>e.kind).length,txt=r=>(r&&r.data&&r.data.text)||"";
+    for(let i=0;i<files.length;i++){ocrMsg=`Reading picture ${i+1} of ${files.length}…`;render();const src=await ocrPrep(files[i]);
+      let best=txt(await worker.recognize(src)),bn=daysIn(best);
+      if(!bn){const tries=[[src,"6"],[files[i],"4"],[files[i],"6"]];for(const [img,mode] of tries){ocrMsg=`Reading picture ${i+1} of ${files.length} again, another way…`;render();
+        try{await worker.setParameters({tessedit_pageseg_mode:mode});const t=txt(await worker.recognize(img)),n=daysIn(t);if(n>bn){best=t;bn=n}}catch(e){}if(bn)break}
+        try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}}
+      all+="\n--- next picture ---\n"+best}
     all=ocrClean(all);ocrRaw=all.trim();const ta=$("#rost-p");rosterMsg=rpApply(all,true);ocrMsg=/^Read \d+ day/.test(rosterMsg)?"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.":/^Nothing recognised/.test(rosterMsg)?"Couldn't find roster days in those pictures. Try clearer screenshots that show the dates, or use your phone's AI below.":"Read "+files.length+" picture"+(files.length===1?"":"s")+" on this phone.";
     if(ta&&/^Nothing/.test(rosterMsg))ta.value=all.trim();
   }catch(e){ocrMsg=String(e&&e.message)==="offline"?"The reader needs signal the first time, to download. Try again when you're online.":"Something went wrong reading the pictures. Try fewer at a time, or use your phone's AI below."}
@@ -1167,7 +1174,7 @@ function pasteImportHTML(){return `<div class="seccard" style="margin-bottom:8px
       <p class="note" style="margin:0">Take screenshots of your whole roster (the calendar and the roster list, a screen at a time), then choose them all here. Crew Day reads them on your phone: the pictures never leave it. Check the days it finds against your roster.</p>
       <div class="field"><label for="ocr-f">Roster screenshots</label><input id="ocr-f" type="file" accept="image/*" multiple ${ocrBusy?"disabled":""}></div>
       ${ocrMsg?`<p class="note" role="status" style="margin:0">${esc(ocrMsg)}</p>`:""}
-      ${ocrRaw?`<details><summary class="note">What the reader saw</summary><textarea id="ocr-raw" readonly rows="8" style="width:100%;box-sizing:border-box;font:500 12px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px">${esc(ocrRaw)}</textarea><p class="note" style="margin:4px 0 0">If days came out wrong, this helps fix the reader. It contains your roster, so only share it with someone you choose.</p></details>`:""}</div>
+      ${ocrRaw?`<details ${/^Couldn/.test(ocrMsg)?"open":""}><summary class="note">What the reader saw</summary><textarea id="ocr-raw" readonly rows="8" style="width:100%;box-sizing:border-box;font:500 12px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px">${esc(ocrRaw)}</textarea><p class="note" style="margin:4px 0 0">If days came out wrong, this helps fix the reader. It contains your roster, so only share it with someone you choose.</p></details>`:""}</div>
     <div class="field"><label for="rost-p">Paste your roster</label><textarea id="rost-p" rows="5" placeholder="Paste the text from your roster screenshots here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
     <div class="btns"><button class="primary" id="pasteroster">Read my roster</button></div>
     <details open><summary class="note"><b>How to bring in your roster</b></summary><div class="note" style="margin:6px 0;display:grid;gap:10px">
@@ -1570,6 +1577,42 @@ async function makeFitNotePdf(btn){
   }catch(err){btn.disabled=false;msg.textContent=err&&err.code?uploadMsg(err):"That file couldn't be turned into a PDF. If it's a protected PDF, try a photo of it instead."}
 }
 
+/* ---------- Documents: crew's own folders of PDFs and pictures for work, kept on this phone ---------- */
+const DOC_START=["Self-certificates","Trip notes"];
+let docMsg="",docOpen="",docDel="";
+function docsState(){if(!S.fileStore||!Array.isArray(S.fileStore.folders))S.fileStore={folders:DOC_START.map(n=>({id:uid(),name:n})),files:[]};return S.fileStore}
+function docFolder(name){const D=docsState();let f=D.folders.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!f){f={id:uid(),name};D.folders.push(f)}return f}
+async function docSave(folderName,blob,name){if(!assetsNS)throw new Error("no storage");const f=docFolder(folderName),r=await assetsNS.upload(blob);
+  const D=docsState(),e={id:uid(),folder:f.id,name,asset:r.id,type:blob.type||"",size:blob.size||0,date:today()};D.files.push(e);save();return e}
+function docSize(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+function viewFiles(){const D=docsState();
+  if(!assetsNS)return `<section class="card"><h2>Documents</h2><p class="note">Keeping documents needs the installed app, which can save files on your phone.</p></section>`;
+  const f=D.folders.find(x=>x.id===docOpen);
+  if(!f)return `<section class="card"><h2>Documents</h2><p class="note" style="margin:0">Folders for the PDFs and pictures you need for work. They stay on this phone and work offline. Not included in backups.</p>
+    <div>${D.folders.map(x=>{const n=D.files.filter(y=>y.folder===x.id).length;return `<button class="chk" style="width:100%;text-align:left;justify-content:space-between" data-docopen="${x.id}"><span><b>${esc(x.name)}</b></span><span class="note">${n} file${n===1?"":"s"} ›</span></button>`}).join("")}</div>
+    <div class="row"><div class="field"><label for="doc-nf">New folder</label><input id="doc-nf" type="text" maxlength="40" placeholder="e.g. Uniform"></div><div class="field" style="align-self:end"><button id="docnew">Create</button></div></div>
+    ${docMsg?`<p class="note" role="status" style="margin:0">${esc(docMsg)}</p>`:""}</section>`;
+  const files=D.files.filter(y=>y.folder===f.id).slice().reverse();
+  return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><button class="linkbtn" data-docopen="">‹ All folders</button><span class="note">${files.length} file${files.length===1?"":"s"}</span></div>
+    <div class="field"><label for="doc-rn">Folder name</label><input id="doc-rn" type="text" maxlength="40" value="${esc(f.name)}" data-docren="${f.id}"></div>
+    <div class="field"><label for="doc-add">Add PDFs or pictures</label><input id="doc-add" type="file" accept="application/pdf,image/*" multiple data-docadd="${f.id}"></div>
+    ${docMsg?`<p class="note" role="status" style="margin:0">${esc(docMsg)}</p>`:""}
+    <div>${files.length?files.map(y=>`<div class="chk" style="justify-content:space-between;gap:8px"><a ${blobAttr(y.asset,y.name)} style="min-width:0;overflow-wrap:anywhere">${/^image\//.test(y.type)?"🖼":/pdf/.test(y.type)?"📄":"📝"} ${esc(y.name)}</a><span class="note" style="white-space:nowrap">${esc(fmtDate(y.date,{day:"numeric",month:"short"}))} · ${docSize(y.size)}</span><button class="ghost" aria-label="Delete ${esc(y.name)}" data-docdelf="${y.id}">${docDel===y.id?"Tap to delete":ICON.x}</button></div>`).join(""):`<p class="note">Nothing here yet.</p>`}</div>
+    <div class="btns"><button class="ghost" data-docdelfolder="${f.id}">${docDel===f.id?"Tap again to delete the folder and its files":"Delete folder"}</button></div></section>`}
+
+/* ---------- Trip notebook: notes and tick-box lists, one per trip ---------- */
+function nbKey(){return S.nbView||(S.duty&&S.duty.date)||today()}
+function nbOf(k){if(!S.notebook)S.notebook={};if(!S.notebook[k])S.notebook[k]={text:"",items:[]};return S.notebook[k]}
+let nbMsg="";
+function notebookBody(){const k=nbKey(),N=nbOf(k),keys=Object.keys(S.notebook||{}).filter(x=>{const n=S.notebook[x];return n.text||n.items.length||x===k}).sort().reverse(),dest=(S.roster[k]&&destCodes(S.roster[k]).replace(/\n/g,", "))||S.trip.city||"";
+  return `${keys.length>1?`<div class="field"><label for="nb-k">Notebook for</label><select id="nb-k">${keys.map(x=>`<option value="${x}" ${x===k?"selected":""}>${esc(fmtDate(x,{weekday:"short",day:"numeric",month:"short"}))}${S.roster[x]&&destCodes(S.roster[x])?" · "+esc(destCodes(S.roster[x]).replace(/\n/g,", ")):""}</option>`).join("")}</select></div>`:`<p class="note" style="margin:0">Notes for ${esc(fmtDate(k,{weekday:"long",day:"numeric",month:"long"}))}${dest?" · "+esc(dest):""}. A new notebook starts with each trip.</p>`}
+    <div class="field"><label for="nb-t">Notes</label><textarea id="nb-t" rows="4" style="width:100%;box-sizing:border-box;font:500 15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px" placeholder="Anything to remember on this trip">${esc(N.text)}</textarea></div>
+    <span class="label">Checklist</span>
+    <div>${N.items.map(it=>`<div class="chk ${it.done?"done":""}" style="justify-content:space-between"><label style="display:flex;gap:10px;align-items:center;min-width:0;flex:1"><input type="checkbox" ${it.done?"checked":""} data-nbtick="${it.id}"><span style="overflow-wrap:anywhere">${esc(it.t)}</span></label><button class="ghost" aria-label="Remove ${esc(it.t)}" data-nbdel="${it.id}">${ICON.x}</button></div>`).join("")}</div>
+    <div class="row"><div class="field"><label for="nb-i">Add to the list</label><input id="nb-i" type="text" maxlength="120" placeholder="e.g. Buy water for the crew room"></div><div class="field" style="align-self:end"><button id="nbadd">Add</button></div></div>
+    <div class="btns">${assetsNS?`<button id="nbsave">Save to Documents</button>`:""}</div>
+    ${nbMsg?`<p class="note" role="status" style="margin:0">${esc(nbMsg)}</p>`:""}`}
+function nbText(k){const N=nbOf(k),d=S.roster[k];return `Crew Day notes, ${fmtDate(k,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}${d&&destCodes(d)?" ("+destCodes(d).replace(/\n/g,", ")+")":""}\n\n${N.text||""}\n\n${N.items.map(it=>(it.done?"[x] ":"[ ] ")+it.t).join("\n")}\n`}
 /* ---------- Backup (installable app only) ---------- */
 // the chosen file and the restore message live outside the page, so a background refresh can't lose them
 let bkFile=null,rsMsg="";
@@ -2919,6 +2962,7 @@ function viewTrip(){
   ${on("weather")?fold("wxtoday","Weather today",()=>wxDayBody(today(),dutyCity(S.duty)||S.trip.city).html+`<p class="note" style="margin:0">Tomorrow's weather is on Plan.</p>`,false,""):""}
   ${S.profile.role==="pilot"&&on("pilot")?fold("pilot","Pilot briefing",pilotBody,false,"Wind and runways"):""}
   ${on("more_water")?fold("water","Water",waterBody,true,w.ml+" / "+w.goal+" ml"):""}
+  ${on("notebook")?fold("notebook","Notebook",notebookBody,false,(()=>{const N=nbOf(nbKey()),left=N.items.filter(x=>!x.done).length;return N.items.length?left+" to do":N.text?"Notes saved":"Notes and lists"})()):""}
   ${on("timers")?fold("timers","Timers",timersBody,running>0,running?running+" running":""):""}
   ${on("moves")?fold("moves","Exercises and stretches",movesBody,false,"On board, after, layover"):""}
   ${fold("dest","Destination",destPick,!dest,dest?esc(dest):"Not set")}
@@ -3578,7 +3622,7 @@ function viewPerks(){
 const TOGGLES=[
   ["Main tabs",[["tab_trip","Trip"],["tab_plan","Plan"],["tab_me","Me"]]],
   ["Today",[["core","Before you leave"],["travel","Getting there"],["late","Running late"]]],
-  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","News"]]],
+  ["Trip",[["ftimer","Flight timer"],["trip_flights","My flights"],["notebook","Notebook"],["pilot","Pilot briefing (pilots)"],["more_water","Water"],["timers","Timers"],["moves","Exercises and stretches"],["destfacts","Destination facts and events"],["words","Useful words"],["more_currency","Currency"],["more_news","News"]]],
   ["Plan",[["planday","Tonight and sleep"],["evening","Evening prep and grooming"],["kitcheck","Kit check"],["packing","Packing"],["weather","Weather"],["todo","To do"],["food","Food and meals"]]],
   ["Me",[["more_wellbeing","Mood and energy"],["me_selfcare","My routine"],["me_fitness","Fitness"]]],
   ["More",[["tool_roster","Roster"],["tool_money","Money"],["more_hours","FTL and hours"],["more_notes","Layover"],["more_meals","Meals and shopping"],["kitlist","Grooming and kit"],["more_care","Uniform care"],["perks","Crew discounts"]]],
@@ -3611,6 +3655,7 @@ const TOOLS=[
   ["security","Privacy and lock",null,"Lock the app with a PIN and keep your data private.",()=>SEC.cfg()?"PIN lock on":"PIN lock off",viewSecurity],
   ["issues","Report an issue",null,"Tell us what's not working or what you'd like.",()=>{const q=(S.issues||[]).filter(r=>!r.sent).length,n=(S.issues||[]).filter(r=>r.sent&&r.sent>=today()).length;return q?q+" waiting for signal":n?n+" sent today":"Problems and ideas"},viewIssues],
   ["perks","Crew discounts","perks","Staff schemes and deals you use.",()=>S.perks.length+" saved",viewPerks],
+  ["files","Documents","documents","Folders of PDFs and pictures you need for work.",()=>{const n=docsState().files.length;return n?n+" file"+(n===1?"":"s"):"Make folders, add files"},()=>viewFiles()],
   ["backup","Backup",null,"",()=>backupHint(),()=>viewBackup()]
 ];
 function toolOn(x){if(x[0]==="backup"&&!IS_PWA)return false;return !x[2]||on(x[2])}
@@ -3674,6 +3719,7 @@ document.addEventListener("visibilitychange",()=>{
   else{document.body.classList.remove("privacy");if(c&&!lockMode&&SEC.hiddenAt&&Date.now()-SEC.hiddenAt>=(+c.auto||0)*60000){SEC.locked=true;showLock("unlock")}}
 });
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pin]");if(!b)return;e.stopPropagation();pinKey(b.dataset.pin)},true);
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.id==="nb-i"){e.preventDefault();const b=$("#nbadd");if(b)b.click()}});
 document.addEventListener("keydown",e=>{if(!lockMode)return;if(/^[0-9]$/.test(e.key))pinKey(e.key);else if(e.key==="Backspace")pinKey("del");else if(e.key==="Enter"&&lockMode!=="unlock")pinKey("ok")});
 function viewSecurity(){
   const c=SEC.cfg();
@@ -3815,6 +3861,14 @@ document.addEventListener("click",e=>{
   if(b.id==="chkupd"){const m=$("#updmsg");if(!navigator.onLine){if(m)m.textContent="You're offline. It checks again when you have signal.";return}
     if(m)m.textContent="Checking…";Promise.resolve(window.crewdayCheckUpdate?window.crewdayCheckUpdate():false).then(found=>{const m2=$("#updmsg");if(m2)m2.textContent=found?"New version found. It loads in a few seconds.":"You have the latest version."});return}
   if(b.dataset.delalso){const [d,i]=b.dataset.delalso.split("|"),x=S.roster[d];if(x&&x.also){x.also.splice(+i,1);if(!x.also.length)delete x.also}render();save();return}
+  if(b.dataset.docopen!==undefined){docOpen=b.dataset.docopen;docMsg="";docDel="";render();return}
+  if(b.id==="docnew"){const v=(($("#doc-nf")||{}).value||"").trim();if(!v){docMsg="Type a name for the folder.";render();return}if(docsState().folders.some(x=>x.name.toLowerCase()===v.toLowerCase())){docMsg="There's already a folder called "+v+".";render();return}docFolder(v.slice(0,40));docMsg="";render();save();return}
+  if(b.dataset.docdelf){const id=b.dataset.docdelf;if(docDel!==id){docDel=id;render();return}const D=docsState(),e=D.files.find(x=>x.id===id);if(e){try{assetsNS&&assetsNS.delete(e.asset)}catch(x){}D.files=D.files.filter(x=>x.id!==id)}docDel="";render();save();return}
+  if(b.dataset.docdelfolder){const id=b.dataset.docdelfolder;if(docDel!==id){docDel=id;render();return}const D=docsState();D.files.filter(x=>x.folder===id).forEach(e=>{try{assetsNS&&assetsNS.delete(e.asset)}catch(x){}});D.files=D.files.filter(x=>x.folder!==id);D.folders=D.folders.filter(x=>x.id!==id);docOpen="";docDel="";render();save();return}
+  if(b.id==="nbadd"){const i=$("#nb-i"),v=(i&&i.value||"").trim();if(!v)return;nbOf(nbKey()).items.push({id:uid(),t:v.slice(0,120),done:false});render();save();setTimeout(()=>{const j=$("#nb-i");if(j)j.focus()},0);return}
+  if(b.dataset.nbdel){const N=nbOf(nbKey());N.items=N.items.filter(x=>x.id!==b.dataset.nbdel);render();save();return}
+  if(b.id==="nbsave"){const k=nbKey(),d=S.roster[k],dest=d&&destCodes(d)?destCodes(d).split("\n")[0]:"Trip",name=`Notes-${dest}-${k}.txt`;
+    docSave("Trip notes",new Blob([nbText(k)],{type:"text/plain"}),name).then(()=>{nbMsg="Saved to Documents › Trip notes as "+name+".";render()}).catch(()=>{nbMsg="Couldn't save. The phone may be full.";render()});return}
   if(b.id==="calsave"){const u=calLinkOk(($("#cal-u")||{}).value);if(!u){rosterMsg="That doesn't look like a calendar link. It should start with https:// or webcal://.";render();return}S.rosterLink={url:u,at:"",err:""};save();calLinkFetch(true);return}
   if(b.id==="calget"){const u=calLinkOk(($("#cal-u")||{}).value);if(u&&S.rosterLink)S.rosterLink.url=u;calLinkFetch(true);return}
   if(b.id==="caldel"){delete S.rosterLink;rosterMsg="Calendar link removed from this phone.";render();save();return}
@@ -4058,6 +4112,13 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 document.addEventListener("change",e=>{
   const el=e.target;
   if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
+  if(el.id==="nb-t"){nbOf(nbKey()).text=el.value;save();return}
+  if(el.id==="nb-k"){S.nbView=el.value===((S.duty&&S.duty.date)||today())?"":el.value;render();return}
+  if(el.dataset.nbtick){const it=nbOf(nbKey()).items.find(x=>x.id===el.dataset.nbtick);if(it)it.done=el.checked;render();save();return}
+  if(el.dataset.docren){const f=docsState().folders.find(x=>x.id===el.dataset.docren),v=el.value.trim();if(f&&v)f.name=v.slice(0,40);render();save();return}
+  if(el.dataset.docadd){const fid=el.dataset.docadd,list=[...(el.files||[])];if(!list.length)return;docMsg="Saving…";render();
+    (async()=>{let ok=0;for(const fl of list){try{const r=await assetsNS.upload(fl);docsState().files.push({id:uid(),folder:fid,name:fl.name||"File",asset:r.id,type:fl.type||"",size:fl.size||0,date:today()});ok++}catch(e){}}
+      docMsg=ok===list.length?`Saved ${ok} file${ok===1?"":"s"}.`:`Saved ${ok} of ${list.length}. A file may be too big (20 MB max) or the phone is full.`;render();save()})();return}
   if(el.id==="ocr-f"){const f=[...(el.files||[])];if(f.length)ocrRead(f);return}
   if(el.id==="bk-file"){bkFile=el.files&&el.files[0]||null;rsMsg="";pendingDel=null;return}
   if(el.id==="sayslow"){S.slowSay=el.checked;save();return}
