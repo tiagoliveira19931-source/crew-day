@@ -36,3 +36,4 @@ Also 1.35.3 (from a screenshot Tiago sent): Getting home tidy-up: Take this butt
 - Today: Now card with the current step and time left; everything else folds (also Plan and Trip). Destination card removed (place comes from flights).
 - Dish drawings with a full view (ingredients, how to make it).
 - 1.36.1 (Tiago): "if you're off quickly" counts from the predicted landing (online estimate or running timer) + quickest time to the stop; sketches behind the Now card; dish photos from Wikipedia (dish name only looked up) with the drawing as fallback.
+- 1.36.2: code clean-up: removed unused screens and helpers (old map, notes, week list, payslip leftovers), unused styles and duplicate airport codes; lint clean; tests write screenshots to /tmp.

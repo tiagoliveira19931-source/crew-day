@@ -15,6 +15,6 @@ with sync_playwright() as p:
     pg.clock.set_system_time(datetime.datetime(2026,11,13,11,35)); pg.click("[data-tab=today]")
     print("11:35:",pg.inner_text(".pass").replace("\n"," "))
     pg.click(".bigbtn[data-sbcheck]"); print("after:",pg.inner_text(".pass").replace("\n"," "))
-    pg.screenshot(path="look_sb.png",full_page=True)
+    pg.screenshot(path="/tmp/look_sb.png",full_page=True)
     pg.click("[data-tab=more]"); pg.click('[data-more="settings"]'); pg.click('[data-mode="auto"]'); print("auto bg:",pg.evaluate("getComputedStyle(document.body).backgroundColor")); pg.click('[data-mode="light"]'); print("light bg:",pg.evaluate("getComputedStyle(document.body).backgroundColor"))
     print("ERRORS:",errs or "none")

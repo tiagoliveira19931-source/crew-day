@@ -1,4 +1,4 @@
-const {rpList,rpCal}=require("./rparse.js");
+// Made-up roster text samples (as copied from crew-app screenshots). Read by the Python tests; not run on its own.
 const row=`Roster
 Legend
 DUTY
@@ -81,8 +81,6 @@ STN
 22:55 Z
 22:55 LT
 CHECK OUT`;
-console.log(JSON.stringify(rpList(row),null,0));
-console.log(JSON.stringify(rpList(col),null,0));
 const cal=`Calendar Legend
 November 2026 Flight time: 63h 1m
 Mon Tue Wed Thu Fri Sat Sun
@@ -104,7 +102,5 @@ Mon Tue Wed Thu Fri Sat Sun
 OFF OFF OFF L L L
 7 8 9 10 11 12 13
 L L OFF OFF OFF DUTY DUTY`;
-console.log(rpCal(cal).map(e=>e.date.slice(5)+":"+e.kind+(e.n?e.n:"")).join(" "));
 const cell=`November 2026
 1 OFF 2 VTO 3 HSBY 4 HSBY 5 HSBY 6 2 7 OFF 8 OFF 9 OFF 10 2 11 HSBY 12 2`;
-console.log(rpCal(cell).map(e=>e.date.slice(5)+":"+e.kind).join(" "));

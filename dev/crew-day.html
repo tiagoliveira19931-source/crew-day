@@ -125,17 +125,10 @@ nav .tabs{max-width:560px;margin:0 auto;display:grid;grid-auto-flow:column;grid-
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:12px;padding:4px;gap:4px}
 .seg button{border:0;border-radius:9px;background:transparent;color:var(--muted);font:700 15px var(--body);min-height:42px}
 .seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(20,27,45,.15)}
-.secrow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 36px;gap:4px;align-items:center;padding:8px;border-radius:10px;background:var(--bg)}
-.sectimes{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.sectimes label{display:grid;gap:2px;font-size:11px;font-weight:600;color:var(--muted)}
-.secrow input{padding:7px 6px;font-size:14px;min-height:40px;font-family:var(--mono);background:var(--surface)}
-.secrow button{min-height:36px;padding:0}
 .sw{appearance:none;-webkit-appearance:none;width:44px!important;height:26px!important;min-height:26px!important;border-radius:99px;background:var(--line);position:relative;flex:none;cursor:pointer;padding:0!important;border:0!important;transition:background .2s}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s}
 .sw:checked{background:var(--accent)}
 .sw:checked::after{transform:translateX(18px)}
-.newsgrid{display:grid;gap:8px}
-.newsl{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);text-decoration:none}
 /* colour themes (chosen in More › Choose your tools) */
 .app.c-teal{--accent:#2E7D84;--accent-soft:#E2F1F2;--night:#23464B;--hl:#9AD7DC;--accent-ink:#FFFFFF}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .app.c-teal{--accent:#7CC3C9;--accent-soft:#1B3436;--night:#12282B;--hl:#9AD7DC;--accent-ink:#0E1416}}
@@ -170,7 +163,6 @@ nav .tabs{max-width:560px;margin:0 auto;display:grid;grid-auto-flow:column;grid-
 .ftlgrid b{font:700 20px var(--mono);font-variant-numeric:tabular-nums}
 .bigbtn{min-height:56px;font-size:17px;width:100%}
 button.danger{background:var(--danger);border-color:var(--danger);color:var(--surface)}
-.rcdue{border-color:var(--accent);background:var(--accent-soft)}
 .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .row2 .field{min-width:0}
 .row2 input{width:100%;box-sizing:border-box}
@@ -233,9 +225,6 @@ main[data-art="backup"] header:first-of-type::before{content:"";-webkit-mask-ima
 body.privacy main,body.locked main,body.locked nav{visibility:hidden}
 a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--body);text-decoration:none}
 .sbprog{display:grid;gap:6px}
-.sbtimes{display:flex;flex-wrap:wrap;gap:6px}
-.sbtimes span{font:600 13px var(--mono);padding:4px 8px;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
-.sbtimes span.on{background:var(--accent-soft);color:var(--ink);text-decoration:line-through;border-color:transparent}
 .nudges{display:grid;gap:10px;border-color:var(--accent);background:var(--accent-soft)}
 .nudge{display:grid;grid-template-columns:32px 1fr;gap:10px;align-items:start}
 .nudge .ni{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--accent);font-weight:700;font-size:13px;border:1px solid var(--accent)}
@@ -264,7 +253,6 @@ a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:4
 .tile .tl{color:var(--accent);font-weight:700}
 .back{justify-self:start;background:none;border:0;color:var(--accent);font-weight:700;padding:4px 0;min-height:36px}
 .linkbtn{background:none;border:0;padding:0;min-height:0;color:var(--accent);font-weight:700;font-size:inherit}
-.wkform{grid-column:1/-1;display:grid;gap:10px;background:var(--bg);border-radius:12px;padding:12px}
 .tip{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .tip:last-child{border-bottom:0}
 .tip.ride{grid-template-columns:62px minmax(0,1fr) auto;align-items:center}.tip.ride .pick{white-space:nowrap}
@@ -277,11 +265,6 @@ ul.plain{margin:0;padding-left:18px;display:grid;gap:6px}
 nav button{border:0;border-radius:0;background:transparent;color:var(--muted);display:grid;justify-items:center;gap:3px;font-size:12px;padding:9px 4px 10px;min-height:58px}
 nav button svg{width:22px;height:22px}
 nav button[aria-current="page"]{color:var(--accent)}
-.jvm-container{touch-action:none;position:relative;overflow:hidden;height:100%;width:100%}
-.jvm-tooltip{position:absolute;display:none;border-radius:6px;background:var(--night);color:#F4F1EA;font:600 13px var(--body);padding:4px 8px;white-space:nowrap;z-index:5}
-.jvm-tooltip.active{display:block}
-.jvm-zoom-btn{position:absolute;left:10px;width:32px;height:32px;line-height:30px;text-align:center;border-radius:8px;background:var(--surface);border:1px solid var(--line);color:var(--ink);cursor:pointer;font-weight:700;box-sizing:border-box;user-select:none}
-.jvm-zoom-btn.jvm-zoomin{top:10px}.jvm-zoom-btn.jvm-zoomout{top:48px}
 textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .blkgrid{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 10px;align-items:center;margin:8px 0}.blkgrid label{font-size:13px;font-weight:600;color:var(--muted)}.blkgrid input{min-width:0}
@@ -324,6 +307,16 @@ textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   window.Date=HD;window.CREWDAY_HOME_CLOCK=true})();
 </script>
 <script>
+/* =====================================================================================
+   Crew Day — one file, sections in this order (search for "/* ---------- <name>"):
+   saving · security · time maths · train and bus · views (shared helpers) · reference data ·
+   installable app (PWA) files · Week (roster import and editing) · Weekly meals · dish pictures ·
+   Sick leave · Self-certificate · Documents · Trip notebook · Backup · Aviation news ·
+   folding sections · the next duty · where today's duty is up to · small bodies shared between tabs ·
+   standby pieces · TODAY (reminders, weather, Now card) · TRIP (flight timer, live times) ·
+   PLAN · ME · MORE · issue reports · render (events) · start.
+   Rules for changes are in CLAUDE.md. Tests: dev/run_tests.sh must print ALL PASSED.
+   ===================================================================================== */
 (function(){
 const ICON={
   speaker:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
@@ -393,7 +386,6 @@ const DEFAULT={
   trip:{country:"Spain",city:""},
   pay:{payType:"sector",basic:0,sectorPay:0,sectors:0,dutyRate:0,dutyHours:0,flightRate:0,flightHours:0,allowances:0,pension:5,month:"",dayMethod:"365",dayRate:0,sickPay:"ssp",unpaidDays:0},
   expenses:[],
-  payslips:[],
   profile:{airline:"Ryanair",base:"STN"},
   perks:[
     {id:uid(),t:"Your airline's staff travel and perks portal",u:"",n:"Check your company intranet for staff travel, uniform allowance and partner discounts."},
@@ -578,7 +570,6 @@ function tHas(rk){return rk?ttCount(tt("out",rk))>0:RK.some(r=>tHas(r))}
 /* how you're going on a given day: your pick for that day, or your usual way; "car" when no timetable */
 function modeOf(date){const c=(S.tmode||{})[date||today()];if(c==="car")return "car";if(c&&tHas(c))return c;const u=S.duty.mode;if(RK.includes(u)&&tHas(u))return u;if(u==="transit"){const pf=tPref();return pf!=="fastest"&&tHas(pf)?pf:RK.find(r=>tHas(r))||"car"}return "car"}
 function useT(date){return modeOf(date)!=="car"}
-function tOn(){return useT(S.duty.date||today())}
 function tList(date,which,rk){rk=rk||"train";const v=tt(which||"out",rk),w=new Date(date+"T12:00:00").getDay(),L=w===6?(v.sat.length?v.sat:v.wk):w===0?(v.sun.length?v.sun:v.sat.length?v.sat:v.wk):v.wk;
   return L.map(x=>{const d=new Date(date+"T"+x.d+":00");let a=x.a?new Date(date+"T"+x.a+":00"):new Date(d.getTime()+(+R(rk).ride||10)*60000);if(!x.e&&x.n){const rm=routeRides(rk)[x.n];if(rm)a=new Date(d.getTime()+rm*60000)}if(a<d)a=new Date(a.getTime()+86400000);return {t:x.d,dep:d,arr:a,n:x.n||""}})}
 function routeRides(rk){const o={};String(R(rk).rides||"").replace(/([0-9]{1,4}[a-z]?)\s*[=:]\s*([0-9]{1,3})/gi,(m,a,b)=>{o[a.toUpperCase()]=+b;o[a]=+b});return o}
@@ -732,12 +723,10 @@ function packFor(c0,city0,date0){
   return {items,label,mo};
 }
 function thumb(file,max){return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c)};img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("bad image"))};img.src=url})}
-function photoSrc(p){if(!p)return "";if(String(p).startsWith("data:image/"))return p;return "/_blob/"+p}
 /* ---------- installable app (PWA) support: files live on the phone in IndexedDB ---------- */
 const IS_PWA=!!window.CREWDAY_PWA;
 const isLocal=id=>String(id||"").startsWith("idb:");
 function blobAttr(id,dl){if(isLocal(id))return `href="#" data-blob="${esc(id)}"${dl?` download="${esc(dl)}"`:""}`;return `href="/_blob/${esc(id)}" target="_blank" rel="noopener"`}
-function imgAttr(p){if(isLocal(p))return `src="" data-blob="${esc(p)}"`;return `src="${esc(photoSrc(p))}"`}
 const IDB={db:null,open(){return this.db||(this.db=new Promise((res,rej)=>{const r=indexedDB.open("crewday-files",1);r.onupgradeneeded=()=>r.result.createObjectStore("files");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
   async put(k,v){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction("files","readwrite");t.objectStore("files").put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})},
   async get(k){const d=await this.open();return new Promise((res,rej)=>{const q=d.transaction("files").objectStore("files").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})},
@@ -813,10 +802,8 @@ function isDutyK(k){return k==="flying"||k==="standby"||k==="asby"||k==="trainin
 function hasEnd(k){return k==="asby"||k==="training"||k==="adty"}
 function placeOf(d){d=d||S.duty;return d.kind==="training"&&d.loc?d.loc:d.airport||""}
 const KIND_CELL={off:"Day off",leave:"Annual leave",vto:"VTO",sick:"Sick",standby:"Home standby",asby:"Airport standby",training:"Training",adty:"Airport duty",other:""};
-const KIND_SHORT={off:"OFF",leave:"AL",vto:"VTO",sick:"SICK",standby:"HSBY",asby:"ASBY",training:"TRG",adty:"ADTY",other:""};
-let weekOff=0,editDay=null,rosterBackup=null,sampleNS=null,sampleImages=false,rosterBusy=null,rosterMsg="";
+let editDay=null,rosterBackup=null,sampleNS=null,sampleImages=false,rosterBusy=null,rosterMsg="";
 function mondayOf(d){const x=new Date(d+"T00:00:00"),w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
-function weekDates(){const m=addDays(mondayOf(today()),weekOff*7),out=[];for(let i=0;i<7;i++)out.push(addDays(m,i));return out}
 function validDay(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&KIND_NAME[e.kind]}
 function cleanTime(t){t=String(t||"").trim();const m=t.match(/^(\d{1,2}):?(\d{2})$/);if(!m)return "";const h=+m[1],mi=+m[2];return h<24&&mi<60?String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0"):""}
 function cleanSectors(a){return (Array.isArray(a)?a:[]).slice(0,10).map(x=>({flt:String(x.flt||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8),from:String(x.from||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),to:String(x.to||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),dep:cleanTime(x.dep),arr:cleanTime(x.arr),typ:["op","dh","gt"].includes(x.typ)?x.typ:"op",est:Math.max(0,Math.min(900,parseInt(x.est)||0)),reg:String(x.reg||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),ctot:cleanTime(x.ctot),offb:cleanTime(x.offb),onb:cleanTime(x.onb),offbLive:!!x.offbLive,onbLive:!!x.onbLive})).filter(x=>x.flt||x.from||x.to||x.dep)}
@@ -870,7 +857,6 @@ function rosterAll(){/* manual duties plus roster flying/standby days, one per d
 }
 /* roster times are Zulu (UTC) by default; the app shows and plans in local time */
 function RZ(){return (S.profile&&S.profile.rosterTz)!=="local"}
-function zl(){return RZ()?"Z":""}
 function r2lDT(date,t){const [y,mo,da]=date.split("-").map(Number),[h,m]=t.split(":").map(Number);return RZ()?new Date(Date.UTC(y,mo-1,da,h,m)):new Date(y,mo-1,da,h,m)}
 function r2l(date,t){t=cleanTime(t);if(!t||!date)return t||"";return hm(r2lDT(date,t))}
 function l2r(date,t){t=cleanTime(t);if(!t||!RZ()||!date)return t||"";const d=new Date(date+"T"+t+":00");return String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0")}
@@ -935,7 +921,7 @@ function fltFill(i){
     fltNote(i,n?`Filled from your ${esc(f)}${m.d?" on "+esc(fmtDate(m.d,{day:"numeric",month:"short"})):""}. ${key?"Checking the current schedule…":"Check the times, schedules change by season."}`:"");if(!key||navigator.onLine===false)return}
   if(key&&navigator.onLine!==false){if(!m)fltNote(i,"Looking up "+esc(f)+"…");
     alSched(f,key,day).then(o=>{if(cleanFlt(($("#sc-flt-"+i)||{}).value)!==f)return;
-      if(o&&o.r){const z=RZ(),n=fltSet(i,"from",o.r.dep_iata,!!m)+fltSet(i,"to",o.r.arr_iata,!!m)+fltSet(i,"dep",z?o.r.dep_time_utc:o.r.dep_time,true)+fltSet(i,"arr",z?o.r.arr_time_utc:o.r.arr_time,true);
+      if(o&&o.r){const z=RZ();fltSet(i,"from",o.r.dep_iata,!!m);fltSet(i,"to",o.r.arr_iata,!!m);fltSet(i,"dep",z?o.r.dep_time_utc:o.r.dep_time,true);fltSet(i,"arr",z?o.r.arr_time_utc:o.r.arr_time,true);
         fltNote(i,`${esc(o.r.dep_iata)} → ${esc(o.r.arr_iata)} ${esc(z?o.r.dep_time_utc:o.r.dep_time)}–${esc(z?o.r.arr_time_utc:o.r.arr_time)}${z?"Z":" local"} from the AirLabs schedule${o.days?" ("+esc(o.days)+")":""}. Check it against your roster.`);return}
       if(o&&o.err){fltNote(i,esc(o.err)+(m?" Kept the times from last time.":""));return}
       if(m)fltNote(i,`Filled from your ${esc(f)}${m.d?" on "+esc(fmtDate(m.d,{day:"numeric",month:"short"})):""}. ${esc(f)} isn't in the online schedule for that day, so check the times.`);
@@ -1036,8 +1022,6 @@ function rpCal(txt){
   }
   return out;
 }
-function rpParse(txt){const L=rpList(txt),C=rpCal(txt);return {list:L,cal:C}}
-
 function z2roster(date,t){if(!t||RZ())return t;const d=new Date(date+"T"+t+":00Z");return hm(d)}
 
 // Roster changes: compare a new import with what was saved before.
@@ -1161,7 +1145,7 @@ function rpCareful(e){const old=S.roster[e.date];if(!old)return e;
   if(hasOld&&full(e)<full(old))return null;                   // a weaker reading than what we have: leave the day as it is
   const os=old.sectors||[];
   const sec=(e.sectors||[]).map((x,i)=>{const o=os.find(y=>x.flt&&cleanFlt(y.flt)===cleanFlt(x.flt))||(!x.flt&&os[i]&&(!x.from||os[i].from===x.from)?os[i]:null);if(!o)return x;
-    const r2z=v=>v;return Object.assign({},x,{flt:x.flt||o.flt,from:x.from||o.from,to:x.to||o.to,dep:x.dep||"",arr:x.arr||"",reg:x.reg||o.reg||"",_old:o})});
+    return Object.assign({},x,{flt:x.flt||o.flt,from:x.from||o.from,to:x.to||o.to,dep:x.dep||"",arr:x.arr||"",reg:x.reg||o.reg||"",_old:o})});
   if(os.length&&sec.length<os.length&&sec.some(x=>!x.dep||!x.arr))return null;   // fewer, half-read flights: keep what we have
   return Object.assign({},e,{report:e.report||"",off:e.off||"",sectors:sec,_keep:old})}
 function rpApply(txt,careful){
@@ -1347,7 +1331,7 @@ function suggestSnacks(ws,only){const M=mealsState(),used={};
     for(let k=0;k<SNACK_N[t];k++){const c=pool.filter(n=>!pick.includes(n)).sort((a,b)=>(used[a]||0)-(used[b]||0)||(((i*31+k*17+a.length*7+a.charCodeAt(0))%23)-((i*31+k*17+b.length*7+b.charCodeAt(0))%23)))[0];if(c){pick.push(c);used[c]=(used[c]||0)+1}}
     M.snacks[d]=pick}}
 // full method online (meals are made at home, before the duty, so a link is fine)
-/* ---------- dish pictures: soft line drawings (no photos to download), tap for the full view ---------- */
+/* ---------- dish pictures: a Wikipedia photo of the dish when online, a line drawing otherwise; tap for the full view ---------- */
 const DISH_SVG={
  bowl:'<path d="M8 30h48c0 13-10 22-24 22S8 43 8 30z"/><path d="M22 52h20"/><path d="M18 30c2-6 6-9 10-9 3 0 5 2 6 4 2-3 5-5 9-4 4 1 6 5 6 9"/><circle cx="26" cy="26" r="1.6"/><circle cx="38" cy="25" r="1.6"/>',
  wrap:'<path d="M14 46 40 14c4-4 10-2 11 3 1 4-1 7-4 9L20 52c-3 2-7 1-8-2-1-1 0-3 2-4z"/><path d="M40 14c-3 6-1 11 7 12"/><path d="M24 36l6 6M30 30l5 5"/>',
@@ -1395,7 +1379,6 @@ function openDish(n){const R=RECIPES[n]||{},m=mealInfo(n),old=document.getElemen
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("dishview");if(d)d.remove()}});
 function howLink(name){return `<a class="note" style="margin:0" href="https://www.google.com/search?q=${encodeURIComponent(name+" recipe")}" target="_blank" rel="noopener">How to make it ↗</a>`}
 function snacksFor(d){const M=mealsState();return (M.snacks[d]||[]).filter(Boolean)}
-const ALL_MEALS=()=>[].concat(...Object.keys(MEALS).map(k=>MEALS[k].map(m=>m[0])));
 function weekStart(d){const x=new Date((d||today())+"T12:00:00");const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x.toISOString().slice(0,10)}
 function mealsState(){if(!S.meals)S.meals={week:"",plan:{},got:{},extra:[],off:{},snacks:{}};const M=S.meals;if(!M.plan)M.plan={};if(!M.snacks)M.snacks={};if(!M.got)M.got={};if(!M.extra)M.extra=[];if(!M.off)M.off={};return M}
 function dayTypeOf(d){const r=S.roster[d];if(!r||!isDutyK(r.kind)||!r.report)return null;return dutyType(r2lDT(d,r.report))}
@@ -1416,7 +1399,7 @@ function batchNotes(ws){const M=mealsState(),by={};for(let i=0;i<7;i++){const d=
 function viewMeals(){
   const M=mealsState(),ws=S.mealWeek||weekStart(today());if(M.week!==ws&&!Object.keys(M.plan).some(d=>d>=ws&&d<addDays(ws,7)))suggestWeek(ws);
   if(Object.keys(M.plan).some(d=>d>=ws&&d<addDays(ws,7))&&[...Array(7)].some((_,i)=>{const d=addDays(ws,i);return dayTypeOf(d)&&!M.snacks[d]}))suggestSnacks(ws,true);
-  const names=ALL_MEALS(),days=[...Array(7)].map((_,i)=>addDays(ws,i)),list=shopList(ws),bn=batchNotes(ws);
+  const days=[...Array(7)].map((_,i)=>addDays(ws,i)),list=shopList(ws),bn=batchNotes(ws);
   const qty=x=>x.u===""?(x.q+" ×"):x.u==="tin"?x.q+" tin"+(x.q>1?"s":""):x.u==="slices"?x.q+" slices":x.q>=1000?(x.q/1000).toFixed(1).replace(/\.0$/,"")+(x.u==="g"?" kg":" l"):x.q+" "+x.u;
   const left=list.filter(x=>!M.got[x.key]).length+M.extra.filter(x=>!x.d).length;
   return `<section class="card">
@@ -1450,7 +1433,6 @@ function minusMins(t,m){t=cleanTime(t);if(!t)return "";const [h,mi]=t.split(":")
 function codeOf(city){const k=Object.keys(IATA).find(c=>IATA[c]===city);return k||""}
 function cleanFlt(f){return String(f||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8)}
 function fr24Flight(f){return "https://www.flightradar24.com/data/flights/"+encodeURIComponent(String(f).toLowerCase())}
-function fr24Airport(code,board){return "https://www.flightradar24.com/data/airports/"+encodeURIComponent(String(code||"stn").toLowerCase())+(board?"/"+board:"")}
 // Airlines the app knows. Ryanair UK is part of the Ryanair group (same app, crew codes, 1-hour call-out); Norse flies long-haul.
 const AIRLINES=["Ryanair","Ryanair UK","Jet2","Norse","Other"];
 function isRyr(){return /^Ryanair/.test(S.profile.airline||"")}
@@ -1513,54 +1495,6 @@ function viewWeek(){
     ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
   </section>`;
 }
-function viewWeekList(){
-  const dates=weekDates(),t=today();
-  const ws=dates.map(d=>S.roster[d]).filter(Boolean);
-  const hrs=dates.map(d=>S.roster[d]).filter(e=>e&&isDutyK(e.kind)&&e.report&&e.off).reduce((s,e)=>s+dutyHours(e),0);
-  const label=fmtDate(dates[0],{day:"numeric",month:"short"})+" – "+fmtDate(dates[6],{day:"numeric",month:"short"});
-  return `
-  <header><h1>Your week</h1><p class="sub">Your roster at a glance. Tap a day to plan it.</p></header>
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-    <button data-wk="-1" aria-label="Previous week">‹ Prev</button>
-    <div style="text-align:center"><b style="font-family:var(--display)">${esc(label)}</b><br><span class="note">${weekOff===0?"This week":weekOff===1?"Next week":weekOff===-1?"Last week":""}</span></div>
-    <button data-wk="1" aria-label="Next week">Next ›</button>
-  </div>
-  <section class="pass" aria-label="Week summary" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-    <div><span class="k">Flying</span><span class="v hl">${ws.filter(e=>e.kind==="flying").length}</span><span class="d">days</span></div>
-    <div><span class="k">Standby</span><span class="v">${ws.filter(e=>e.kind==="standby").length}</span><span class="d">days</span></div>
-    <div><span class="k">Duty</span><span class="v">${hrs.toFixed(1)}</span><span class="d">hours</span></div>
-  </section>
-  <section class="card" style="gap:0">
-    ${dates.map(d=>{const e=S.roster[d],dt=new Date(d+"T00:00:00"),isT=d===t;
-      return `<div class="wk ${isT?"today":""}">
-        <div class="dn"><b>${dt.toLocaleDateString("en-GB",{weekday:"short"})}</b><span>${dt.getDate()}</span></div>
-        <div style="min-width:0">${e?`<span class="kind ${e.kind}">${KIND_NAME[e.kind]}</span>${e.report?`<span style="font-family:var(--mono);font-weight:700">${esc(e.report)}${e.off?"–"+esc(e.off):""}</span>`:""}${e.dest?`<br><span>${esc(e.dest)}</span>`:""}${e.note&&e.note!==e.dest?`<br><span class="note" style="overflow-wrap:anywhere">${esc(e.note)}</span>`:""}`:`<span class="note">Nothing added</span>`}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${e&&isDutyK(e.kind)?`<button class="primary" data-useday="${d}">Plan</button>`:""}<button data-editday="${d}">${e?"Edit":"Add"}</button></div>
-        ${editDay===d?`<div class="wkform">
-          <div class="row"><div class="field"><label for="rw-k">Day type</label><select id="rw-k">${KINDS.map(k=>`<option value="${k[0]}" ${(e&&e.kind||"flying")===k[0]?"selected":""}>${k[1]}</option>`).join("")}</select></div><div class="field"><label for="rw-d">Destination</label><input id="rw-d" type="text" list="citylist" value="${esc(e&&e.dest||"")}" placeholder="City or code, e.g. AGP"></div></div>
-          <div class="row"><div class="field"><label for="rw-r">Report / start</label><input id="rw-r" type="time" value="${esc(e&&e.report||"")}"><span class="note" style="margin:0">Leave blank to work it out: ${repBefore()} min before the first departure.</span></div><div class="field"><label for="rw-o">Off duty / end</label><input id="rw-o" type="time" value="${esc(e&&e.off||"")}"></div></div>
-          <div class="field"><label for="rw-n">Note</label><input id="rw-n" type="text" value="${esc(e&&e.note||"")}" placeholder="e.g. FR8123 / FR8124"></div>
-          <div class="btns"><button class="primary" data-saveday="${d}">Save</button>${e?`<button data-clearday="${d}">Clear day</button>`:""}<button class="ghost" data-canceledit="1">Cancel</button></div>
-        </div>`:""}
-      </div>`}).join("")}
-  </section>
-  <datalist id="citylist">${CITIES.map(c=>`<option value="${esc(c.name)}">`).join("")}</datalist>
-  ${changesNote("all")}
-  <section class="card">
-    <h2>Bring in your roster</h2>
-    ${sampleNS?`
-    <div class="field"><label for="rost-t">Paste your roster</label><textarea id="rost-t" rows="5" placeholder="Copy your roster from your crew app or PDF and paste it here" style="width:100%;box-sizing:border-box;font:500 14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea></div>
-    ${sampleImages?`<div class="field"><label for="rost-img">Or a screenshot or photo of it</label><input id="rost-img" type="file" accept="image/jpeg,image/png,image/webp"></div>`:""}
-    <div class="btns"><button class="primary" id="readroster" ${rosterBusy?"disabled":""}>${rosterBusy?"Reading…":"Read my roster"}</button>${rosterBusy?`<button id="stoproster">Stop</button>`:""}</div>
-    <p class="note">Claude reads it and fills in your days. Uses your Claude account and asks your permission the first time.</p>`:""}
-    ${sampleNS?"":pasteImportHTML()}
-    ${calLinkHTML()}
-    <div class="field"><label for="ics">Calendar file from your roster app (.ics)</label><input id="ics" type="file" accept=".ics,text/calendar"></div>
-    <p class="note" id="rostmsg" role="status">${esc(rosterMsg||"Many roster apps can export your roster as a calendar file. You can also add or edit any day by hand above.")}</p>
-    ${rosterBackup?`<div class="btns"><button id="undoroster">Undo last import</button></div>`:""}
-  </section>`;
-}
-
 /* ---------- Sick leave ---------- */
 function currentSick(){const t=today();return (S.sick||[]).filter(e=>daysBetween(e.to,t)<=1).sort((a,b)=>b.from.localeCompare(a.from))[0]||null}
 function sickDays(ep){const out=[];for(let d=ep.from;d<=ep.to&&out.length<366;d=addDays(d,1))out.push(d);return out}
@@ -1725,7 +1659,7 @@ function scMissing(){const m=S.me,miss=[];[["name","your name"],["staffNo","crew
 const dmy=(d,full)=>{const [y,mo,da]=String(d||"").split("-");return y?da+"/"+mo+"/"+(full?y:y.slice(2)):""};
 async function scMakePdf(ep){
   const {PDFDocument,StandardFonts,rgb}=window.PDFLib,doc=await PDFDocument.create(),pg=doc.addPage([595.28,841.89]);
-  const H=await doc.embedFont(StandardFonts.Helvetica),HB=await doc.embedFont(StandardFonts.HelveticaBold),HI=await doc.embedFont(StandardFonts.HelveticaBoldOblique),CB=await doc.embedFont(StandardFonts.CourierBold),CR=await doc.embedFont(StandardFonts.Courier);
+  const H=await doc.embedFont(StandardFonts.Helvetica),HB=await doc.embedFont(StandardFonts.HelveticaBold),HI=await doc.embedFont(StandardFonts.HelveticaBoldOblique),CB=await doc.embedFont(StandardFonts.CourierBold);
   const ink=rgb(0,0,0),blue=rgb(0.043,0.165,0.42),grey=rgb(0.85,0.85,0.85),dark=rgb(0.23,0.23,0.23),white=rgb(1,1,1);
   const L=34,R=561,W=R-L;let y=808; // y = top of the next block (pdf origin is bottom-left)
   const T=(t,x,yy,f,sz,c)=>pg.drawText(pdfSafe(t),{x,y:yy,font:f,size:sz,color:c||ink});
@@ -1845,7 +1779,7 @@ function viewBackup(){
   </section>`;
 }
 
-/* ---------- Aviation news (links: live headlines need a news feed in the full app) ---------- */
+/* ---------- Aviation news: headlines saved for offline, refreshed at most every 3 hours ---------- */
 // Headlines saved for offline reading (fetched through rss2json, which allows apps to read news feeds)
 // UK and Europe first: crew want these most, and for them the whole article is saved to read offline.
 const NEWS_FEEDS=[
@@ -2036,43 +1970,6 @@ function viewDocs(){
     <p class="note">Only the name and date are saved, never document numbers or scans.</p>
   </section>`;
 }
-function viewMap(){
-  const pinned=S.pins,countries=new Set(pinned.map(p=>p.country)),cities=new Set(pinned.map(p=>p.city));
-  const tripCity=CITIES.find(c=>c.name.toLowerCase()===String(S.trip.city).trim().toLowerCase());
-  const suggest=tripCity&&!cities.has(tripCity.name)?tripCity:null;
-  const list=pinned.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-  return `
-  <section class="pass" aria-label="Places visited" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-    <div><span class="k">Countries</span><span class="v hl">${countries.size}</span><span class="d">visited</span></div>
-    <div><span class="k">Cities</span><span class="v">${cities.size}</span><span class="d">pinned</span></div>
-  </section>
-  <section class="card" style="padding:8px">
-    <div id="worldmap" role="img" aria-label="Map of the places you've pinned" style="height:300px;border-radius:12px;overflow:hidden;background:var(--bg)"></div>
-    <p class="note" id="mapmsg" style="padding:0 8px 6px">Pinch or use + and − to zoom.</p>
-  </section>
-  ${suggest?`<section class="card" style="border-color:var(--accent)"><p style="margin:0">You're flying to <b>${esc(suggest.name)}</b>. Add it to your map?</p><div class="btns"><button class="primary" data-quickpin="${esc(suggest.name)}">Pin ${esc(suggest.name)}</button></div></section>`:""}
-  <section class="card">
-    <h2>Add a place</h2>
-    <div class="row"><div class="field"><label for="pn-c">City</label><select id="pn-c">${CITIES.map(c=>`<option value="${esc(c.name)}" ${tripCity&&tripCity.name===c.name?"selected":""}>${esc(c.name)} (${esc(c.country)})</option>`).join("")}</select></div><div class="field"><label for="pn-d">Date</label><input id="pn-d" type="date" value="${today()}"></div></div>
-    <div class="field"><label for="pn-n">Memory or tip</label><input id="pn-n" type="text" placeholder="e.g. Sunset walk by the harbour"></div>
-    <div class="field"><label for="pn-f">Photo (optional)</label><input id="pn-f" type="file" accept="image/*"></div>
-    <div class="btns"><button class="primary" id="addpin">Add to my map</button></div>
-    <p class="note" id="pinmsg">Your map is private. Pins are city-level only, never hotels. If you share photos, check your airline's rules on uniform and on-board pictures.</p>
-  </section>
-  ${list.length?`<section class="card"><h2>Your places</h2><div style="display:grid;gap:12px">${list.map(p=>`<div style="display:grid;grid-template-columns:${p.photo?"72px ":""}minmax(0,1fr) auto;gap:12px;align-items:center">${p.photo?`<img ${imgAttr(p.photo)} alt="Photo from ${esc(p.city)}" style="width:72px;height:72px;object-fit:cover;border-radius:10px">`:""}<span style="min-width:0"><b>${esc(p.city)}</b> <span class="note">${esc(p.country)} · ${esc(fmtDate(p.date,{month:"short",year:"numeric"}))}</span>${p.note?`<br><span style="font-size:14px">${esc(p.note)}</span>`:""}</span><button class="ghost" aria-label="Remove ${esc(p.city)}" data-delpin="${p.id}">${pendingDel===p.id?"Tap to delete":ICON.x}</button></div>`).join("")}</div></section>`:""}`;
-}
-function viewNotes(){
-  const groups=[...new Set(S.notes.map(n=>n.city))].sort();
-  return `
-  <section class="card">
-    <h2>Add a layover tip</h2>
-    <div class="row"><div class="field"><label for="nt-c">City</label><select id="nt-c">${CITIES.map(c=>`<option ${String(S.trip.city).trim().toLowerCase()===c.name.toLowerCase()?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label for="nt-k">Type</label><select id="nt-k">${NOTE_CATS.map(c=>`<option>${c}</option>`).join("")}</select></div></div>
-    <div class="field"><label for="nt-t">Tip</label><input id="nt-t" type="text" placeholder="e.g. Supermarket 5 min walk, open till 10pm"></div>
-    <div class="btns"><button class="primary" id="addnote">Save tip</button></div>
-    <p class="note">Your private notes, kept by city.</p>
-  </section>
-  ${groups.length?groups.map(g=>`<section class="card"><h2>${esc(g)}</h2><div>${S.notes.filter(n=>n.city===g).map(n=>`<div class="chk"><span><span class="label">${esc(n.cat)}${n.from?" · from "+esc(n.from):""}</span><br>${esc(n.text)}</span><button class="ghost" aria-label="Remove tip" data-delnote="${n.id}">${ICON.x}</button></div>`).join("")}</div></section>`).join(""):`<section class="card"><p class="note">No tips yet. Save the good cafés, supermarkets and gyms near your layover spots.</p></section>`}`;
-}
 function viewCurrency(){
   const code=CURRENCY[S.trip.country]||"EUR",rate=S.fx[code]||"",r=parseFloat(rate);
   const quick=[5,10,20,50];
@@ -2210,7 +2107,6 @@ function viewMoney(){
 }
 function viewPay(){
   const P=S.pay,E=estimate();
-  const slip=null;
   const f=(id,label,k,step,hint)=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" class="num" type="number" min="0" step="${step}" inputmode="decimal" value="${esc(P[k])}" data-k="pay.${k}">${hint?`<span class="note">${hint}</span>`:""}</div>`;
   return `
   <section class="pass" aria-label="Estimated pay this month" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -2253,7 +2149,6 @@ function viewPay(){
       <tr><td>National Insurance</td><td class="r m">−${money(E.ni)}</td></tr>
       <tr><th scope="row" style="color:var(--ink);font-size:14px;text-transform:none;letter-spacing:0">Estimated take-home</th><td class="r m" style="font-weight:700">${money(E.net)}</td></tr>
     </tbody></table>
-    ${slip?`<p class="note">Your payslip for this month says ${money(+slip.net)} take-home: ${Math.abs(+slip.net-E.net)<5?"close to the estimate.":"a difference of "+money(Math.abs(+slip.net-E.net))+". Worth checking your sectors and allowances."}</p>`:""}
     <p class="note">A rough guide using standard 2026/27 UK tax code 1257L rates for England, Wales and Northern Ireland. Scottish tax, student loans, salary sacrifice and tax code changes aren't included. Your payslip is always the final word.</p>
   </section>`;
 }
@@ -2287,26 +2182,6 @@ function viewExpenses(){
     ${list.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>What</th><th class="r">£</th><th><span style="position:absolute;left:-9999px">Actions</span></th></tr></thead><tbody>
       ${list.map(e=>`<tr><td class="m">${esc(new Date(e.date+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short"}))}</td><td>${esc(e.cat)}${e.note?`<br><span class="note">${esc(e.note)}</span>`:""}${e.file?`<br><a ${blobAttr(e.file)} style="color:var(--accent);font-size:13px;font-weight:600">Receipt ↗</a>`:""}</td><td class="r m">${money(+e.amount||0)}</td><td class="r"><button class="ghost" aria-label="Remove expense" data-delexp="${e.id}">${pendingDel===e.id?"Tap to delete":ICON.x}</button></td></tr>`).join("")}
     </tbody></table></div>`:`<p class="note">No expenses yet. Add parking, layover meals or uniform costs above.</p>`}
-  </section>`;
-}
-function viewPayslips(){
-  const list=S.payslips.slice().sort((a,b)=>(b.month||"").localeCompare(a.month||""));
-  return `
-  <section class="card">
-    <h2>Save a payslip</h2>
-    ${assetsNS?`
-    <div class="row">
-      <div class="field"><label for="ps-m">Month</label><input id="ps-m" type="month" value="${today().slice(0,7)}"></div>
-      <div class="field"><label for="ps-net">Take-home on payslip (£)</label><input id="ps-net" class="num" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Optional"></div>
-    </div>
-    <div class="field"><label for="ps-f">Payslip (PDF or photo)</label><input id="ps-f" type="file" accept="application/pdf,image/*"></div>
-    <div class="btns"><button class="primary" id="addslip">Save payslip</button></div>
-    <p class="note" id="slipmsg">Optional. Payslips are stored with this app, which only you can open. Don't give anyone edit access while payslips are saved here.</p>`
-    :`<p class="note">Saving files isn't available in this view. Open the app from your own Claude account to save payslips.</p>`}
-  </section>
-  <section class="card">
-    <h2>Your payslips</h2>
-    ${list.length?`<div>${list.map(p=>`<div class="chk"><span><b>${esc(new Date(p.month+"-01T00:00:00").toLocaleDateString("en-GB",{month:"long",year:"numeric"}))}</b>${p.net?` · <span class="m" style="font-family:var(--mono)">${money(+p.net)}</span>`:""}<br>${p.file?`<a ${blobAttr(p.file)} style="color:var(--accent);font-size:13px;font-weight:600">Open payslip ↗</a>`:""}</span><button class="ghost" aria-label="Delete payslip" data-delslip="${p.id}">${pendingDel===p.id?"Tap to delete":ICON.x}</button></div>`).join("")}</div>`:`<p class="note">No payslips saved yet.</p>`}
   </section>`;
 }
 function viewSales(){
@@ -2474,16 +2349,6 @@ function kitCheckBody(){
 }
 
 /* ---------- standby pieces ---------- */
-function sbSettingsBody(o){
-  const s=S.standby,start=o?o.report:s.start,end=o?o.end:s.end,pre=o?"next":"standby",sk=o?"report":"start";
-  return `<div class="row"><div class="field"><label for="sb-s">Starts</label><input id="sb-s" type="time" value="${esc(start)}" data-k="${pre}.${sk}"></div><div class="field"><label for="sb-e">Ends</label><input id="sb-e" type="time" value="${esc(end)}" data-k="${pre}.end"></div></div>
-    <div class="field"><label for="sb-i">Check my roster every</label><select id="sb-i" data-k="standby.interval">${[30,45,60,90,120].map(m=>`<option value="${m}" ${+s.interval===m?"selected":""}>${m<60?m+" minutes":m===60?"hour":m/60+" hours"}</option>`).join("")}</select></div>
-    <label class="chk" style="border:0;padding:0"><input type="checkbox" id="sb-al" ${s.startAlarm!==false?"checked":""}><span>Alarm at the start of standby, to check for calls or messages</span></label>
-    ${s.startAlarm!==false?`<div class="row"><div class="field"><label for="sb-alm">Ring</label><select id="sb-alm" data-k="standby.startAlarmMins">${[[0,"At the start"],[10,"10 min before"],[15,"15 min before"],[30,"30 min before"]].map(x=>`<option value="${x[0]}" ${(+s.startAlarmMins||0)===x[0]?"selected":""}>${x[1]}</option>`).join("")}</select></div><div class="field" style="align-content:end"><span style="font:700 22px var(--mono);color:var(--accent)">${standbyAlarm(start)}</span></div></div>`:""}
-    <div class="field"><label for="co-m">Time to report if called (minutes)</label><input id="co-m" class="num" type="number" min="15" step="15" inputmode="numeric" value="${calloutMins()}" data-k="standby.calloutMins"><span class="note">Usually ${S.profile.airline==="Jet2"?"2 hours at Jet2":isRyr()?"1 hour at "+S.profile.airline:"set by your airline"}. Check your own contract.</span></div>
-    <div class="btns"><button id="copysb" data-which="${o?"next":""}">Copy alarm and check times</button>${calBtn(o?"standbynext":"standby","Add to calendar")}</div>
-    <p class="note" id="sbmsg"></p>`;
-}
 /* EASA home standby FTL (ORO.FTL.225 / CS FTL.1.225). Companies can have their own approved scheme. */
 function nightOverlap(a,b){let ms=0;const d=new Date(a);d.setHours(0,0,0,0);d.setDate(d.getDate()-1);
   for(;d<b;d.setDate(d.getDate()+1)){const n1=new Date(d);n1.setHours(23,0,0,0);const n2=new Date(n1.getTime()+8*3600000);const x=Math.max(a.getTime(),n1.getTime()),y=Math.min(b.getTime(),n2.getTime());if(y>x)ms+=y-x}
@@ -2534,34 +2399,8 @@ function rosterCheckBtn(){
   const t=past&&!s.checked.includes(past.t)?past:list.find(x=>x.at.getTime()>now&&!s.checked.includes(x.t));
   return t?`<button class="primary bigbtn" data-sbcheck="${t.t}">I've checked my roster</button>`:"";
 }
-function rosterCheckCard(){
-  const s=S.standby,list=sbDated(),now=Date.now(),done=list.filter(x=>s.checked.includes(x.t)).length;
-  const past=list.filter(x=>x.at.getTime()<=now).pop(),due=past&&!s.checked.includes(past.t)?past:null;
-  const next=list.find(x=>x.at.getTime()>now&&!s.checked.includes(x.t)),target=due||next;
-  const last=[...s.checked].filter(t=>list.some(x=>x.t===t)).pop();
-  return `<section class="card ${due?"rcdue":""}">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>Roster check</h2><span class="chip">${due?"Due now · "+due.t:next?"Next "+next.t:"All done"}</span></div>
-    ${target?`<button class="${due?"primary ":""}bigbtn" data-sbcheck="${target.t}">${due?"I've checked my roster":"Checked early ("+target.t+")"}</button>`:`<p style="margin:0">No more checks on this standby.</p>`}
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="note" style="margin:0">${done} of ${list.length} done</span>
-    <span class="btns" style="margin:0">${last?`<button class="ghost" data-sbcheck="${last}">Undo ${last}</button>`:""}<button class="ghost" id="sball">${sbShowAll?"Hide times":"All times"}</button></span></div>
-    ${sbShowAll?`<div class="sbtimes">${list.map(x=>`<span class="${s.checked.includes(x.t)?"on":""}">${x.t}</span>`).join("")}</div>`:""}
-  </section>`;
-}
 let sbShowAll=false;
 function sbDated(){const w=sbWindow(),step=Math.max(15,+S.standby.interval||60),out=[];for(let t=w.start.getTime();t<=w.end.getTime();t+=step*60000){const d=new Date(t);out.push({t:hm(d),at:d})}return out}
-function sbChecksBody(){
-  const s=S.standby,list=sbDated(),now=Date.now(),done=list.filter(x=>s.checked.includes(x.t)).length;
-  const past=list.filter(x=>x.at.getTime()<=now).pop(),due=past&&!s.checked.includes(past.t)?past:null;
-  const next=list.find(x=>x.at.getTime()>now&&!s.checked.includes(x.t));
-  const last=[...s.checked].filter(t=>list.some(x=>x.t===t)).pop();
-  const card=due?`<div class="sbnow due"><span><span class="label">Check now</span><b>${due.t}</b><span class="note" style="margin:0">Open your roster app and look for changes.</span></span><button class="primary" data-sbcheck="${due.t}">Checked</button></div>`
-    :next?`<div class="sbnow"><span><span class="label">Next check</span><b>${next.t}</b><span class="note" style="margin:0">In ${fmtIn(next.at.getTime()-now)}</span></span><button class="ghost" data-sbcheck="${next.t}">Done early</button></div>`
-    :`<div class="sbnow"><span><span class="label">Roster checks</span><b>All done</b></span></div>`;
-  return `${card}
-    <div class="sbprog"><div class="progress" role="progressbar" aria-valuenow="${done}" aria-valuemin="0" aria-valuemax="${list.length}" aria-label="Roster checks done"><i style="width:${list.length?Math.round(done/list.length*100):0}%"></i></div><span class="note" style="margin:0">${done} of ${list.length} checks</span></div>
-    <div class="btns">${last?`<button class="ghost" data-sbcheck="${last}">Undo ${last}</button>`:""}<button class="ghost" id="sball">${sbShowAll?"Hide times":"See all times"}</button></div>
-    ${sbShowAll?`<div class="sbtimes">${list.map(x=>`<span class="${s.checked.includes(x.t)?"on":""}">${x.t}</span>`).join("")}</div>`:""}`;
-}
 function sbReadyBody(){
   const ready=S.standby.ready||{};
   return `<div>${READY.map(r=>`<label class="chk ${ready[r[0]]?"done":""}"><input type="checkbox" ${ready[r[0]]?"checked":""} data-ready="${r[0]}"><span>${esc(r[1])}</span></label>`).join("")}</div><p class="note">Ticks clear each day.</p>`;
@@ -2688,7 +2527,7 @@ function nudgeCard(stage,o){
   return `<section class="card nudges" role="status"><span class="label">${NUDGE_LABEL[stage]}</span>${rows.join("")}</section>`;
 }
 /* ---------- day weather summaries (Trip today, Plan tomorrow) ---------- */
-const ICAO={SDR:"LEXJ",BIO:"LEBB",SCQ:"LEST",VGO:"LEVX",OVD:"LEAS",ZAZ:"LEZG",XRY:"LEJR",LEI:"LEAM",PDL:"LPPD",TRS:"LIPQ",BDS:"LIBR",PSR:"LIBP",AOI:"LIPY",GOA:"LIMJ",VRN:"LIPX",TPS:"LICT",SUF:"LICA",OLB:"LIEO",AHO:"LIEA",PEG:"LIRZ",FLR:"LIRQ",NTE:"LFRS",MPL:"LFMT",LIG:"LFBL",BZR:"LFMU",PGF:"LFMP",FNI:"LFTW",LRH:"LFBH",EGC:"LFBE",GNB:"LFLS",CMF:"LFLB",NUE:"EDDN",DTM:"EDLW",FMM:"EDJA",NRN:"EDLV",BRE:"EDDW",STR:"EDDS",DUS:"EDDL",FKB:"EDSB",TLL:"EETN",RIX:"EVRA",VNO:"EYVI",KUN:"EYKA",CPH:"EKCH",BLL:"EKBI",AAR:"EKAH",TRF:"ENTO",OSL:"ENGM",ARN:"ESSA",NYO:"ESKN",GOT:"ESGG",HEL:"EFHK",RVN:"EFRO",BGO:"ENBR",BTS:"LZIB",KSC:"LZKZ",BRQ:"LKTB",KTW:"EPKT",POZ:"EPPO",RZE:"EPRZ",LUZ:"EPLB",SZZ:"EPSC",BZG:"EPBY",OTP:"LROP",CLJ:"LRCL",TSR:"LRTR",SOF:"LBSF",PDV:"LBPD",VAR:"LBWN",BOJ:"LBBG",ZAG:"LDZA",RJK:"LDRI",LJU:"LJLJ",BEG:"LYBE",TIA:"LATI",TGD:"LYPG",SJJ:"LQSA",CRL:"EBCI",BRU:"EBBR",LUX:"ELLX",BSL:"LFSB",GVA:"LSGG",ZRH:"LSZH",SZG:"LOWS",INN:"LOWI",GRZ:"LOWG",JMK:"LGMK",JTR:"LGSR",PVK:"LGPZ",KLX:"LGKL",SMI:"LGSM",JSI:"LGSK",MJT:"LGMT",FEZ:"GMFF",TNG:"GMTT",NDR:"GMMW",RBA:"GMME",ESU:"GMMI",AMM:"OJAI",TLV:"LLBG",MIR:"DTMB",NBE:"DTNH",DJE:"DTTJ",HRG:"HEGN",SSH:"HESH",ORK:"EICK",SNN:"EINN",KIR:"EIKY",NOC:"EIKN",BHD:"EGAC",BFS:"EGAA",LDY:"EGAE",NQY:"EGHQ",JER:"EGJJ",GCI:"EGJB",INV:"EGPE",ABZ:"EGPD",GLA:"EGPF",PIK:"EGPK",LPL:"EGGP",MAN:"EGCC",EXT:"EGTE",OPO:"LPPR",STN:"EGSS",LTN:"EGGW",LGW:"EGKK",LHR:"EGLL",MAN:"EGCC",BHX:"EGBB",EMA:"EGNX",LBA:"EGNM",NCL:"EGNT",GLA:"EGPF",EDI:"EGPH",BRS:"EGGD",BFS:"EGAA",AGP:"LEMG",ALC:"LEAL",BCN:"LEBL",MAD:"LEMD",PMI:"LEPA",IBZ:"LEIB",TFS:"GCTS",TFN:"GCXO",ACE:"GCRR",LPA:"GCLP",FUE:"GCFV",VLC:"LEVC",SVQ:"LEZL",GRO:"LEGE",REU:"LERS",RMU:"LEMI",MAH:"LEMH",FAO:"LPFR",LIS:"LPPT",OPO:"LPPR",FNC:"LPMA",FCO:"LIRF",CIA:"LIRA",MXP:"LIMC",LIN:"LIML",BGY:"LIME",VCE:"LIPZ",TSF:"LIPH",NAP:"LIRN",PSA:"LIRP",BLQ:"LIPE",BRI:"LIBD",PMO:"LICJ",CTA:"LICC",CAG:"LIEE",TRN:"LIMF",CDG:"LFPG",ORY:"LFPO",BVA:"LFOB",NCE:"LFMN",MRS:"LFML",BOD:"LFBD",LYS:"LFLL",TLS:"LFBO",BIQ:"LFBZ",CCF:"LFMK",BER:"EDDB",MUC:"EDDM",FRA:"EDDF",HHN:"EDFH",HAM:"EDDH",CGN:"EDDK",ATH:"LGAV",CFU:"LGKR",HER:"LGIR",CHQ:"LGSA",RHO:"LGRP",KGS:"LGKO",SKG:"LGTS",ZTH:"LGZA",EFL:"LGKF",KRK:"EPKK",WAW:"EPWA",WMI:"EPMO",GDN:"EPGD",WRO:"EPWR",AYT:"LTAI",DLM:"LTBS",BJV:"LTFE",ADB:"LTBJ",DBV:"LDDU",SPU:"LDSP",ZAD:"LDZD",PUY:"LDPL",AMS:"EHAM",EIN:"EHEH",DUB:"EIDW",PFO:"LCPH",LCA:"LCLK",MLA:"LMML",BUD:"LHBP",PRG:"LKPR",VIE:"LOWW",RAK:"GMMX",AGA:"GMAD"};
+const ICAO={SDR:"LEXJ",BIO:"LEBB",SCQ:"LEST",VGO:"LEVX",OVD:"LEAS",ZAZ:"LEZG",XRY:"LEJR",LEI:"LEAM",PDL:"LPPD",TRS:"LIPQ",BDS:"LIBR",PSR:"LIBP",AOI:"LIPY",GOA:"LIMJ",VRN:"LIPX",TPS:"LICT",SUF:"LICA",OLB:"LIEO",AHO:"LIEA",PEG:"LIRZ",FLR:"LIRQ",NTE:"LFRS",MPL:"LFMT",LIG:"LFBL",BZR:"LFMU",PGF:"LFMP",FNI:"LFTW",LRH:"LFBH",EGC:"LFBE",GNB:"LFLS",CMF:"LFLB",NUE:"EDDN",DTM:"EDLW",FMM:"EDJA",NRN:"EDLV",BRE:"EDDW",STR:"EDDS",DUS:"EDDL",FKB:"EDSB",TLL:"EETN",RIX:"EVRA",VNO:"EYVI",KUN:"EYKA",CPH:"EKCH",BLL:"EKBI",AAR:"EKAH",TRF:"ENTO",OSL:"ENGM",ARN:"ESSA",NYO:"ESKN",GOT:"ESGG",HEL:"EFHK",RVN:"EFRO",BGO:"ENBR",BTS:"LZIB",KSC:"LZKZ",BRQ:"LKTB",KTW:"EPKT",POZ:"EPPO",RZE:"EPRZ",LUZ:"EPLB",SZZ:"EPSC",BZG:"EPBY",OTP:"LROP",CLJ:"LRCL",TSR:"LRTR",SOF:"LBSF",PDV:"LBPD",VAR:"LBWN",BOJ:"LBBG",ZAG:"LDZA",RJK:"LDRI",LJU:"LJLJ",BEG:"LYBE",TIA:"LATI",TGD:"LYPG",SJJ:"LQSA",CRL:"EBCI",BRU:"EBBR",LUX:"ELLX",BSL:"LFSB",GVA:"LSGG",ZRH:"LSZH",SZG:"LOWS",INN:"LOWI",GRZ:"LOWG",JMK:"LGMK",JTR:"LGSR",PVK:"LGPZ",KLX:"LGKL",SMI:"LGSM",JSI:"LGSK",MJT:"LGMT",FEZ:"GMFF",TNG:"GMTT",NDR:"GMMW",RBA:"GMME",ESU:"GMMI",AMM:"OJAI",TLV:"LLBG",MIR:"DTMB",NBE:"DTNH",DJE:"DTTJ",HRG:"HEGN",SSH:"HESH",ORK:"EICK",SNN:"EINN",KIR:"EIKY",NOC:"EIKN",BHD:"EGAC",BFS:"EGAA",LDY:"EGAE",NQY:"EGHQ",JER:"EGJJ",GCI:"EGJB",INV:"EGPE",ABZ:"EGPD",GLA:"EGPF",PIK:"EGPK",LPL:"EGGP",MAN:"EGCC",EXT:"EGTE",OPO:"LPPR",STN:"EGSS",LTN:"EGGW",LGW:"EGKK",LHR:"EGLL",BHX:"EGBB",EMA:"EGNX",LBA:"EGNM",NCL:"EGNT",EDI:"EGPH",BRS:"EGGD",AGP:"LEMG",ALC:"LEAL",BCN:"LEBL",MAD:"LEMD",PMI:"LEPA",IBZ:"LEIB",TFS:"GCTS",TFN:"GCXO",ACE:"GCRR",LPA:"GCLP",FUE:"GCFV",VLC:"LEVC",SVQ:"LEZL",GRO:"LEGE",REU:"LERS",RMU:"LEMI",MAH:"LEMH",FAO:"LPFR",LIS:"LPPT",FNC:"LPMA",FCO:"LIRF",CIA:"LIRA",MXP:"LIMC",LIN:"LIML",BGY:"LIME",VCE:"LIPZ",TSF:"LIPH",NAP:"LIRN",PSA:"LIRP",BLQ:"LIPE",BRI:"LIBD",PMO:"LICJ",CTA:"LICC",CAG:"LIEE",TRN:"LIMF",CDG:"LFPG",ORY:"LFPO",BVA:"LFOB",NCE:"LFMN",MRS:"LFML",BOD:"LFBD",LYS:"LFLL",TLS:"LFBO",BIQ:"LFBZ",CCF:"LFMK",BER:"EDDB",MUC:"EDDM",FRA:"EDDF",HHN:"EDFH",HAM:"EDDH",CGN:"EDDK",ATH:"LGAV",CFU:"LGKR",HER:"LGIR",CHQ:"LGSA",RHO:"LGRP",KGS:"LGKO",SKG:"LGTS",ZTH:"LGZA",EFL:"LGKF",KRK:"EPKK",WAW:"EPWA",WMI:"EPMO",GDN:"EPGD",WRO:"EPWR",AYT:"LTAI",DLM:"LTBS",BJV:"LTFE",ADB:"LTBJ",DBV:"LDDU",SPU:"LDSP",ZAD:"LDZD",PUY:"LDPL",AMS:"EHAM",EIN:"EHEH",DUB:"EIDW",PFO:"LCPH",LCA:"LCLK",MLA:"LMML",BUD:"LHBP",PRG:"LKPR",VIE:"LOWW",RAK:"GMMX",AGA:"GMAD"};
 function wxSumm(lat,lon,from,to){
   const h=wxGet(lat,lon);if(!h||!h.time)return null;
   let n=0,tmin=99,tmax=-99,rain=0,rainAt=null,gust=0,fog=false,snow=false;
@@ -2814,7 +2653,7 @@ function comingUpBody(p){const now=Date.now(),ph=phaseOf(),d=S.duty,asb=d.kind==
   return `<section class="pass" aria-label="Your duty" style="border:0;padding:0 0 8px">${cell("ready","Wake up",p.first,day(p.first))}${cell("go","Leave by",p.leave,esc(p.tr&&p.tr.chosen?(p.tr.rk==="bus"?"Bus ":"Train ")+p.tr.chosen.t:modeName(RK.includes(d.mode)?"driving":d.mode)))}${cell("duty",asb?"Standby":trg?"Start":"Report",p.rep,esc(placeOf(d).split(" ").slice(0,2).join(" ")))}</section><div>${nowItems(p).map(x=>{const past=x.at.getTime()<=now;return `<div class="tip" style="align-items:center;${past?"opacity:.45":""}"><span class="t clk">${hm(x.at)}</span><span style="flex:1">${x.key?"<b>":""}${esc(x.label)}${x.key?"</b>":""}</span><span class="note" style="margin:0;white-space:nowrap">${past?"done":"in "+fmtIn(x.at-now)}</span></div>`}).join("")}</div>`}
 function comingUpHint(p){return "leave "+hm(p.leave)+(p.tr&&p.tr.chosen?" · "+(p.tr.rk==="bus"?"bus":"train")+" "+p.tr.chosen.t:"")}
 function viewToday(){
-  const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",now=new Date(),F=k=>k+"|"+ph;
+  const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",F=k=>k+"|"+ph;
   const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p>${homeClockNote()}</div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none;position:relative;z-index:1;background:var(--surface);border:1px solid var(--line)">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
   /* nothing on today */
   if(ph==="none"||ph==="future"||ph==="done"){
@@ -2829,7 +2668,7 @@ function viewToday(){
   }
   /* home standby */
   if(sb){
-    const w=sbWindow(),nx=nextCheck(),times=standbyTimes(),done=S.standby.checked.length,rd=READY.filter(r=>(S.standby.ready||{})[r[0]]).length;
+    const w=sbWindow(),times=standbyTimes(),done=S.standby.checked.length,rd=READY.filter(r=>(S.standby.ready||{})[r[0]]).length;
     const called=ph==="called";
     return head("Home standby",esc(S.standby.start)+"–"+esc(S.standby.end)+(RZ()?" L":"")+" · "+calloutMins()+" min to report if called")+todayAlerts(null)+
     (called?calledOutBody()+ccBar("called"):`
@@ -2850,9 +2689,7 @@ function viewToday(){
   /* flying duty: soon → ready → go → duty */
   const asb=d.kind==="asby",trg=d.kind==="training",adt=d.kind==="adty";
   const p=plan(),c=S.core.items,cd=c.filter(x=>x.d).length,leaveOpen=new Date(p.leave.getTime()-30*60000);
-  const stage={soon:p.split&&new Date()>=p.wake?["Free time · get ready at "+hm(p.ready),p.ready]:["Next: "+(p.split?"wake up":"first alarm"),p.first],ready:["Get ready · leave by "+hm(p.leave),p.leave],go:["Time to go · "+(asb?"standby from ":trg?"training from ":"report ")+hm(p.rep),p.rep],training:["Training until "+hm(asbyEnd()),asbyEnd()],adty:["Airport duty until "+hm(asbyEnd()),asbyEnd()],asby:["Airport standby until "+hm(asbyEnd()),asbyEnd()],duty:["On duty · FDP ends by "+hm(fdpEnd()),fdpEnd()]}[ph];
   const dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:"");
-  const cell=(k,label,t,sub)=>`<div class="${k===ph||(k==="soon"&&ph==="soon")?"now":""}"><span class="k">${label}</span><span class="v clk ${k===ph?"hl":""}">${hm(t)}</span><span class="d">${sub}</span></div>`;
   if(trg&&ph==="training")return head("Training day",esc(placeOf(d)||"Training")+" · "+hm(p.rep)+"–"+hmL(asbyEnd()))+todayAlerts(p)+`
   <section class="pass" aria-label="Training" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdCell("Training left",asbyEnd(),"ends "+hm(asbyEnd()),true)}${cdSince("In training",p.rep,"since "+hm(p.rep))}</section>
   ${nudgeCard("training",{rep:p.rep})}`;
@@ -3202,7 +3039,7 @@ function tripAutoDest(){try{const d=S.duty;if(!d.date)return;const c=dutyCity(d)
   const m=CITIES.find(x=>(x.name||x[0])===c);S.trip.city=c;if(m)S.trip.country=m.country||m[1];S.trip.auto=k}catch(e){}}
 function viewTrip(){
   tripAutoDest();
-  const ph=phaseOf(),now=new Date(),r=S.roster[S.duty.date],sec=(r&&r.kind==="flying"&&r.sectors)||[],first=sec.find(x=>x.flt);
+  const ph=phaseOf(),now=new Date(),r=S.roster[S.duty.date],sec=(r&&r.kind==="flying"&&r.sectors)||[];
   const w=S.water,dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:""),P=PHRASES[S.trip.country];
   const running=(S.timers||[]).filter(t=>t.end>Date.now()).length;
   let clock="";
@@ -3250,7 +3087,7 @@ function ftDone(t){if(!S.ftDone||S.ftDone.date!==t)S.ftDone={date:t,list:[]};ret
    (AirLabs, the crew member's own free key) set the timer. Only the flight number is sent. */
 let ftLiveBusy=false,ftLiveMsg="";
 function ftLiveOf(f){const L=S.ftLive&&S.ftLive[f];return L&&L.date===today()?L:null}
-function homeClockNote(){if(!window.CREWDAY_HOME_CLOCK)return "";const o=new Date().getTimezoneOffset();let p=0;try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:window.CREWDAY_PHONE_TZ,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(window.Date.now()),[h,m]=f.split(":").map(Number),u=new Date();p=(h*60+m)-(u.getHours()*60+u.getMinutes());if(p>720)p-=1440;if(p<-720)p+=1440}catch(e){}
+function homeClockNote(){if(!window.CREWDAY_HOME_CLOCK)return "";let p=0;try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:window.CREWDAY_PHONE_TZ,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(window.Date.now()),[h,m]=f.split(":").map(Number),u=new Date();p=(h*60+m)-(u.getHours()*60+u.getMinutes());if(p>720)p-=1440;if(p<-720)p+=1440}catch(e){}
   if(!p)return "";const city=String(window.CREWDAY_PHONE_TZ).split("/").pop().replace(/_/g," ");
   return `<p class="note" style="margin:4px 0 0">Your phone is on ${esc(city)} time (${p>0?"+":"−"}${hmDur(Math.abs(p))}). Crew Day keeps UK time, your base, so trains, alarms and duty times stay right.</p>`}
 function liveLand(L){return L?(L.arrAct||(/landed|arrived/i.test(L.status||"")?(L.arrEst||L.arrSched):0)):0}
@@ -3286,7 +3123,7 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
   ftLiveBusy=false;render();save()}
 // Checks are kept few so the free key lasts the month: every 3 minutes from 10 minutes before the scheduled
 // departure (gate closing) until the off-block time is found (at most 1 h), then once after the expected landing.
-setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i,ft}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt||!x.dep)return;
+setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt||!x.dep)return;
   const L=ftLiveOf(cleanFlt(x.flt)),now=Date.now(),std=r2lDT(t,x.dep).getTime(),since=L?now-L.at:1e12;
   if(!L||!L.depAct){if(now>=std-600000&&now<=std+3600000&&since>=175000)ftLiveCheck(false);return}
   const land=(L.arrEst||L.arrSched||0);if(!liveLand(L)&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
@@ -3420,16 +3257,6 @@ function pilotBody(){
   if(!sec.length&&to)out+=pilotAirport(to.to,dxy?dxy[0]:null,dxy?dxy[1]:null,landTime(S.duty,p.rep),city||to.to);
   return out+`<p class="note" style="margin:0">Model forecast (Met Office, ECMWF and others via Open-Meteo) for the town near each airport, for planning only. QNH is an estimate. Always use the official METAR, TAF, NOTAMs and your company briefing.</p>`;
 }
-function liveBodyTrip(first){
-  return `${first?`<div class="links">${((S.roster[S.duty.date]||{}).sectors||[]).filter(x=>x.flt).map(x=>`<a href="${fr24Flight(x.flt)}" target="_blank" rel="noopener">${esc(x.flt)} ${esc(x.from)}→${esc(x.to)} ↗</a>`).join("")}</div>
-      <p class="note">Is your aircraft late inbound? Open your flight, tap the aircraft registration and check its previous flight.</p>`:`<p class="note">Add sectors to today's duty in More › Roster to track them here.</p>`}
-    <div class="links">
-      <a href="${fr24Airport(S.profile.base,"departures")}" target="_blank" rel="noopener">${esc(S.profile.base)} departures and gates ↗</a>
-      <a href="${fr24Airport(S.profile.base,"arrivals")}" target="_blank" rel="noopener">${esc(S.profile.base)} arrivals ↗</a>
-    </div>
-    <p class="note">Opens Flightradar24. Public boards can change: always go by ops and the crew room for gates.</p>`;
-}
-
 /* ---------- PLAN: get ready for the next duty ---------- */
 const EVE_IDEAS=["Wash and dry hair","Hair bun kit: pins, net, spray","Remove makeup and skincare","Nails checked or painted","Spare tights in bag","Makeup bag restocked","Iron blouse or shirt","Shave","Polish shoes","Charge phone and power bank","Set out uniform and scarf or tie"];
 function eveningBody(){
@@ -3666,22 +3493,12 @@ function homeCard(){
   const sug=pickRide(list.filter(x=>!x.quick));
   const pick=h&&h.dep&&h.manual?L.find(x=>rideKey(x)===h.key)||null:null,b=pick||sug;
   if(b&&(!h||h.key!==rideKey(b))&&!h?.manual){S.homeRide={date:S.duty.date,key:rideKey(b),rk:b.rk,name:nm(b),dep:b.dep.getTime(),home:b.home.getTime(),missed,manual:false}}
-  const H={list:L,best:b};
   return `<section class="card"><h2>Getting home</h2>
     <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}.</p>
     ${b?`<p style="margin:0"><b>${pick&&h.manual?"Your pick":"Take"}: ${esc(nm(b).toLowerCase())} at ${b.t}</b>, home about ${hm(b.home)}.${!pick&&tPref()!=="fastest"&&b.rk!==tPref()&&L.every(x=>x.rk===b.rk||x.home>b.home)?` No ${tPref()} gets you home in time.`:""}</p>
       ${(pick&&h.manual)||Date.now()>=Math.min(b.dep.getTime()-30*60000,end.getTime()-60*60000)?`<div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>
       <p class="note" style="margin:0">If you don't tap, it's marked as caught 15 min after it leaves. You can still change it after.</p>`:`<p class="note" style="margin:0">It updates by itself if you land early or late.</p>`}`:""}
     ${L.length?`<div>${L.map(x=>`<div class="tip ride"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}${x.quick?" (if you're off quickly)":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"<span></span>":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
-  </section>`;
-}
-function homeCardOld(){
-  const m=modeOf(S.duty.date);if(m==="car")return "";const T=R(m),v=tt("back",m);if(!ttCount(v))return "";const end=homeEnd();if(!end)return "";
-  const ready=new Date(Math.max(end.getTime(),Date.now())+tBuf(m)*60000),d0=S.duty.date;
-  const L=tList(d0,"back",m).concat(tList(addDays(d0,1),"back",m)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).slice(0,3),w=RNAME[m];
-  return `<section class="card"><h2>Getting home</h2>
-    <p class="note" style="margin:0">Off duty around ${hmL(end)}${(()=>{const sh=dayShift();return sh&&sh.min?` (${sh.min>0?sh.min+" min late":-sh.min+" min early"}, from your ${esc(sh.why)})`:sh?" (on time, from your "+esc(sh.why)+")":" (roster time: add your actual on blocks in Trip › My flights to update it)"})()}. At the ${m==="bus"?"coach station":"station"} from about ${hmL(ready)}.</p>
-    ${L.length?`<div>${L.map((x,i)=>`<div class="tip"><span class="t clk">${x.t}</span><span>${i===0?"<b>Next "+w+"</b>"+(x.n?" ("+esc(x.n)+")":"")+", ":x.n?"("+esc(x.n)+") ":""}arrives ${hm(x.arr)}${T.walk?", home about "+hm(new Date(x.arr.getTime()+(+T.walk)*60000)):""}</span></div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more ${w}${m==="bus"?"es":"s"} home tonight.</b> Book a taxi or arrange a lift.</p>`}
   </section>`;
 }
 function travelChoice(n,pn){
@@ -3730,7 +3547,7 @@ function travelFieldsCore(){
 `;
 }
 function timesFields(noTravel){
-  const d=S.duty,s=S.standby,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
+  const s=S.standby,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
   return `<span class="label">Roster</span>
     <div class="seg" role="tablist" aria-label="Roster times are in">${[["Z","Zulu (UTC)"],["local","UK local time"]].map(x=>`<button role="tab" aria-selected="${(RZ()?"Z":"local")===x[0]}" data-rtz="${x[0]}">${x[1]}</button>`).join("")}</div>
     <p class="note" style="margin:0">Your roster is in ${RZ()?"Zulu. The app converts to UK time for alarms and Today (+1 hour in summer)":"UK local time"}.</p>
@@ -3884,7 +3701,7 @@ function viewLayover(){
 /* ---------- issue reports: crew send problems and ideas, reviewed monthly ---------- */
 const ISSUE_AREAS=["Today","Trip","Plan","Me","Roster","Money","Layover","Profile","Something else"];
 const ISSUE_ST={open:"New",planned:"Planned",done:"Done",no:"Not planned"};
-let userNS=null,myId=null,isOwnerV=false,allIssues=null,issueStatus={},issueMsg="";
+let myId=null,isOwnerV=false,allIssues=null,issueStatus={},issueMsg="";
 function syncMyIssues(){if(!db||!myId)return;return db.doc("issues/"+myId).set({name:S.me.name||"",airline:S.profile.airline||"",reports:S.issues.slice(-60)}).catch(()=>{})}
 function loadAllIssues(){if(!db||!isOwnerV||allIssues)return;allIssues=[];
   Promise.all([db.collection("issues").get(),db.doc("issueStatus/main").get()]).then(([q,st])=>{issueStatus=st.exists?Object.assign({},st.data().st||{}):{};
@@ -4089,6 +3906,7 @@ function renderNow(){
   if(!S.perks)S.perks=JSON.parse(JSON.stringify(DEFAULT.perks));
   if(!S.todo)S.todo=[];
   if(S.moneyView==="payslips")S.moneyView="bills";
+  delete S.payslips; // payslips are not stored in Crew Day
   if(S.tab==="water"){S.tab="more";S.moreView="water"}
   if(S.moreView==="standby")S.moreView="hours";
   if(!S.duty.kind)S.duty.kind="flying";
@@ -4096,7 +3914,7 @@ function renderNow(){
   ["sick","roster","moreView","standby","duties","limits","docs","pins","notes","fx","mood","care","me"].forEach(k=>{if(S[k]===undefined)S[k]=JSON.parse(JSON.stringify(DEFAULT[k]))});
   if(S.standby.date!==today()){S.standby.date=today();S.standby.checked=[];S.standby.ready={};S.standby.calledAt=null}
   if(!S.standby.ready)S.standby.ready={};
-  ["pay","expenses","payslips","moneyView","bills","diet","trip"].forEach(k=>{if(S[k]===undefined)S[k]=JSON.parse(JSON.stringify(DEFAULT[k]))});
+  ["pay","expenses","moneyView","bills","diet","trip"].forEach(k=>{if(S[k]===undefined)S[k]=JSON.parse(JSON.stringify(DEFAULT[k]))});
   Object.keys(DEFAULT.pay).forEach(k=>{if(S.pay[k]===undefined)S.pay[k]=DEFAULT.pay[k]});
   if(S.pay.month!==today().slice(0,7)){S.pay.month=today().slice(0,7);S.pay.sectors=0;S.pay.dutyHours=0;S.pay.flightHours=0}
   if(!S.core){S.core=JSON.parse(JSON.stringify(DEFAULT.core));S.kit=S.kit.filter(k=>k.g!=="Documents")}
@@ -4234,7 +4052,6 @@ document.addEventListener("click",e=>{
   if(b.dataset.copysick){const ep=currentSick();if(!ep)return;const text=sickMessages(ep)[b.dataset.copysick],m=$("#sickcopymsg");Promise.resolve().then(()=>navigator.clipboard.writeText(text)).then(()=>{m.textContent="Copied."},()=>{m.textContent="Select the message above and copy it."});return}
   if(b.dataset.fnrot){fnState.rot=(fnState.rot+90)%360;drawFitPreview();return}
   if(b.id==="fnmake"){makeFitNotePdf(b);return}
-  if(b.dataset.wk){weekOff+=+b.dataset.wk;editDay=null;render();return}
   if(b.dataset.mo){monthOff+=+b.dataset.mo;selDay=null;render();return}
   if(b.dataset.pick){selDay=b.dataset.pick;const G=monthGrid();if(selDay.slice(0,7)!==G.ym){const t=new Date(today()+"T00:00:00"),p=new Date(selDay+"T00:00:00");monthOff=(p.getFullYear()-t.getFullYear())*12+(p.getMonth()-t.getMonth())}render();return}
   if(b.dataset.setkind){const d=selDay||today(),cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual"};cur.kind=b.dataset.setkind;
@@ -4268,7 +4085,7 @@ document.addEventListener("click",e=>{
   if(b.id==="ftgo"){const {t,secs,i}=ftState(),est=parseHM(($("#ft-est")||{}).value);if(!est){const v=$("#ft-est");if(v){v.setCustomValidity("Type the block time, e.g. 2:35");v.reportValidity();v.oninput=()=>v.setCustomValidity("")}return}
     // started at taxi: off blocks (pushback) is counted as 5 minutes earlier, so the block time stays right
     const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);S.ft={date:t,i,start:off.getTime(),taxi:now.getTime(),est};if(i>=0&&secs[i])secs[i].est=est;render();save();ftLiveCheck(false);return}
-  if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);ftDone(t).push(ft.i);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+  if(b.id==="ftstop"){const {t,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);ftDone(t).push(ft.i);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
   if(b.dataset.dish){openDish(b.dataset.dish);return}
   if(b.dataset.tpref){S.me.tpref=b.dataset.tpref;render();save();return}
   if(b.dataset.hpick){const end=homeEnd(),x=end&&homeOptions(end).list.find(y=>rideKey(y)===b.dataset.hpick);if(x){const h=homeRide()||{};S.homeRide={date:S.duty.date,key:rideKey(x),rk:x.rk,name:(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:""),dep:x.dep.getTime(),home:x.home.getTime(),missed:h.missed||[],manual:true}}render();save();return}
@@ -4286,7 +4103,7 @@ document.addEventListener("click",e=>{
   if(b.id==="ftmanual"){S.ftManual=today();render();save();return}
   if(b.dataset.ftlivego){const {t,secs,i}=ftState(),x=i>=0?secs[i]:null,L=x&&ftLiveOf(cleanFlt(x.flt));if(!L||!L.depAct)return;const est=parseHM(($("#ft-est")||{}).value)||x.est||blockMins(x)||(L.arrEst&&L.depAct?Math.round((L.arrEst-L.depAct)/60000):0);
     if(!est){ftLiveMsg="Type today's block time first.";render();return}S.ft={date:t,i,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true};x.est=est;render();save();return}
-  if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);ft.start=off.getTime();ft.taxi=now.getTime();render();save();return}
+  if(b.id==="ftrestart"){const {ft}=ftState();if(!ft)return;const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);ft.start=off.getTime();ft.taxi=now.getTime();render();save();return}
   if(b.id==="ftunstop"){const l=S.ftLast;if(!l||!l.prev)return;const {secs}=ftState();S.ft=l.prev;if(l.prev.i>=0&&secs[l.prev.i])secs[l.prev.i].onb="";S.ftLast=null;render();save();return}
   if(b.id==="ftundo"){{const {secs:s3,ft:f3}=ftState(),y=f3&&s3[f3.i];if(y&&y.flt)S.ftNoAuto=today()+"|"+cleanFlt(y.flt)}S.ft=null;render();save();return}
   if(b.dataset.evepick){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(b.dataset.evepick);render();save();return}
@@ -4409,9 +4226,6 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
   if(b.dataset.delexp){const id=b.dataset.delexp;if(pendingDel!==id){pendingDel=id;render();return}
     const ex=S.expenses.find(x=>x.id===id);S.expenses=S.expenses.filter(x=>x.id!==id);pendingDel=null;render();save();
     if(ex&&ex.file&&assetsNS)assetsNS.delete(ex.file).catch(()=>{});return}
-  if(b.dataset.delslip){const id=b.dataset.delslip;if(pendingDel!==id){pendingDel=id;render();return}
-    const ps=S.payslips.find(x=>x.id===id);S.payslips=S.payslips.filter(x=>x.id!==id);pendingDel=null;render();save();
-    if(ps&&ps.file&&assetsNS)assetsNS.delete(ps.file).catch(()=>{});return}
   if(b.id==="addexp"){
     const amt=parseFloat($("#e-amt").value),msg=$("#expmsg");
     if(!(amt>0)){msg.textContent="Enter the amount in pounds.";return}
@@ -4420,13 +4234,6 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
     if(file&&assetsNS){b.disabled=true;msg.textContent="Uploading receipt…";
       assetsNS.upload(file).then(r=>{entry.file=r.id;S.expenses.push(entry);render();save()},err=>{b.disabled=false;msg.textContent=uploadMsg(err)});
     }else{S.expenses.push(entry);render();save()}
-    return}
-  if(b.id==="addslip"){
-    const fileEl=$("#ps-f"),file=fileEl&&fileEl.files[0],msg=$("#slipmsg");
-    if(!file){msg.textContent="Choose your payslip file first.";return}
-    b.disabled=true;msg.textContent="Uploading…";
-    const net=parseFloat($("#ps-net").value);
-    assetsNS.upload(file).then(r=>{S.payslips.push({id:uid(),month:$("#ps-m").value||today().slice(0,7),net:isFinite(net)?net:null,file:r.id});render();save()},err=>{b.disabled=false;msg.textContent=uploadMsg(err)});
     return}
   if(b.dataset.diet){const d=b.dataset.diet;S.diet=S.diet.includes(d)?S.diet.filter(x=>x!==d):S.diet.concat(d);render();save();return}
   if(b.dataset.delbill){e.preventDefault();S.bills=S.bills.filter(x=>x.id!==b.dataset.delbill);render();save();return}
@@ -4505,22 +4312,6 @@ document.addEventListener("input",e=>{
   if(el.id==="fx-loc"){const v=parseFloat(el.value);$("#fx-gbp").value=isFinite(v)?(v/r).toFixed(2):""}
 });
 /* map: drawn after each render of the My map view */
-function initMap(){
-  const box=document.getElementById("worldmap");if(!box)return;
-  if(typeof window.jsVectorMap!=="function"){box.innerHTML='<p class="note" style="padding:16px">The map couldn\'t load right now. Your places are listed below.</p>';return}
-  const cs=getComputedStyle(document.documentElement),tok=n=>cs.getPropertyValue(n).trim();
-  let mapObj=null;
-  try{
-    mapObj=new window.jsVectorMap({selector:"#worldmap",map:"world",zoomButtons:true,zoomOnScroll:false,
-      backgroundColor:"transparent",
-      regionStyle:{initial:{fill:tok("--line"),stroke:tok("--surface"),strokeWidth:0.4},hover:{fillOpacity:1}},
-      selectedRegions:[],
-      markers:S.pins.map(p=>({name:p.city+(p.note?": "+p.note:""),coords:[p.lat,p.lon]})),
-      markerStyle:{initial:{fill:tok("--accent"),stroke:tok("--surface"),strokeWidth:1.5,r:5},hover:{fill:tok("--accent")}}
-    });
-  }catch(err){box.innerHTML='<p class="note" style="padding:16px">The map couldn\'t load right now. Your places are listed below.</p>';return}
-  try{mapObj.setFocus({regions:["ES","PL","GR","GB","IT"],animate:false})}catch(err){}
-}
 let lastNext=null,lastPhase=null,lastMin=null;
 setInterval(()=>{
   const now=Date.now();let changed=false;
@@ -4547,12 +4338,12 @@ try{const q=new URLSearchParams(location.search);if(q.get("called")==="1"){histo
 (async()=>{
   try{
     if(!window.claude||!window.claude.use)return;
-    claude.use("assets").then(a=>{assetsNS=a;if(S.tab!=="today")render()}).catch(()=>{});
-    claude.use("sample").then(s=>{if(!s)return;sampleNS=s;return s.limits().then(l=>{sampleImages=!!(l&&l.images)},()=>{})}).then(()=>{if(S.tab==="more"&&S.moreView==="roster")render()}).catch(()=>{});
-    const [d,u]=await Promise.all([claude.use("db"),claude.use("user")]);
+    window.claude.use("assets").then(a=>{assetsNS=a;if(S.tab!=="today")render()}).catch(()=>{});
+    window.claude.use("sample").then(s=>{if(!s)return;sampleNS=s;return s.limits().then(l=>{sampleImages=!!(l&&l.images)},()=>{})}).then(()=>{if(S.tab==="more"&&S.moreView==="roster")render()}).catch(()=>{});
+    const [d,u]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
     const id=u?await u.id():null;
     if(!d||!id)return;
-    userNS=u;myId=id;try{isOwnerV=!!(await u.isOwner())}catch(e){}
+    myId=id;try{isOwnerV=!!(await u.isOwner())}catch(e){}
     db=d;docRef=db.doc("data/users/"+id+"/crewday");
     const snap=await docRef.get();
     if(snap.exists){const data=snap.data();S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)),JSON.parse(JSON.stringify(data)));setStatus("Saved to your account");render()}

@@ -21,5 +21,5 @@ with sync_playwright() as p:
     pg.click('[data-more=""]'); pg.click('[data-more="issues"]'); pg.wait_for_timeout(300)
     print(pg.inner_text("main").replace("\n"," | ")[:900])
     pg.click('[data-ist="x1:planned"]'); pg.wait_for_timeout(100); print("status store:",pg.evaluate("JSON.stringify(window.__store['issueStatus/main'])"))
-    pg.screenshot(path="issues.png",full_page=True)
+    pg.screenshot(path="/tmp/issues.png",full_page=True)
     print("ERRORS:",errs or "none")

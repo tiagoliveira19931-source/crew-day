@@ -34,7 +34,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Getting home: "if you're off quickly" options start at on blocks + Profile "Quickest from on blocks to the station" (default 20 min), inside the 30 minutes before duty ends.
 - Layout: Today opens with a Now card (current step and time left, or flight/train countdown on duty); everything else folds (closed by default, also on Plan and Trip). Timers and the Trip flight timer stay open. Older tests run with window.CREWDAY_TEST_OPEN (set by run_tests.sh) so the sections they read start open.
 - Destination comes from the day's flights (tripAutoDest); the place picker lives in Facts › Change place.
-- Dish pictures are built-in line drawings by dish type (dishCat); tap opens the full view with ingredients and how to make it. No photos are downloaded.
+- Dish pictures: a Wikipedia photo of that kind of dish when online (only the dish name is looked up, via DISH_WIKI), with a built-in line drawing (dishCat) until it loads or offline; tap opens the full view with ingredients and how to make it. Payslips are never stored (old data is deleted on load).
 
 ## Issue reports
 Crew send problems and ideas from More › Report an issue. They queue offline and go to Tiago's Google Form "Crew Day Reports" (responses in a linked Google Sheet). Columns: Timestamp, Type, Area, Report, Version, Airline.
