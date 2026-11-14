@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.31.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.31.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -3067,7 +3067,10 @@ function clampD(d,lo,hi){return d<lo?lo:d>hi?hi:d}
 function prevHome(x){
   const pd=addDays(x.date,-1),e=S.roster[pd];if(!e||!isDutyK(e.kind)||!e.off||e.kind==="standby")return null;
   let off=r2lDT(pd,e.off);if(e.report&&off<r2lDT(pd,e.report))off=new Date(off.getTime()+86400000);
-  return new Date(off.getTime()+((+S.duty.commute||0)+15)*60000);
+  let home=new Date(off.getTime()+((+S.duty.commute||0)+15)*60000);
+  // the duty still on Today: use when you'll really be home (actual on blocks, the train or bus home), if that's later
+  if(S.duty.date===pd&&S.duty.kind!=="standby"&&!prevHome.busy){prevHome.busy=1;try{const h=holdUntil();if(h&&h-30*60000>home.getTime())home=new Date(h-30*60000)}catch(er){}finally{prevHome.busy=0}}
+  return home;
 }
 function sleepPlan(p,x){
   const type=dutyType(p.rep),eve=addDays((x&&x.date)||today(),-1);
@@ -3258,9 +3261,12 @@ function tPref(){const v=(S.me&&S.me.tpref)||"train";return ["train","bus","fast
 function pickRide(list){if(!list.length)return null;const fastest=list.slice().sort((a,b)=>a.home-b.home)[0],pf=tPref();if(pf==="fastest")return fastest;
   return list.filter(x=>x.rk===pf&&x.home.getTime()<=fastest.home.getTime()+30*60000).sort((a,b)=>a.home-b.home)[0]||fastest}
 function homeOptions(end,fixed){const d0=S.duty.date,out=[];RK.filter(rk=>ttCount(tt("back",rk))).forEach(rk=>{const T=R(rk),ready=new Date((fixed?end.getTime():Math.max(end.getTime(),Date.now()))+tBuf(rk)*60000);
-    tList(d0,"back",rk).concat(tList(addDays(d0,1),"back",rk)).filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).forEach(x=>out.push(Object.assign({},x,{rk,ready,home:new Date(x.arr.getTime()+(+T.walk||0)*60000)})))});
-  out.sort((a,b)=>a.dep-b.dep);const firstHome=out.length?Math.min(...out.map(x=>x.home.getTime())):0;
-  const best=pickRide(out);
+    const all=tList(d0,"back",rk).concat(tList(addDays(d0,1),"back",rk));
+    all.filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).forEach(x=>out.push(Object.assign({},x,{rk,ready,home:new Date(x.arr.getTime()+(+T.walk||0)*60000)})));
+    // also the one just before, for when you're off quicker than planned (never suggested, only shown)
+    if(!fixed){const lo=Math.max(Date.now(),end.getTime()-30*60000),q=all.filter(x=>x.dep<ready&&x.dep.getTime()>=lo).pop();if(q)out.push(Object.assign({},q,{rk,ready,quick:true,home:new Date(q.arr.getTime()+(+T.walk||0)*60000)}))}});
+  out.sort((a,b)=>a.dep-b.dep);
+  const best=pickRide(out.filter(x=>!x.quick));
   return {list:out,best}}
 // the train or bus home: picked (or the suggested one), then caught — by a tap, or automatically 15 min after it leaves
 const rideKey=x=>x.rk+"|"+x.dep.getTime();
@@ -3268,13 +3274,13 @@ function homeRide(){const h=S.homeRide;return h&&h.date===S.duty.date?h:null}
 function rideStatus(){const h=homeRide();if(!h||!h.dep)return null;if(h.caught)return "caught";if(Date.now()>h.dep+15*60000){h.caught=true;save();return "caught"}return "picked"}
 function homeCard(){
   const m=modeOf(S.duty.date);if(m==="car"&&!RK.includes(S.duty.mode))return "";if(!RK.some(rk=>ttCount(tt("back",rk))))return "";const end=homeEnd();if(!end)return "";
-  {const h0=homeRide();if(h0&&h0.dep&&!h0.caught&&h0.dep<end.getTime()+tBuf(h0.rk)*60000){h0.missed=(h0.missed||[]).concat([h0.key]);h0.key="";h0.dep=0;h0.manual=false}} // landed too late for it
+  {const h0=homeRide();if(h0&&h0.dep&&!h0.caught&&h0.dep<(h0.manual?end.getTime()-30*60000:end.getTime()+tBuf(h0.rk)*60000)){h0.missed=(h0.missed||[]).concat([h0.key]);h0.key="";h0.dep=0;h0.manual=false}} // landed too late for it
   const nm=x=>(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:""),h=homeRide(),st=rideStatus(),missed=(h&&h.missed)||[];
   if(st==="caught"){const dep=new Date(h.dep),home=new Date(h.home);return `<section class="card"><h2>Getting home</h2>
     <p style="margin:0"><b>On the ${esc(h.name.toLowerCase())} that left at ${hm(dep)}</b>. Home about ${hm(home)}.</p>
     <div class="btns" style="margin:0"><button class="ghost" data-hmiss="1">Not on it? Pick another way</button></div></section>`}
   const H0=homeOptions(end),list=H0.list.filter(x=>!missed.includes(rideKey(x))&&!(h&&h.missedAt&&x.dep.getTime()<=h.missedAt)),L=list.slice(0,5);
-  const sug=pickRide(list);
+  const sug=pickRide(list.filter(x=>!x.quick));
   const pick=h&&h.dep&&h.manual?L.find(x=>rideKey(x)===h.key)||null:null,b=pick||sug;
   if(b&&(!h||h.key!==rideKey(b))&&!h?.manual){S.homeRide={date:S.duty.date,key:rideKey(b),rk:b.rk,name:nm(b),dep:b.dep.getTime(),home:b.home.getTime(),missed,manual:false}}
   const H={list:L,best:b};
@@ -3283,7 +3289,7 @@ function homeCard(){
     ${b?`<p style="margin:0"><b>${pick&&h.manual?"Your pick":"Take"}: ${esc(nm(b).toLowerCase())} at ${b.t}</b>, home about ${hm(b.home)}.${!pick&&tPref()!=="fastest"&&b.rk!==tPref()&&L.every(x=>x.rk===b.rk||x.home>b.home)?` No ${tPref()} gets you home in time.`:""}</p>
       <div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>
       <p class="note" style="margin:0">If you don't tap, it's marked as caught 15 min after it leaves. You can still change it after.</p>`:""}
-    ${L.length?`<div>${L.map(x=>`<div class="tip" style="align-items:center"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
+    ${L.length?`<div>${L.map(x=>`<div class="tip" style="align-items:center"><span class="t clk">${x.t}</span><span style="flex:1">${x===b?"<b>":""}${esc(nm(x))}${x===b?"</b>":""}${x.quick?" (if you're off quickly)":""}, arrives ${hm(x.arr)}, home about ${hm(x.home)}</span>${x===b?"":`<button class="pick" data-hpick="${rideKey(x)}">Take this</button>`}</div>`).join("")}</div>`:`<p style="margin:0;color:var(--danger)"><b>No more trains or buses home tonight.</b> Book a taxi or arrange a lift.</p>`}
   </section>`;
 }
 function homeCardOld(){
