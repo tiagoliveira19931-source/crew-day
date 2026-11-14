@@ -46,9 +46,22 @@ with sync_playwright() as p:
     t=pg.inner_text("main"); print([l for l in t.split("\n") if "blocks" in l][:4])
     assert "Off blocks 13:38" in t, t
     pg.click("[data-ftlivego]"); pg.wait_for_timeout(300)
+    t=pg.inner_text("main"); assert "Running from online times" in t, [l for l in t.split("\n") if "online" in l]
+    assert pg.locator("#ftgo").count()==0 and pg.locator("#ftrestart").count()==0
     t=pg.inner_text("main"); assert "On blocks" in t and "off blocks ~13:38" in t, [l for l in t.split("\n") if "13:" in l]
     # the timer didn't write the block times
     R=pg.evaluate("window.CREWDAY_TEST.roster()['2026-11-14'].sectors[0]"); print("sector:",{k:R.get(k) for k in ("offb","onb")})
     assert not R.get("offb") and not R.get("onb")
+    # after landing the app checks once more; the online on-block time stops the timer by itself
+    ANS["response"]["arr_actual_utc"]="2026-11-14 15:19"
+    pg.clock.set_system_time(datetime.datetime(2026,11,14,15,30)); pg.clock.run_for(400000); pg.wait_for_timeout(500)
+    if pg.evaluate("!!window.CREWDAY_TEST.ft&&!!window.CREWDAY_TEST.ft()"): pg.click("#ftlive"); pg.wait_for_timeout(500)
+    t=pg.inner_text("main"); assert "Running from online times" not in t, [l for l in t.split("\n") if "online" in l or "blocks" in l]
+    assert "1:41" in t or "101" in t, [l for l in t.split("\n") if "block" in l.lower()]
+    # the saved note shows after a change
+    pg.click("[data-tab=more]"); pg.click('[data-more=""]') if pg.locator('[data-more=""]').count() else None
+    pg.click('[data-more="profile"]'); pg.wait_for_timeout(150)
+    pg.fill("#pr-fk","test-key-123 "); pg.locator("#pr-fk").dispatch_event("change"); pg.wait_for_timeout(100)
+    assert "Saved" in pg.evaluate("(document.getElementById('savedpill')||{}).textContent||''")
     b.close()
 print("ERRORS:", errs or "none")

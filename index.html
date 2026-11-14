@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.35.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.35.1";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -468,7 +468,13 @@ const SEC={key:null,locked:false,fails:0,until:0,hiddenAt:0,
   encrypting(){const c=this.cfg();return !!(c&&c.enc&&IS_PWA)}
 };
 let secSaving=Promise.resolve();
+// a small "Saved" note after anything you change, so you know it's kept (not for background saves)
+let savedT=0;
+function savedFlash(){const ev=window.event;if(!ev||!/^(change|click|input|submit|keydown)$/.test(ev.type))return;let el=document.getElementById("savedpill");
+  if(!el){el=document.createElement("div");el.id="savedpill";el.setAttribute("role","status");el.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--accent);color:#fff;font:600 13px var(--body);padding:6px 14px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.15);z-index:50;transition:opacity .3s;pointer-events:none";document.body.appendChild(el)}
+  el.textContent="✓ Saved on this phone";el.style.opacity="1";clearTimeout(savedT);savedT=setTimeout(()=>{el.style.opacity="0"},1400)}
 function save(){
+  savedFlash();
   if(SEC.encrypting()){if(SEC.key){const snap=JSON.stringify(S);secSaving=secSaving.then(()=>SEC.encText(snap)).then(v=>{try{localStorage.setItem("crewday",v)}catch(e){}}).catch(()=>{})}}
   else{try{localStorage.setItem("crewday",JSON.stringify(S))}catch(e){}}
   if(!docRef)return;
@@ -3099,6 +3105,7 @@ function blockNote(x,pb,ab){
 /* ---------- flight timer: block time from the briefing, start at taxi ---------- */
 const TAXI_BUF=5;
 // flights the timer has finished today (kept apart from the block times crew type in)
+function liveMode(){return !!(S.me.flightKey||"").trim()&&S.ftManual!==today()}
 function ftDone(t){if(!S.ftDone||S.ftDone.date!==t)S.ftDone={date:t,list:[]};return S.ftDone.list}
 /* Live times (trial): before doors close and on taxi, with signal, the flight's estimated and actual times
    (AirLabs, the crew member's own free key) set the timer. Only the flight number is sent. */
@@ -3120,6 +3127,8 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
     // the aircraft is off blocks and the timer isn't running yet: start it from the real time
     const L=S.ftLive[cleanFlt(x.flt)],ft=S.ft&&S.ft.date===ftState().t?S.ft:null;
     if(L.depAct&&ft&&ft.start&&!ft.stop&&Math.abs(ft.start-L.depAct)>60000&&!ft.liveSet){ft.start=L.depAct;ft.liveSet=true}
+    if(ft&&ft.start&&ft.liveSet&&L.arrEst&&L.arrEst>ft.start)ft.est=Math.round((L.arrEst-ft.start)/60000);
+    if(ft&&ft.start&&ft.liveSet&&L.arrAct&&L.arrAct>ft.start){const {t:t3}=ftState(),blk=Math.round((L.arrAct-ft.start)/60000);ftDone(t3).push(ft.i);S.ftLast={date:t3,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null}
     else if(L.depAct&&!(ft&&ft.start)&&!L.arrAct&&!(S.ftNoAuto&&S.ftNoAuto===today()+"|"+cleanFlt(x.flt))){const {t:t2,secs:s2,i:i2}=ftState(),y=i2>=0?s2[i2]:null;const est=(y&&(y.est||blockMins(y)))||(L.arrEst?Math.round((L.arrEst-L.depAct)/60000):0);
       if(y&&est){S.ft={date:t2,i:i2,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true,auto:true};y.est=est}}
   }catch(e){if(manual)ftLiveMsg="Couldn't get live times ("+String(e.message||e).slice(0,60)+").";}
@@ -3166,8 +3175,8 @@ function flightTimerCard(){
       <div class="pass" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">${cdSince("Block so far",new Date(ft.start),"taxi "+hm(new Date(ft.taxi||ft.start+TAXI_BUF*60000))+" · off blocks ~"+hm(new Date(ft.start)))}${cdCell("Block left",end,"on blocks ~"+hm(end),true)}</div>
       ${x&&x.ctot?`<p class="note" style="margin:0">Slot ${r2l(t,x.ctot)}${RZ()?"L":""}: ${slotLine(t,x)}</p>`:""}
       ${ftLiveHTML(x,true)}
-      <button class="primary bigbtn" id="ftstop">On blocks</button>
-      <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from taxi now</button><button class="ghost" id="ftundo">Cancel the timer</button></div></section>`}
+      ${liveMode()&&ft.liveSet?`<p class="note" style="margin:0">Running from online times. It stops by itself once the landing time is online.</p><div class="btns" style="margin:0"><button class="ghost" id="ftstop">Stop now</button><button class="ghost" id="ftundo">Cancel the timer</button></div>`:`<button class="primary bigbtn" id="ftstop">On blocks</button>
+      <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from taxi now</button><button class="ghost" id="ftundo">Cancel the timer</button></div>`}</section>`}
   if(!x&&secs.length&&!ft)return last?`<section class="card ftcard"><h2>Flights done</h2><p style="margin:0">Last block ${fmtMins(last.block)}${last.est?" ("+(last.block>last.est?"+":last.block<last.est?"−":"±")+fmtMins(Math.abs(last.block-last.est))+" against "+fmtMins(last.est)+")":""}.</p></section>`:"";
   return `<section class="card ftcard">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>Flight timer</h2>${last?`<span class="chip">Last block ${fmtMins(last.block)}${last.est?" · "+(last.block>last.est?"+":last.block<last.est?"−":"±")+Math.abs(last.block-last.est)+" min":""}</span>`:""}</div>
@@ -3175,8 +3184,8 @@ function flightTimerCard(){
     <div class="row2"><div class="field"><label for="ft-est">Block time today</label><input id="ft-est" type="text" inputmode="numeric" placeholder="e.g. 2:35" value="${est?fmtMins(est):""}"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">From the briefing.${x&&blockMins(x)?" Planned "+fmtMins(blockMins(x))+".":""}</span></div></div>
     ${x?`<div class="row2"><div class="field"><label for="ft-slot">Slot (CTOT)${RZ()?" L":""}</label><input id="ft-slot" type="time" value="${x.ctot?r2l(t,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">${x.ctot?slotLine(t,x):"Add it if ATC gives you one. The landing estimate then moves with it."}</span></div></div>`:""}
     ${ftLiveHTML(x,false)}
-    <button class="primary bigbtn" id="ftgo">Start at taxi</button>
-    <p class="note" style="margin:0">Block time counts from pushback, so the timer adds the ${TAXI_BUF} minutes before taxi.</p>
+    ${liveMode()?`<p class="note" style="margin:0">With your flight key, times come from online: no buttons needed. Have Crew Day open during boarding or taxi.</p><div class="btns" style="margin:0"><button class="ghost" id="ftmanual">No signal? Start by hand instead</button></div>`:`<button class="primary bigbtn" id="ftgo">Start at taxi</button>
+    <p class="note" style="margin:0">Block time counts from pushback, so the timer adds the ${TAXI_BUF} minutes before taxi.</p>`}
     ${last&&last.prev?`<div class="btns" style="margin:0"><button class="ghost" id="ftunstop">Pressed On blocks by mistake? Carry on timing</button></div>`:""}
   </section>`;
 }
@@ -4098,6 +4107,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.newscat){S.newsCat=b.dataset.newscat;render();save();return}
   if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
   if(b.id==="ftlive"){ftLiveCheck(true);return}
+  if(b.id==="ftmanual"){S.ftManual=today();render();save();return}
   if(b.dataset.ftlivego){const {t,secs,i}=ftState(),x=i>=0?secs[i]:null,L=x&&ftLiveOf(cleanFlt(x.flt));if(!L||!L.depAct)return;const est=parseHM(($("#ft-est")||{}).value)||x.est||blockMins(x)||(L.arrEst&&L.depAct?Math.round((L.arrEst-L.depAct)/60000):0);
     if(!est){ftLiveMsg="Type today's block time first.";render();return}S.ft={date:t,i,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true};x.est=est;render();save();return}
   if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);ft.start=off.getTime();ft.taxi=now.getTime();render();save();return}

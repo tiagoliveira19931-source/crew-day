@@ -22,3 +22,7 @@ Reports from More › Report an issue that have been handled. The repo is public
 | 13/11/2026 23:24:23 | Tonight and sleep ignored a late landing and still said to pack the bag before they were home | Fixed in 1.31.1: plan starts from when you're really home (actual on blocks, train home) |
 | 13/11/2026 23:25:31 | Trip: timer should start at taxi, not pushback | Asked Tiago |
 | 13/11/2026 23:41:54 | Report an issue: hide reports once they're dealt with | Asked Tiago (the app can't see what happens to a report without fetching from the sheet) |
+
+## 14 Nov 2026 (1.35.1)
+- Idea (Jet2): wants reassurance that changes are saved. Done: a short "✓ Saved on this phone" note appears after each change.
+- Problem (Ryanair): with a flight key, the timer should use online times rather than buttons. Done: with a key the Start/On blocks buttons are hidden, block end follows the online estimate and the timer stops by itself at the online on-block time. "Start by hand instead" stays for no signal; without a key nothing changes.
