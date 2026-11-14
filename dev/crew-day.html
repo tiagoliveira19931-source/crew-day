@@ -2958,18 +2958,22 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
     // the aircraft is off blocks and the timer isn't running yet: start it from the real time
     const L=S.ftLive[cleanFlt(x.flt)],ft=S.ft&&S.ft.date===ftState().t?S.ft:null;
     if(L.depAct&&ft&&ft.start&&!ft.stop&&Math.abs(ft.start-L.depAct)>60000&&!ft.liveSet){ft.start=L.depAct;ft.liveSet=true}
+    else if(L.depAct&&!(ft&&ft.start)&&!L.arrAct&&!(S.ftNoAuto&&S.ftNoAuto===today()+"|"+cleanFlt(x.flt))){const {t:t2,secs:s2,i:i2}=ftState(),y=i2>=0?s2[i2]:null;const est=(y&&(y.est||blockMins(y)))||(L.arrEst?Math.round((L.arrEst-L.depAct)/60000):0);
+      if(y&&est){S.ft={date:t2,i:i2,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true,auto:true};y.est=est}}
   }catch(e){if(manual)ftLiveMsg="Couldn't get live times ("+String(e.message||e).slice(0,60)+").";}
   ftLiveBusy=false;render();save()}
-// while a flight is close (2 h before to 30 min after departure) or the timer is running, check every 2 minutes
-setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i,ft}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt)return;
-  const L=ftLiveOf(cleanFlt(x.flt));if(L&&Date.now()-L.at<110000)return;const dep=x.dep?r2lDT(t,x.dep).getTime():0,running=ft&&ft.start&&!ft.stop;
-  if(running&&Date.now()-ft.start<3600000||dep&&Date.now()>dep-7200000&&Date.now()<dep+1800000)ftLiveCheck(false)},30000);
+// Checks are kept few so the free key lasts the month: every 3 minutes from 10 minutes before the scheduled
+// departure (gate closing) until the off-block time is found (at most 1 h), then once after the expected landing.
+setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i,ft}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt||!x.dep)return;
+  const L=ftLiveOf(cleanFlt(x.flt)),now=Date.now(),std=r2lDT(t,x.dep).getTime(),since=L?now-L.at:1e12;
+  if(!L||!L.depAct){if(now>=std-600000&&now<=std+3600000&&since>=175000)ftLiveCheck(false);return}
+  const land=(L.arrEst||L.arrSched||0);if(!L.arrAct&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
 function ftLiveHTML(x,running){if(!x||!x.flt)return "";const L=ftLiveOf(cleanFlt(x.flt)),key=(S.me.flightKey||"").trim(),t2=v=>v?hm(new Date(v)):"";
   return `<div class="seccard" style="margin:0"><span class="label">Live times · trial</span>
     ${L?`<p style="margin:0">${L.depAct?`Off blocks <b>${t2(L.depAct)}</b>`:L.depEst?`Expected off blocks <b>${t2(L.depEst)}</b>`:`Scheduled ${t2(L.depSched)}`}${L.arrAct?` · landed <b>${t2(L.arrAct)}</b>`:L.arrEst?` · expected on blocks <b>${t2(L.arrEst)}</b>`:""}</p>
-      <p class="note" style="margin:0">Checked ${t2(L.at)}${L.status?" · "+esc(L.status):""}.${L.depAct&&running?" The timer is set from the real off-block time.":""}</p>
+      <p class="note" style="margin:0">Checked ${t2(L.at)}${L.status?" · "+esc(L.status):""}.${L.depAct&&running?(S.ft&&S.ft.auto?" The timer started by itself from the real off-block time.":" The timer is set from the real off-block time."):""}</p>
       ${L.depAct&&!running?`<div class="btns" style="margin:0"><button data-ftlivego="1">Start the timer from off blocks ${t2(L.depAct)}</button></div>`:""}`
-    :`<p class="note" style="margin:0">${key?"With signal, the app checks the flight every 2 minutes from 2 hours before departure, and starts the timer from the real off-block time.":"Add a free flight lookup key in Profile › Flight lookup to try this."}</p>`}
+    :`<p class="note" style="margin:0">${key?"Keep Crew Day open on Trip during boarding or taxi: from 10 minutes before departure it checks the flight and starts the timer by itself from the real off-block time.":"Add a free flight lookup key in Profile › Flight lookup to try this."}</p>`}
     ${ftLiveMsg?`<p class="note" style="margin:0" role="status">${esc(ftLiveMsg)}</p>`:""}
     ${key?`<div class="btns" style="margin:0"><button class="ghost" id="ftlive">Check live times now</button></div>`:""}</div>`} // minutes from pushback to taxi, added back when the timer starts at taxi
 function parseHM(v){v=String(v||"").trim();let m=v.match(/^(\d{1,2})[:.h ](\d{1,2})$/);if(m)return +m[1]*60+ +m[2];m=v.match(/^(\d{1,3})$/);if(m){const n=+m[1];return n<=12?n*60:n}return 0}
@@ -3900,7 +3904,7 @@ document.addEventListener("click",e=>{
     if(!est){ftLiveMsg="Type today's block time first.";render();return}S.ft={date:t,i,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true};x.est=est;render();save();return}
   if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);ft.start=off.getTime();ft.taxi=now.getTime();render();save();return}
   if(b.id==="ftunstop"){const l=S.ftLast;if(!l||!l.prev)return;const {secs}=ftState();S.ft=l.prev;if(l.prev.i>=0&&secs[l.prev.i])secs[l.prev.i].onb="";S.ftLast=null;render();save();return}
-  if(b.id==="ftundo"){const {secs,ft}=ftState();if(ft&&ft.i>=0&&secs[ft.i]){secs[ft.i].offb=""}S.ft=null;render();save();return}
+  if(b.id==="ftundo"){{const {secs:s3,ft:f3}=ftState(),y=f3&&s3[f3.i];if(y&&y.flt)S.ftNoAuto=today()+"|"+cleanFlt(y.flt)}S.ft=null;render();save();return}
   if(b.dataset.evepick){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(b.dataset.evepick);render();save();return}
   if(b.id==="eveadd"){const v=($("#eve-n")||{}).value||"";if(v.trim()){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(v.trim().slice(0,60))}render();save();return}
   if(b.dataset.evedel!==undefined){e.preventDefault();S.evening.items.splice(+b.dataset.evedel,1);render();save();return}

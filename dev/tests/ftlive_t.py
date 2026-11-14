@@ -22,10 +22,18 @@ with sync_playwright() as p:
     f=pg.locator('[data-fold="pf_key"]')
     if f.get_attribute("aria-expanded")=="false": f.click()
     pg.fill("#pr-fk","test-key-123"); pg.locator("#pr-fk").dispatch_event("change"); pg.wait_for_timeout(100)
-    pg.clock.set_system_time(datetime.datetime(2026,11,14,13,40)); pg.wait_for_timeout(1200)
+    pg.clock.set_system_time(datetime.datetime(2026,11,14,13,15)); pg.wait_for_timeout(1200)
     pg.click("[data-tab=today]"); pg.wait_for_timeout(300); pg.click("[data-tab=trip]"); pg.wait_for_timeout(300)
     print("duty:",pg.evaluate("JSON.stringify(window.CREWDAY_TEST.duty?window.CREWDAY_TEST.duty():null)"))
     t=pg.inner_text("main"); assert "live times" in t.lower(), t[:900]
+    # automatic: 10 minutes before departure the app checks by itself and starts the timer from off blocks
+    pg.clock.set_system_time(datetime.datetime(2026,11,14,13,21)); pg.wait_for_timeout(200)
+    assert not calls, "no checks earlier than 10 min before departure"
+    pg.clock.run_for(35000); pg.wait_for_timeout(500)
+    assert calls, "should check from 10 min before departure"
+    t=pg.inner_text("main"); assert "started by itself" in t and "On blocks" in t, [l for l in t.split("\n") if "blocks" in l or "itself" in l]
+    n=len(calls); pg.clock.run_for(400000); pg.wait_for_timeout(300); assert len(calls)==n, ("stops checking once off blocks is known",len(calls)-n)
+    pg.click("#ftundo") if pg.locator("#ftundo").count() else None; pg.wait_for_timeout(200)
     pg.click("#ftlive"); pg.wait_for_timeout(500)
     assert calls and "flight_iata=FR147" in calls[-1] and "test-key-123" in calls[-1], calls
     t=pg.inner_text("main"); print([l for l in t.split("\n") if "blocks" in l][:4])
