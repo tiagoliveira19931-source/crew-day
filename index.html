@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.31.1";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.32.0";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -560,7 +560,8 @@ function bedTime(){return /^\d\d:\d\d$/.test(S.profile.bed||"")?S.profile.bed:"2
 function sleepHours(){const v=+S.profile.sleepH;return v>=6&&v<=10?v:8.5}
 // the alarms for a duty morning: on a late report, one to wake up after a full night's sleep, then one to start getting ready
 function stepRings(p,s,i){return !!s.alarm&&(!p.split||i===0||!/alarm|snooze|wake|breakfast/i.test(s.label))}
-function alarmList(p){
+function alarmList(p){return alarmList0(p).sort((a,b)=>a.t-b.t)}
+function alarmList0(p){
   if(!p.split)return S.steps.map((s,i)=>s.alarm?{t:p.times[i],label:s.label,i}:null).filter(Boolean).concat([{t:p.leave,label:"Leave the house",i:"leave"}]);
   const out=[{t:p.wake,label:"Wake up (about "+hmDur(sleepHours()*60)+" sleep)",i:"wake"},{t:p.ready,label:"Start getting ready",i:"ready"}];
   S.steps.forEach((s,i)=>{if(i>0&&s.alarm&&!/alarm|snooze|wake|breakfast/i.test(s.label))out.push({t:p.times[i],label:s.label,i})});
@@ -588,8 +589,8 @@ function plan(x){
       if(!d._mode)for(const rk of RK.filter(r=>r!==tm&&tHas(r))){const alt=tryMode(rk);if(alt&&alt.tr){tr=alt.tr;tr.fallback=tm;break}}}
     if(tr){skipped=tr.fallback?skipped:null;leave=new Date(tr.chosen.dep.getTime()-((+R(tr.rk).walk||0)+(S.wxExtra&&+S.wxExtra[d.date]||0))*60000)}}
   let t=leave.getTime();const times=[];
-  for(let i=S.steps.length-1;i>=0;i--){t-=(+S.steps[i].min||0)*60000;times[i]=new Date(t)}
-  const ready=times[0]||leave;
+  for(let i=S.steps.length-1;i>=0;i--){const st=S.steps[i];if(/^\d\d:\d\d$/.test(st.at||"")){const [h,m]=st.at.split(":").map(Number),x=new Date(leave);x.setHours(h,m,0,0);if(x>leave)x.setDate(x.getDate()-1);times[i]=x;continue}t-=(+st.min||0)*60000;times[i]=new Date(t)}
+  const ready=times.length?new Date(Math.min(...times.map(x=>x.getTime()))):leave;
   // wake after a proper night's sleep, not just in time to get ready: a late report leaves the morning free
   let wake=ready,split=false,bedAt=null,bedLate=false;
   // not when called out from home standby: then it's the call-out time that counts
@@ -1292,6 +1293,8 @@ function suggestSnacks(ws,only){const M=mealsState(),used={};
     const ok=SNACK_NAMES.filter(dietOk),pool=ok.length?ok:SNACK_NAMES,pick=[];
     for(let k=0;k<SNACK_N[t];k++){const c=pool.filter(n=>!pick.includes(n)).sort((a,b)=>(used[a]||0)-(used[b]||0)||(((i*31+k*17+a.length*7+a.charCodeAt(0))%23)-((i*31+k*17+b.length*7+b.charCodeAt(0))%23)))[0];if(c){pick.push(c);used[c]=(used[c]||0)+1}}
     M.snacks[d]=pick}}
+// full method online (meals are made at home, before the duty, so a link is fine)
+function howLink(name){return `<a class="note" style="margin:0" href="https://www.google.com/search?q=${encodeURIComponent(name+" recipe")}" target="_blank" rel="noopener">How to make it ↗</a>`}
 function snacksFor(d){const M=mealsState();return (M.snacks[d]||[]).filter(Boolean)}
 const ALL_MEALS=()=>[].concat(...Object.keys(MEALS).map(k=>MEALS[k].map(m=>m[0])));
 function weekStart(d){const x=new Date((d||today())+"T12:00:00");const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x.toISOString().slice(0,10)}
@@ -1322,7 +1325,7 @@ function viewMeals(){
     <p class="note" style="margin:0">Meals and snacks are picked for your duty days from your roster and your food needs, with a different mix each day. Every snack is solid, so nothing goes in your liquids bag, and all of it comes from the supermarket, not the airport. Change any of them.</p>
     <div>${days.map(d=>{const t=dayTypeOf(d),m=M.plan[d];return `<div class="ex" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);display:grid;gap:8px;align-items:center">
       <span><b>${esc(fmtDate(d,{weekday:"short",day:"numeric"}))}</b><span class="note" style="display:block">${t?esc(DUTY[t].name):"No duty"}</span></span>
-      <div style="display:flex;gap:6px;align-items:center;min-width:0"><select data-mplan="${d}" aria-label="Meal for ${esc(d)}" style="min-width:0;flex:1"><option value="">${t?"Eating out / none":"Nothing planned"}</option>${Object.keys(MEALS).map(k=>`<optgroup label="${esc(DUTY[k].name)}">${MEALS[k].map(x=>x[0]).map(n=>`<option ${m===n?"selected":""}>${esc(n)}</option>`).join("")}</optgroup>`).join("")}</select></div>
+      <div style="display:flex;gap:6px;align-items:center;min-width:0"><select data-mplan="${d}" aria-label="Meal for ${esc(d)}" style="min-width:0;flex:1"><option value="">${t?"Eating out / none":"Nothing planned"}</option>${Object.keys(MEALS).map(k=>`<optgroup label="${esc(DUTY[k].name)}">${MEALS[k].map(x=>x[0]).map(n=>`<option ${m===n?"selected":""}>${esc(n)}</option>`).join("")}</optgroup>`).join("")}</select>${m&&RECIPES[m]?`<a href="https://www.google.com/search?q=${encodeURIComponent(m+" recipe")}" target="_blank" rel="noopener" aria-label="How to make ${esc(m)}" style="font-size:13px;white-space:nowrap">How ↗</a>`:""}</div>
       ${t?`<span class="note" style="align-self:center">Snacks</span><div style="display:flex;flex-direction:column;gap:4px;min-width:0">${[...Array(Math.max(SNACK_N[t],(M.snacks[d]||[]).length))].map((_,k)=>{const sn=(M.snacks[d]||[])[k]||"";return `<select data-msnack="${d}|${k}" aria-label="Snack ${k+1} for ${esc(d)}" style="min-width:0;font-size:14px"><option value="">No snack</option>${SNACK_NAMES.map(n=>`<option ${sn===n?"selected":""}>${esc(n)}</option>`).join("")}</select>`}).join("")}</div>`:""}</div>`}).join("")}</div>
     <div class="btns" style="margin:0"><button data-msuggest="${ws}">Suggest again</button></div>
   </section>
@@ -2151,12 +2154,13 @@ function phaseOf(){
 
 /* ---------- small bodies shared between tabs ---------- */
 function morningBody(p,which){
-  return `${p.split?`<div class="seccard"><span class="label">Late report, free morning</span><p style="margin:0">Alarm <b>${hm(p.wake)}</b> to wake up after about ${hmDur(sleepHours()*60)} of sleep (bed ${hm(p.bedAt)}${p.bedLate?", as you're home late from the day before":""}), then <b>${hm(p.ready)}</b> to start getting ready. The rest of the morning is yours.</p><p class="note" style="margin:0">Change your bedtime and sleep in <button class="linkbtn" data-goto="more:profile">Profile</button>.</p></div>`:""}<p class="note" style="margin:0">Tap the bell to make a step an alarm.${p.split?" On a free morning the snooze and breakfast alarms are skipped; your first step rings to start getting ready.":""} Leaving the house always has its own alarm.</p>
+  return `${p.split?`<div class="seccard"><span class="label">Late report, free morning</span><p style="margin:0">Alarm <b>${hm(p.wake)}</b> to wake up after about ${hmDur(sleepHours()*60)} of sleep (bed ${hm(p.bedAt)}${p.bedLate?", as you're home late from the day before":""}), then <b>${hm(p.ready)}</b> to start getting ready. The rest of the morning is yours.</p><p class="note" style="margin:0">Change your bedtime and sleep in <button class="linkbtn" data-goto="more:profile">Profile</button>.</p></div>`:""}<p class="note" style="margin:0">Steps run in time order. Give one a set time and it stays at that time; the rest count back from leaving the house. Tap the bell to make a step an alarm.${p.split?" On a free morning the snooze and breakfast alarms are skipped; your first step rings to start getting ready.":""} Leaving the house always has its own alarm.</p>
     <div class="timeline">
       ${p.split?`<div class="step"><span class="t alarm">${hm(p.wake)}</span><span class="fixed">Wake up</span><div style="display:flex;gap:4px"><span class="bell fixedbell" role="img" aria-label="Always an alarm">${ICON.bell}</span><button class="ghost" tabindex="-1" aria-hidden="true" style="visibility:hidden">${ICON.x}</button></div></div>`:""}
-      ${S.steps.map((s,i)=>`<div class="step">
+      ${S.steps.map((s,i)=>[s,i]).sort((a,b)=>p.times[a[1]]-p.times[b[1]]||a[1]-b[1]).map(([s,i])=>`<div class="step">
         <span class="t ${stepRings(p,s,i)?"alarm":""}">${hm(p.times[i])}</span>
-        <div class="n"><input aria-label="Step name" type="text" value="${esc(s.label)}" data-step="${s.id}" data-f="label"><input aria-label="Minutes for ${esc(s.label)}" class="num" type="number" min="0" inputmode="numeric" value="${esc(s.min)}" data-step="${s.id}" data-f="min"></div>
+        <div class="n"><input aria-label="Step name" type="text" value="${esc(s.label)}" data-step="${s.id}" data-f="label"><input aria-label="Minutes for ${esc(s.label)}" class="num" type="number" min="0" inputmode="numeric" value="${esc(s.min)}" data-step="${s.id}" data-f="min" ${s.at?"disabled title=\"Set to a clock time\"":""}>
+          <label class="note" style="grid-column:1/-1;display:flex;align-items:center;gap:6px;margin:0">At a set time <input type="time" aria-label="Set time for ${esc(s.label)}" value="${esc(s.at||"")}" data-step="${s.id}" data-f="at" style="max-width:120px"></label></div>
         <div style="display:flex;gap:4px"><button class="bell" aria-pressed="${s.alarm}" aria-label="Alarm for ${esc(s.label)}" data-bell="${s.id}">${ICON.bell}</button><button class="ghost" aria-label="Remove ${esc(s.label)}" data-delstep="${s.id}">${ICON.x}</button></div>
       </div>`).join("")}
       <div class="step"><span class="t alarm">${hm(p.leave)}</span><span class="fixed">Leave the house</span><div style="display:flex;gap:4px"><span class="bell fixedbell" role="img" aria-label="Always an alarm">${ICON.bell}</span><button class="ghost" tabindex="-1" aria-hidden="true" style="visibility:hidden">${ICON.x}</button></div></div>
@@ -2953,10 +2957,47 @@ function blockNote(x,pb,ab){
   const bm=x.est||pb;if(x.offb&&bm){const eta=addM(x.offb,bm);return `<p style="margin:0"><b>Expected on blocks ${r2l(dt,eta)}${L}</b>${x.arr?`: ${vsSched(eta,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled`:""}. Based on ${x.est?"today's "+fmtMins(bm)+" block from the briefing":"the planned "+fmtMins(bm)+" block"}.</p>`}
   return "";
 }
-/* ---------- flight timer: block time from the briefing, start at pushback ---------- */
+/* ---------- flight timer: block time from the briefing, start at taxi ---------- */
+const TAXI_BUF=5;
+// flights the timer has finished today (kept apart from the block times crew type in)
+function ftDone(t){if(!S.ftDone||S.ftDone.date!==t)S.ftDone={date:t,list:[]};return S.ftDone.list}
+/* Live times (trial): before doors close and on taxi, with signal, the flight's estimated and actual times
+   (AirLabs, the crew member's own free key) set the timer. Only the flight number is sent. */
+let ftLiveBusy=false,ftLiveMsg="";
+function ftLiveOf(f){const L=S.ftLive&&S.ftLive[f];return L&&L.date===today()?L:null}
+function alUTC(v){if(!v)return null;const d=new Date(String(v).replace(" ","T")+"Z");return isNaN(d)?null:d}
+async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,key=(S.me.flightKey||"").trim();
+  if(!x||!x.flt){if(manual){ftLiveMsg="No flight number for this sector.";render()}return}
+  if(!key){if(manual){ftLiveMsg="Live times need a free flight lookup key: Profile › Flight lookup.";render()}return}
+  if(ftLiveBusy||navigator.onLine===false){if(manual){ftLiveMsg="No signal right now.";render()}return}
+  ftLiveBusy=true;if(manual){ftLiveMsg="Checking live times…";render()}
+  try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
+    const R=r&&r.response;if(!R||r.error)throw new Error((r&&r.error&&r.error.message)||"not found");
+    if(!S.ftLive)S.ftLive={};S.ftLive[cleanFlt(x.flt)]={date:today(),at:Date.now(),status:R.status||"",
+      depSched:+alUTC(R.dep_time_utc)||0,depEst:+alUTC(R.dep_estimated_utc)||0,depAct:+alUTC(R.dep_actual_utc)||0,
+      arrSched:+alUTC(R.arr_time_utc)||0,arrEst:+alUTC(R.arr_estimated_utc)||0,arrAct:+alUTC(R.arr_actual_utc)||0};
+    ftLiveMsg="";
+    // the aircraft is off blocks and the timer isn't running yet: start it from the real time
+    const L=S.ftLive[cleanFlt(x.flt)],ft=S.ft&&S.ft.date===ftState().t?S.ft:null;
+    if(L.depAct&&ft&&ft.start&&!ft.stop&&Math.abs(ft.start-L.depAct)>60000&&!ft.liveSet){ft.start=L.depAct;ft.liveSet=true}
+  }catch(e){if(manual)ftLiveMsg="Couldn't get live times ("+String(e.message||e).slice(0,60)+").";}
+  ftLiveBusy=false;render();save()}
+// while a flight is close (2 h before to 30 min after departure) or the timer is running, check every 2 minutes
+setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i,ft}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt)return;
+  const L=ftLiveOf(cleanFlt(x.flt));if(L&&Date.now()-L.at<110000)return;const dep=x.dep?r2lDT(t,x.dep).getTime():0,running=ft&&ft.start&&!ft.stop;
+  if(running&&Date.now()-ft.start<3600000||dep&&Date.now()>dep-7200000&&Date.now()<dep+1800000)ftLiveCheck(false)},30000);
+function ftLiveHTML(x,running){if(!x||!x.flt)return "";const L=ftLiveOf(cleanFlt(x.flt)),key=(S.me.flightKey||"").trim(),t2=v=>v?hm(new Date(v)):"";
+  return `<div class="seccard" style="margin:0"><span class="label">Live times · trial</span>
+    ${L?`<p style="margin:0">${L.depAct?`Off blocks <b>${t2(L.depAct)}</b>`:L.depEst?`Expected off blocks <b>${t2(L.depEst)}</b>`:`Scheduled ${t2(L.depSched)}`}${L.arrAct?` · landed <b>${t2(L.arrAct)}</b>`:L.arrEst?` · expected on blocks <b>${t2(L.arrEst)}</b>`:""}</p>
+      <p class="note" style="margin:0">Checked ${t2(L.at)}${L.status?" · "+esc(L.status):""}.${L.depAct&&running?" The timer is set from the real off-block time.":""}</p>
+      ${L.depAct&&!running?`<div class="btns" style="margin:0"><button data-ftlivego="1">Start the timer from off blocks ${t2(L.depAct)}</button></div>`:""}`
+    :`<p class="note" style="margin:0">${key?"With signal, the app checks the flight every 2 minutes from 2 hours before departure, and starts the timer from the real off-block time.":"Add a free flight lookup key in Profile › Flight lookup to try this."}</p>`}
+    ${ftLiveMsg?`<p class="note" style="margin:0" role="status">${esc(ftLiveMsg)}</p>`:""}
+    ${key?`<div class="btns" style="margin:0"><button class="ghost" id="ftlive">Check live times now</button></div>`:""}</div>`} // minutes from pushback to taxi, added back when the timer starts at taxi
 function parseHM(v){v=String(v||"").trim();let m=v.match(/^(\d{1,2})[:.h ](\d{1,2})$/);if(m)return +m[1]*60+ +m[2];m=v.match(/^(\d{1,3})$/);if(m){const n=+m[1];return n<=12?n*60:n}return 0}
 function ftState(){const run=S.ft&&S.ft.start&&!S.ft.stop,t=run?S.ft.date:(S.duty.date&&S.duty.date>=addDays(today(),-1)&&(S.duty.date===today()||phaseOf()==="duty")?S.duty.date:today()),r=S.roster[S.duty.date===t?t:""],secs=(r&&r.sectors)||[]; // a duty running past midnight keeps its flights
-  let ft=S.ft&&S.ft.date===t?S.ft:null;let i=ft&&ft.i>=0?ft.i:secs.findIndex(x=>!x.onb);if(ft&&!ft.start&&ft.i==null)i=secs.findIndex(x=>!x.onb);
+  const dn=ftDone(t),todo=(x,j)=>!x.onb&&!dn.includes(j);
+  let ft=S.ft&&S.ft.date===t?S.ft:null;let i=ft&&ft.i>=0?ft.i:secs.findIndex(todo);if(ft&&!ft.start&&ft.i==null)i=secs.findIndex(todo);
   return {t,r,secs,ft,i}}
 function flightTimerCard(){
   const {t,secs,ft,i}=ftState(),x=i>=0?secs[i]:null,running=ft&&ft.start&&!ft.stop;
@@ -2965,17 +3006,20 @@ function flightTimerCard(){
   const last=S.ftLast&&S.ftLast.date===t?S.ftLast:null;
   if(running){let end=new Date(ft.start+ft.est*60000);if(x&&x.ctot){const sl=new Date(r2lDT(t,x.ctot).getTime()+(ft.est-15)*60000);if(sl>end)end=sl}
     return `<section class="card ftcard"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>${x?esc(nameOf(x)):"Flight timer"}</h2><span class="chip">Block ${fmtMins(ft.est)}</span></div>
-      <div class="pass" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">${cdSince("Since pushback",new Date(ft.start),"off blocks "+hm(new Date(ft.start)))}${cdCell("Block left",end,"on blocks ~"+hm(end),true)}</div>
+      <div class="pass" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">${cdSince("Block so far",new Date(ft.start),"taxi "+hm(new Date(ft.taxi||ft.start+TAXI_BUF*60000))+" · off blocks ~"+hm(new Date(ft.start)))}${cdCell("Block left",end,"on blocks ~"+hm(end),true)}</div>
       ${x&&x.ctot?`<p class="note" style="margin:0">Slot ${r2l(t,x.ctot)}${RZ()?"L":""}: ${slotLine(t,x)}</p>`:""}
+      ${ftLiveHTML(x,true)}
       <button class="primary bigbtn" id="ftstop">On blocks</button>
-      <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from now</button><button class="ghost" id="ftundo">Cancel the timer</button></div></section>`}
+      <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from taxi now</button><button class="ghost" id="ftundo">Cancel the timer</button></div></section>`}
   if(!x&&secs.length&&!ft)return last?`<section class="card ftcard"><h2>Flights done</h2><p style="margin:0">Last block ${fmtMins(last.block)}${last.est?" ("+(last.block>last.est?"+":last.block<last.est?"−":"±")+fmtMins(Math.abs(last.block-last.est))+" against "+fmtMins(last.est)+")":""}.</p></section>`:"";
   return `<section class="card ftcard">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>Flight timer</h2>${last?`<span class="chip">Last block ${fmtMins(last.block)}${last.est?" · "+(last.block>last.est?"+":last.block<last.est?"−":"±")+Math.abs(last.block-last.est)+" min":""}</span>`:""}</div>
     ${secs.length>1?`<div class="btns" style="margin:0">${secs.map((y,j)=>`<button class="pick" aria-pressed="${j===i}" data-ftsec="${j}" ${y.onb?"disabled":""}>${esc(nameOf(y))}${y.onb?" ✓":""}</button>`).join("")}</div>`:x?`<p style="margin:0"><b>${esc(nameOf(x))}</b>${x.dep?` · sched ${r2l(t,x.dep)}${RZ()?"L":""}`:""}</p>`:""}
     <div class="row2"><div class="field"><label for="ft-est">Block time today</label><input id="ft-est" type="text" inputmode="numeric" placeholder="e.g. 2:35" value="${est?fmtMins(est):""}"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">From the briefing.${x&&blockMins(x)?" Planned "+fmtMins(blockMins(x))+".":""}</span></div></div>
     ${x?`<div class="row2"><div class="field"><label for="ft-slot">Slot (CTOT)${RZ()?" L":""}</label><input id="ft-slot" type="time" value="${x.ctot?r2l(t,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">${x.ctot?slotLine(t,x):"Add it if ATC gives you one. The landing estimate then moves with it."}</span></div></div>`:""}
-    <button class="primary bigbtn" id="ftgo">Start at pushback</button>
+    ${ftLiveHTML(x,false)}
+    <button class="primary bigbtn" id="ftgo">Start at taxi</button>
+    <p class="note" style="margin:0">Block time counts from pushback, so the timer adds the ${TAXI_BUF} minutes before taxi.</p>
     ${last&&last.prev?`<div class="btns" style="margin:0"><button class="ghost" id="ftunstop">Pressed On blocks by mistake? Carry on timing</button></div>`:""}
   </section>`;
 }
@@ -3114,7 +3158,7 @@ function dayPlanBody(p,x){
 }
 function foodBody(p){
   const type=dutyType(p.rep),D=DUTY[type],dk=p.rep.getFullYear()+"-"+String(p.rep.getMonth()+1).padStart(2,"0")+"-"+String(p.rep.getDate()).padStart(2,"0"),mine=on("more_meals")?mealFor(dk):null,R=mine&&RECIPES[mine];
-  return `${mine?`<div class="seccard"><span class="label">Your meal for this duty</span><b>${esc(mine)}</b>${R?`<span class="note" style="margin:0">${esc(R.how)}</span><span class="note" style="margin:0">${esc(R.ing.map(i=>i[0]).join(", "))}</span>`:""}${MEAL_LIQUID.includes(mine)?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${snacksFor(dk).length?`<span class="label">Your snacks</span><ul class="plain">${snacksFor(dk).map(n=>`<li><b>${esc(n)}</b>: ${esc((RECIPES[n]||{}).how||"")}</li>`).join("")}</ul>`:""}<div class="btns" style="margin:0"><button class="linkbtn" data-goto="more:meals">Change or see the shopping list</button></div></div>`:on("more_meals")?`<p class="note" style="margin:0">Plan the week's meals and get one shopping list in <button class="linkbtn" data-goto="more:meals">Meals and shopping</button>.</p>`:""}`+`<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+  return `${mine?`<div class="seccard"><span class="label">Your meal for this duty</span><b>${esc(mine)}</b>${R?`<span class="note" style="margin:0">${esc(R.how)}</span><span class="note" style="margin:0">${esc(R.ing.map(i=>i[0]).join(", "))}</span>${howLink(mine)}`:""}${MEAL_LIQUID.includes(mine)?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${snacksFor(dk).length?`<span class="label">Your snacks</span><ul class="plain">${snacksFor(dk).map(n=>`<li><b>${esc(n)}</b>: ${esc((RECIPES[n]||{}).how||"")} ${howLink(n)}</li>`).join("")}</ul>`:""}<div class="btns" style="margin:0"><button class="linkbtn" data-goto="more:meals">Change or see the shopping list</button></div></div>`:on("more_meals")?`<p class="note" style="margin:0">Plan the week's meals and get one shopping list in <button class="linkbtn" data-goto="more:meals">Meals and shopping</button>.</p>`:""}`+`<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
     <p class="note" style="margin:0">Your food needs: <b>${S.diet.length?esc(DIETS.filter(d=>S.diet.includes(d[0])).map(d=>d[1]).join(", ")):"none set"}</b>. <button class="linkbtn" data-goto="more:profile">Change in Profile</button></p>
     ${S.diet.some(d=>DIET_LINKS[d])?`<div class="links">${[...new Set(S.diet.filter(d=>DIET_LINKS[d]).map(d=>DIET_LINKS[d][1]))].map(u=>{const k=S.diet.find(d=>DIET_LINKS[d]&&DIET_LINKS[d][1]===u);return `<a href="${u}" target="_blank" rel="noopener">${esc(DIET_LINKS[k][0])} ↗</a>`}).join("")}</div>`:""}
     <span class="label">Easy meals to prep</span>
@@ -3521,6 +3565,8 @@ setTimeout(calAuto,3000);window.addEventListener("online",()=>setTimeout(calAuto
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(sendOutbox,2000)});
 function viewIssues(){
   if(!S.issues)S.issues=[];if(!S.issueDraft)S.issueDraft={kind:"problem",area:"Today"};
+  // reports are checked and fixed the night they're sent, so sent ones leave the list once that day is over
+  S.issues=S.issues.filter(r=>!r.sent||r.sent>=today());
   const dr=S.issueDraft,mine=S.issues.slice().reverse();
   loadAllIssues();
   const months=allIssues?[...new Set(allIssues.map(r=>r.date.slice(0,7)))]:[];
@@ -3581,7 +3627,7 @@ const TOOLS=[
   ["care","Uniform care","more_care","Recurring jobs for your uniform.",()=>{const n=S.care.filter(c=>!c.last||daysBetween(today(),addDays(c.last,+c.days||1))<=0).length;return n?n+" due":"All done"},viewCare],
   ["sick","Sick leave","more_sick","Fit notes, sick days and getting back to work.",()=>{const ep=currentSick();return ep&&today()<=ep.to?"Off until "+fmtDate(ep.to,{day:"numeric",month:"short"}):"Nothing logged"},viewSick],
   ["security","Privacy and lock",null,"Lock the app with a PIN and keep your data private.",()=>SEC.cfg()?"PIN lock on":"PIN lock off",viewSecurity],
-  ["issues","Report an issue",null,"Tell us what's not working or what you'd like.",()=>{const n=(S.issues||[]).length;return n?n+" sent":"Problems and ideas"},viewIssues],
+  ["issues","Report an issue",null,"Tell us what's not working or what you'd like.",()=>{const q=(S.issues||[]).filter(r=>!r.sent).length,n=(S.issues||[]).filter(r=>r.sent&&r.sent>=today()).length;return q?q+" waiting for signal":n?n+" sent today":"Problems and ideas"},viewIssues],
   ["perks","Crew discounts","perks","Staff schemes and deals you use.",()=>S.perks.length+" saved",viewPerks],
   ["backup","Backup",null,"",()=>backupHint(),()=>viewBackup()]
 ];
@@ -3856,8 +3902,9 @@ document.addEventListener("click",e=>{
   if(b.dataset.rtz){S.profile.rosterTz=b.dataset.rtz==="Z"?"Z":"local";if(S.duty.date&&S.roster[S.duty.date])useDay(S.duty.date);render();save();return}
   if(b.dataset.ftsec!==undefined){const v=$("#ft-est");S.ft={date:today(),i:+b.dataset.ftsec,est:v?parseHM(v.value):0};render();save();return}
   if(b.id==="ftgo"){const {t,secs,i}=ftState(),est=parseHM(($("#ft-est")||{}).value);if(!est){const v=$("#ft-est");if(v){v.setCustomValidity("Type the block time, e.g. 2:35");v.reportValidity();v.oninput=()=>v.setCustomValidity("")}return}
-    const now=new Date();S.ft={date:t,i,start:now.getTime(),est};if(i>=0&&secs[i]){secs[i].offb=(RZ()?hmZ:hm)(now);secs[i].est=est;secs[i].onb=""}render();save();return}
-  if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);if(ft.i>=0&&secs[ft.i])secs[ft.i].onb=(RZ()?hmZ:hm)(now);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+    // started at taxi: off blocks (pushback) is counted as 5 minutes earlier, so the block time stays right
+    const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);S.ft={date:t,i,start:off.getTime(),taxi:now.getTime(),est};if(i>=0&&secs[i])secs[i].est=est;render();save();ftLiveCheck(false);return}
+  if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);ftDone(t).push(ft.i);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
   if(b.dataset.tpref){S.me.tpref=b.dataset.tpref;render();save();return}
   if(b.dataset.hpick){const end=homeEnd(),x=end&&homeOptions(end).list.find(y=>rideKey(y)===b.dataset.hpick);if(x){const h=homeRide()||{};S.homeRide={date:S.duty.date,key:rideKey(x),rk:x.rk,name:(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:""),dep:x.dep.getTime(),home:x.home.getTime(),missed:h.missed||[],manual:true}}render();save();return}
   if(b.dataset.hcaught){const h=homeRide();if(h){h.caught=true;h.manual=true}render();save();return}
@@ -3870,7 +3917,10 @@ document.addEventListener("click",e=>{
   if(b.id==="newsrf"){newsFetch(true);return}
   if(b.dataset.newscat){S.newsCat=b.dataset.newscat;render();save();return}
   if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
-  if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date();ft.start=now.getTime();if(ft.i>=0&&secs[ft.i])secs[ft.i].offb=(RZ()?hmZ:hm)(now);render();save();return}
+  if(b.id==="ftlive"){ftLiveCheck(true);return}
+  if(b.dataset.ftlivego){const {t,secs,i}=ftState(),x=i>=0?secs[i]:null,L=x&&ftLiveOf(cleanFlt(x.flt));if(!L||!L.depAct)return;const est=parseHM(($("#ft-est")||{}).value)||x.est||blockMins(x)||(L.arrEst&&L.depAct?Math.round((L.arrEst-L.depAct)/60000):0);
+    if(!est){ftLiveMsg="Type today's block time first.";render();return}S.ft={date:t,i,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true};x.est=est;render();save();return}
+  if(b.id==="ftrestart"){const {secs,ft}=ftState();if(!ft)return;const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);ft.start=off.getTime();ft.taxi=now.getTime();render();save();return}
   if(b.id==="ftunstop"){const l=S.ftLast;if(!l||!l.prev)return;const {secs}=ftState();S.ft=l.prev;if(l.prev.i>=0&&secs[l.prev.i])secs[l.prev.i].onb="";S.ftLast=null;render();save();return}
   if(b.id==="ftundo"){const {secs,ft}=ftState();if(ft&&ft.i>=0&&secs[ft.i]){secs[ft.i].offb=""}S.ft=null;render();save();return}
   if(b.dataset.evepick){if(!S.evening)S.evening={items:[],done:{}};S.evening.items.push(b.dataset.evepick);render();save();return}
@@ -4071,7 +4121,7 @@ document.addEventListener("change",e=>{
   if(el.dataset.core){const k=S.core.items.find(x=>x.id===el.dataset.core);k.d=el.checked;render();save();return}
   if(el.dataset.kit){const k=S.kit.find(x=>x.id===el.dataset.kit);k.d=el.checked;render();save();return}
   if(el.dataset.k){setPath(el.dataset.k,el.type==="number"?(parseFloat(el.value)||0):el.value);render();save();return}
-  if(el.dataset.step){const s=S.steps.find(x=>x.id===el.dataset.step);s[el.dataset.f]=el.dataset.f==="min"?(parseFloat(el.value)||0):el.value;render();save();return}
+  if(el.dataset.step){const s=S.steps.find(x=>x.id===el.dataset.step);if(el.dataset.f==="at"){if(/^\d\d:\d\d$/.test(el.value))s.at=el.value;else delete s.at}else s[el.dataset.f]=el.dataset.f==="min"?(parseFloat(el.value)||0):el.value;render();save();return}
 });
 
 document.addEventListener("input",e=>{
