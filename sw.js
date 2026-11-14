@@ -1,5 +1,5 @@
 /* Crew Day service worker: keeps the app working offline. Bump VERSION on every upload. */
-const VERSION="1.35.1";
+const VERSION="1.35.2";
 const CACHE="crewday-"+VERSION;
 const SHELL=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./apple-touch-icon.png"];
 const CDN=["https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"];

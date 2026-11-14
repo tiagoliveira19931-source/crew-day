@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.35.1";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.35.2";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -789,7 +789,7 @@ function mondayOf(d){const x=new Date(d+"T00:00:00"),w=(x.getDay()+6)%7;x.setDat
 function weekDates(){const m=addDays(mondayOf(today()),weekOff*7),out=[];for(let i=0;i<7;i++)out.push(addDays(m,i));return out}
 function validDay(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&KIND_NAME[e.kind]}
 function cleanTime(t){t=String(t||"").trim();const m=t.match(/^(\d{1,2}):?(\d{2})$/);if(!m)return "";const h=+m[1],mi=+m[2];return h<24&&mi<60?String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0"):""}
-function cleanSectors(a){return (Array.isArray(a)?a:[]).slice(0,10).map(x=>({flt:String(x.flt||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8),from:String(x.from||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),to:String(x.to||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),dep:cleanTime(x.dep),arr:cleanTime(x.arr),typ:["op","dh","gt"].includes(x.typ)?x.typ:"op",est:Math.max(0,Math.min(900,parseInt(x.est)||0)),reg:String(x.reg||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),ctot:cleanTime(x.ctot),offb:cleanTime(x.offb),onb:cleanTime(x.onb)})).filter(x=>x.flt||x.from||x.to||x.dep)}
+function cleanSectors(a){return (Array.isArray(a)?a:[]).slice(0,10).map(x=>({flt:String(x.flt||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8),from:String(x.from||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),to:String(x.to||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,3),dep:cleanTime(x.dep),arr:cleanTime(x.arr),typ:["op","dh","gt"].includes(x.typ)?x.typ:"op",est:Math.max(0,Math.min(900,parseInt(x.est)||0)),reg:String(x.reg||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,8),ctot:cleanTime(x.ctot),offb:cleanTime(x.offb),onb:cleanTime(x.onb),offbLive:!!x.offbLive,onbLive:!!x.onbLive})).filter(x=>x.flt||x.from||x.to||x.dep)}
 function opMins(x){return x.typ&&x.typ!=="op"?0:blockMins(x)}
 function blockMins(x){if(!x.dep||!x.arr)return 0;const [a,b]=x.dep.split(":").map(Number),[c,d]=x.arr.split(":").map(Number);let m=(c*60+d)-(a*60+b);if(m<0)m+=1440;return m}
 function destFromSectors(sec){const t=(sec||[]).map(x=>x.to).find(c=>c&&!BASE_CODES.includes(c));return t?cityFrom(t):""}
@@ -3124,6 +3124,9 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
       depSched:+alUTC(R.dep_time_utc)||0,depEst:+alUTC(R.dep_estimated_utc)||0,depAct:+alUTC(R.dep_actual_utc)||0,
       arrSched:+alUTC(R.arr_time_utc)||0,arrEst:+alUTC(R.arr_estimated_utc)||0,arrAct:+alUTC(R.arr_actual_utc)||0};
     ftLiveMsg="";
+    // with a flight key the block times come from online: filled in when found, never over times crew typed
+    {const L0=S.ftLive[cleanFlt(x.flt)],ms2r=v=>(RZ()?hmZ:hm)(new Date(v));
+      if(L0.depAct&&!x.offb){x.offb=ms2r(L0.depAct);x.offbLive=true}if(L0.arrAct&&!x.onb){x.onb=ms2r(L0.arrAct);x.onbLive=true}}
     // the aircraft is off blocks and the timer isn't running yet: start it from the real time
     const L=S.ftLive[cleanFlt(x.flt)],ft=S.ft&&S.ft.date===ftState().t?S.ft:null;
     if(L.depAct&&ft&&ft.start&&!ft.stop&&Math.abs(ft.start-L.depAct)>60000&&!ft.liveSet){ft.start=L.depAct;ft.liveSet=true}
@@ -3206,6 +3209,7 @@ function tripFlightsBody(){
         <label for="ts-b-${i}">Block today</label><input id="ts-b-${i}" type="text" inputmode="numeric" placeholder="${pb?"Planned "+fmtMins(pb):"e.g. 2:35"}" value="${x.est?fmtMins(x.est):""}" data-secest="${i}"><span class="note" style="margin:0">From the briefing</span>
       </div>
       ${blockNote(x,pb,ab)}
+      ${x.offbLive||x.onbLive?`<span class="note" style="margin:0">${x.offbLive&&x.onbLive?"Off and on blocks":x.offbLive?"Off blocks":"On blocks"} filled in from online. Change it if yours differs.</span>`:""}
       <span class="note" style="margin:0">${ab?`Actual block <b>${fmtMins(ab)}</b>${x.est?` (briefing ${fmtMins(x.est)}, ${ab>x.est?"+":ab<x.est?"−":"±"}${fmtMins(Math.abs(ab-x.est))})`:pb?` (planned ${fmtMins(pb)}, ${ab>pb?"+":ab<pb?"−":"±"}${fmtMins(Math.abs(ab-pb))})`:""}`:x.est?`Today's block ${fmtMins(x.est)}${pb?" (planned "+fmtMins(pb)+")":""}`:pb?`Planned block ${fmtMins(pb)}`:""}${x.ctot&&x.dep?` · slot ${(()=>{const d=blockMins({dep:x.dep,arr:x.ctot});return d>720?"before STD":"+"+d+" min after STD"})()}`:""}</span>
     </div>`});
   return rows.join("")+(tot?`<p style="margin:0"><b>Today: ${fmtMins(tot)} actual block</b>${plan?` · ${fmtMins(plan)} planned`:""}</p>`:"");
@@ -4105,7 +4109,7 @@ document.addEventListener("click",e=>{
   if(b.id==="mclear"){const M=mealsState();M.got={};M.extra=M.extra.filter(x=>!x.d);render();save();return}
   if(b.id==="newsrf"){newsFetch(true);return}
   if(b.dataset.newscat){S.newsCat=b.dataset.newscat;render();save();return}
-  if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());render();save()}return}
+  if(b.dataset.secnow){const [i,f]=b.dataset.secnow.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=(RZ()?hmZ:hm)(new Date());r.sectors[+i][f+"Live"]=false;render();save()}return}
   if(b.id==="ftlive"){ftLiveCheck(true);return}
   if(b.id==="ftmanual"){S.ftManual=today();render();save();return}
   if(b.dataset.ftlivego){const {t,secs,i}=ftState(),x=i>=0?secs[i]:null,L=x&&ftLiveOf(cleanFlt(x.flt));if(!L||!L.depAct)return;const est=parseHM(($("#ft-est")||{}).value)||x.est||blockMins(x)||(L.arrEst&&L.depAct?Math.round((L.arrEst-L.depAct)/60000):0);
@@ -4286,7 +4290,7 @@ document.addEventListener("change",e=>{
   if(el.dataset.k==="next.dest"&&S.next){const nm=cityFrom(el.value);S.next.dest=nm||el.value;render();save();return}
   if(el.dataset.secf&&el.id==="ft-slot"){const [i]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i].ctot=el.value?l2r(S.duty.date,cleanTime(el.value)):"";render();save()}return}
   if(el.dataset.secest!==undefined){const i=+el.dataset.secest,r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[i]){const v=parseHM(el.value);r.sectors[i].est=v||0;if(S.ft&&S.ft.start&&S.ft.i===i&&v)S.ft.est=v;render();save()}return}
-  if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=l2r(S.duty.date,cleanTime(el.value));render();save()}return}
+  if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=l2r(S.duty.date,cleanTime(el.value));r.sectors[+i][f+"Live"]=false;render();save()}return}
   if(el.dataset.rwy){if(!S.rwy)S.rwy={};S.rwy[el.dataset.rwy]=el.value.toUpperCase().replace(/[^0-9LRC\/ ]/g,"").slice(0,20);render();save();return}
   if(el.id==="is-a"){S.issueDraft=Object.assign({},S.issueDraft||{},{area:el.value});return}
   if(el.dataset.eve!==undefined){const t=today(),x=S.evening.items[+el.dataset.eve];let d=S.evening.done[t]||[];d=el.checked?d.concat(x):d.filter(y=>y!==x);S.evening.done={[t]:d};render();save();return}

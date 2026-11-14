@@ -26,3 +26,4 @@ Reports from More › Report an issue that have been handled. The repo is public
 ## 14 Nov 2026 (1.35.1)
 - Idea (Jet2): wants reassurance that changes are saved. Done: a short "✓ Saved on this phone" note appears after each change.
 - Problem (Ryanair): with a flight key, the timer should use online times rather than buttons. Done: with a key the Start/On blocks buttons are hidden, block end follows the online estimate and the timer stops by itself at the online on-block time. "Start by hand instead" stays for no signal; without a key nothing changes.
+- 1.35.2: with a flight key, empty Off/On blocks fields are filled from the online times (never over typed times).

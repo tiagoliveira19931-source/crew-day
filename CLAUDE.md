@@ -27,7 +27,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 ## Features with special care
 - Self-certificate (Ryanair group only): the app redraws the Ryanair form with pdf-lib (scMakePdf), filled from Profile (staff number me.empNo, crew code me.staffNo, dept, rank, date of entry, contract FR/CWK/WFI/BRK/STM/SKY) and the sick days (days off/leave inside the period counted). Crew draw their own signature once (me.sig); no generated signatures. Saved as Self-Certificate-<short reason>-<first day>.pdf in Documents > Self-certificates; email goes to me.medEmail. Never put a real form, name or signature in the repo.
 - Documents folders live in S.fileStore (S.docs is the document-expiry list; viewDocs is that screen, viewFiles is the folders).
-- Flight timer: starts at taxi and counts off blocks 5 min earlier; it never writes the typed block times. Live times (AirLabs, crew's own key) check from 10 min before STD every 3 min until off blocks is found, then once after landing.
+- Flight timer: starts at taxi and counts off blocks 5 min earlier; it never writes the typed block times. With a flight key, empty Off/On blocks are filled from online (marked "filled in from online"), never over times crew typed. Live times (AirLabs, crew's own key) check from 10 min before STD every 3 min until off blocks is found, then once after landing.
 
 ## Issue reports
 Crew send problems and ideas from More › Report an issue. They queue offline and go to Tiago's Google Form "Crew Day Reports" (responses in a linked Google Sheet). Columns: Timestamp, Type, Area, Report, Version, Airline.
