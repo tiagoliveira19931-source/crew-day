@@ -2707,6 +2707,7 @@ function viewToday(){
   </section>${leaveWhy(p)}`}
   ${ph==="duty"&&homeEnd()&&Date.now()>=homeEnd().getTime()-3*3600000?homeCard():""}
   <section class="card nowcard" role="status"><span class="label">Now</span><b>${esc(stage[0])}</b><span class="note" style="margin:0">${ph==="duty"?"Live flights, water and timers are on Trip.":"In "+fmtIn(stage[1]-now)}</span>${ph==="duty"&&on("tab_trip")?`<button class="primary" data-tab="trip" style="justify-self:start">Open Trip</button>`:""}</section>
+  ${["soon","ready","go"].includes(ph)?aircraftCard():""}
   ${ph==="go"?ccBar(ph):""}
   ${ph==="ready"||ph==="go"?nudgeCard(ph,{city:dutyCity(S.duty)||S.trip.city,from:p.leave,to:p.rep,land:landTime(S.duty,p.rep)}):ph==="duty"?nudgeCard("duty",{rep:p.rep}):""}
   ${ph==="duty"?"":`
@@ -3089,6 +3090,7 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
   ftLiveBusy=true;if(manual){ftLiveMsg="Checking live times…";render()}
   try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
     const R=r&&r.response;if(!R||r.error)throw new Error((r&&r.error&&r.error.message)||"not found");
+    if(R.reg_number&&!x.reg)x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");
     if(!S.ftLive)S.ftLive={};S.ftLive[cleanFlt(x.flt)]={date:today(),at:Date.now(),status:R.status||"",
       depSched:+alUTC(R.dep_time_utc)||0,depEst:+alUTC(R.dep_estimated_utc)||0,depAct:+alUTC(R.dep_actual_utc)||0,
       arrSched:+alUTC(R.arr_time_utc)||0,arrEst:+alUTC(R.arr_estimated_utc)||0,arrAct:+alUTC(R.arr_actual_utc)||0};
@@ -3106,6 +3108,19 @@ setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===fal
   const L=ftLiveOf(cleanFlt(x.flt)),now=Date.now(),std=r2lDT(t,x.dep).getTime(),since=L?now-L.at:1e12;
   if(!L||!L.depAct){if(now>=std-600000&&now<=std+3600000&&since>=175000)ftLiveCheck(false);return}
   const land=(L.arrEst||L.arrSched||0);if(!L.arrAct&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
+async function regCheck(t,j){const d=S.roster[t],x=d&&d.sectors&&d.sectors[j],key=(S.me.flightKey||"").trim();if(!x||!x.flt||x.reg||!key)return;
+  if(!S.regChk)S.regChk={};S.regChk[t+"|"+j]=Date.now();
+  try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
+    const R=r&&r.response;if(R&&R.reg_number&&!x.reg){x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");render();save()}}catch(e){}}
+setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const t=today(),d=S.roster[t];if(!d||!d.sectors)return;
+  d.sectors.forEach((x,j)=>{if(!x.flt||x.reg||!x.dep)return;const std=r2lDT(t,x.dep).getTime(),now=Date.now(),last=(S.regChk||{})[t+"|"+j]||0;
+    if(now>=std-3*3600000&&now<=std&&now-last>=3600000)regCheck(t,j)})},45000);
+// Today: your aircraft and where it is right now (Flightradar24 opens in the browser)
+function aircraftCard(){const t=S.duty&&S.duty.date,d=t&&S.roster[t];if(!d||d.kind!=="flying"||!(d.sectors||[]).length)return "";
+  const regs=[...new Set(d.sectors.map(x=>x.reg).filter(Boolean))],key=(S.me.flightKey||"").trim();
+  if(!regs.length)return key?`<section class="card"><span class="label">Your aircraft</span><p class="note" style="margin:0">Not assigned yet. From 3 hours before departure the app checks once an hour while it's open.</p></section>`:"";
+  return `<section class="card"><span class="label">Your aircraft</span>${regs.map(r=>{const legs=d.sectors.filter(x=>x.reg===r).map(x=>esc(x.flt||"")).join(", ");return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span><b>${esc(r.replace(/^(9H|EI|SP|OE|HB)(?=[A-Z]{3}$)/,"$1-").replace(/^G(?=[A-Z]{4}$)/,"G-"))}</b> <span class="note">${legs}</span></span><a class="btn" style="text-decoration:none" href="https://www.flightradar24.com/data/aircraft/${encodeURIComponent(r.toLowerCase())}" target="_blank" rel="noopener">Where is it now ↗</a></div>`}).join("")}
+    <p class="note" style="margin:0">See if it's on time while you're on your way in.</p></section>`}
 function ftLiveHTML(x,running){if(!x||!x.flt)return "";const L=ftLiveOf(cleanFlt(x.flt)),key=(S.me.flightKey||"").trim(),t2=v=>v?hm(new Date(v)):"";
   return `<div class="seccard" style="margin:0"><span class="label">Live times · trial</span>
     ${L?`<p style="margin:0">${L.depAct?`Off blocks <b>${t2(L.depAct)}</b>`:L.depEst?`Expected off blocks <b>${t2(L.depEst)}</b>`:`Scheduled ${t2(L.depSched)}`}${L.arrAct?` · landed <b>${t2(L.arrAct)}</b>`:L.arrEst?` · expected on blocks <b>${t2(L.arrEst)}</b>`:""}</p>

@@ -3,7 +3,7 @@
 import datetime, json
 from playwright.sync_api import sync_playwright
 html=open("/home/claude/crew-day.html").read(); errs=[]; calls=[]
-ANS={"response":{"flight_iata":"FR147","status":"en-route","dep_time_utc":"2026-11-14 13:30","dep_estimated_utc":"2026-11-14 13:41","dep_actual_utc":"2026-11-14 13:38","arr_time_utc":"2026-11-14 15:15","arr_estimated_utc":"2026-11-14 15:22"}}
+ANS={"response":{"flight_iata":"FR147","reg_number":"9H-VUC","status":"en-route","dep_time_utc":"2026-11-14 13:30","dep_estimated_utc":"2026-11-14 13:41","dep_actual_utc":"2026-11-14 13:38","arr_time_utc":"2026-11-14 15:15","arr_estimated_utc":"2026-11-14 15:22"}}
 def route(r):
     u=r.request.url
     if u.startswith("https://airlabs.co/api/v9/flight"):
@@ -22,6 +22,13 @@ with sync_playwright() as p:
     f=pg.locator('[data-fold="pf_key"]')
     if f.get_attribute("aria-expanded")=="false": f.click()
     pg.fill("#pr-fk","test-key-123"); pg.locator("#pr-fk").dispatch_event("change"); pg.wait_for_timeout(100)
+    # 3 h before departure the aircraft is looked up once, and Today shows it with a tracking link
+    pg.clock.set_system_time(datetime.datetime(2026,11,14,10,40)); pg.wait_for_timeout(300)
+    pg.click("[data-tab=today]"); pg.clock.run_for(50000); pg.wait_for_timeout(500)
+    t=pg.inner_text("main"); assert "9H-VUC" in t and "Where is it now" in t, [l for l in t.split("\n") if "aircraft" in l.lower()]
+    href=pg.locator('a:has-text("Where is it now")').get_attribute("href"); assert href.endswith("/aircraft/9hvuc"), href
+    n0=len(calls); pg.clock.run_for(200000); assert len(calls)==n0, "no more aircraft checks once known"
+    calls.clear()
     pg.clock.set_system_time(datetime.datetime(2026,11,14,13,15)); pg.wait_for_timeout(1200)
     pg.click("[data-tab=today]"); pg.wait_for_timeout(300); pg.click("[data-tab=trip]"); pg.wait_for_timeout(300)
     print("duty:",pg.evaluate("JSON.stringify(window.CREWDAY_TEST.duty?window.CREWDAY_TEST.duty():null)"))
