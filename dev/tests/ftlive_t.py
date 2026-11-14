@@ -53,7 +53,8 @@ with sync_playwright() as p:
     R=pg.evaluate("window.CREWDAY_TEST.roster()['2026-11-14'].sectors[0]"); print("sector:",{k:R.get(k) for k in ("offb","onb")})
     assert R.get("offb")=="13:38" and not R.get("onb"), R
     # after landing the app checks once more; the online on-block time stops the timer by itself
-    ANS["response"]["arr_actual_utc"]="2026-11-14 15:19"
+    # the free feed often gives no actual on-block time, only "landed": the latest expected time is used
+    ANS["response"]["status"]="landed"; ANS["response"]["arr_estimated_utc"]="2026-11-14 15:19"
     pg.clock.set_system_time(datetime.datetime(2026,11,14,15,30)); pg.clock.run_for(400000); pg.wait_for_timeout(500)
     if pg.evaluate("!!window.CREWDAY_TEST.ft&&!!window.CREWDAY_TEST.ft()"): pg.click("#ftlive"); pg.wait_for_timeout(500)
     t=pg.inner_text("main"); assert "Running from online times" not in t, [l for l in t.split("\n") if "online" in l or "blocks" in l]

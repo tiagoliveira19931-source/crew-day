@@ -277,6 +277,35 @@ textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script>
+/* Home clock. Every base is in the UK, so Crew Day keeps UK time even when the phone changes to the local time abroad:
+   report, trains and buses home, alarms and plans stay right. Moments in time (Date.now, timers) are untouched;
+   only reading and building clock times ("15:40 on 14 Nov") goes through UK time. No-op when the phone is on UK time. */
+(function(){const HOME_TZ="Europe/London",OD=window.Date;let phoneTZ="";try{phoneTZ=Intl.DateTimeFormat().resolvedOptions().timeZone||""}catch(e){}
+  window.CREWDAY_HOME_TZ=HOME_TZ;window.CREWDAY_PHONE_TZ=phoneTZ;
+  if(!phoneTZ||phoneTZ===HOME_TZ||typeof Intl==="undefined")return;
+  let fmt;try{fmt=new Intl.DateTimeFormat("en-GB",{timeZone:HOME_TZ,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return}
+  const OC={};const off=t=>{const k=Math.floor(t/900000);if(OC[k]!=null)return OC[k];const p={};fmt.formatToParts(new OD(k*900000)).forEach(x=>p[x.type]=x.value);
+    const u=OD.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute);return OC[k]=Math.round((u-k*900000)/60000)};
+  const build=(y,mo,d,h,mi,se,ms)=>{const g=OD.UTC(y,mo,d||1,h||0,mi||0,se||0,ms||0);let t=g-off(g)*60000;const o2=off(t);if(o2*60000!==g-t)t=g-o2*60000;return t};
+  const LOCAL=/^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d)(?:\.(\d+))?)?$/;
+  // a plain function (not a class), so it also works when a test swaps in a fake clock
+  function HD(...a){if(!new.target)return OD();let d;
+    if(a.length>=2)d=new OD(build(...a.map(Number)));
+    else if(a.length===1&&typeof a[0]==="string"&&LOCAL.test(a[0])){const m=a[0].match(LOCAL);d=new OD(build(+m[1],m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0),+((m[7]||"0")+"00").slice(0,3)))}
+    else d=new OD(...a);
+    Object.setPrototypeOf(d,HD.prototype);return d}
+  HD.prototype=Object.create(OD.prototype,{constructor:{value:HD,writable:true,configurable:true}});
+  HD.now=()=>OD.now();HD.UTC=(...a)=>OD.UTC(...a);HD.parse=v=>{const m=typeof v==="string"&&v.match(LOCAL);return m?build(+m[1],m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)):OD.parse(v)};
+  const P=HD.prototype,U=t=>new OD(t+off(t)*60000),f=k=>function(){const t=this.getTime();return isNaN(t)?NaN:U(t)[k]()};
+  P.getFullYear=f("getUTCFullYear");P.getMonth=f("getUTCMonth");P.getDate=f("getUTCDate");P.getDay=f("getUTCDay");P.getHours=f("getUTCHours");P.getMinutes=f("getUTCMinutes");P.getSeconds=f("getUTCSeconds");P.getMilliseconds=f("getUTCMilliseconds");
+  P.getTimezoneOffset=function(){return -off(this.getTime())};
+  const parts=d=>{const u=U(d.getTime());return [u.getUTCFullYear(),u.getUTCMonth(),u.getUTCDate(),u.getUTCHours(),u.getUTCMinutes(),u.getUTCSeconds(),u.getUTCMilliseconds()]};
+  const setter=(from)=>function(...v){const q=parts(this);v.forEach((x,j)=>{if(from+j<7)q[from+j]=+x});return this.setTime(build(...q))};
+  P.setFullYear=setter(0);P.setMonth=setter(1);P.setDate=setter(2);P.setHours=setter(3);P.setMinutes=setter(4);P.setSeconds=setter(5);P.setMilliseconds=setter(6);
+  ["toLocaleDateString","toLocaleTimeString","toLocaleString"].forEach(k=>{const o=OD.prototype[k];P[k]=function(l,opt){return o.call(this,l,Object.assign({timeZone:HOME_TZ},opt||{}))}});
+  window.Date=HD;window.CREWDAY_HOME_CLOCK=true})();
+</script>
+<script>
 (function(){
 const ICON={
   speaker:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h3l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
@@ -2659,7 +2688,7 @@ function saveToday(){
 }
 function viewToday(){
   const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",now=new Date(),F=k=>k+"|"+ph;
-  const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p></div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none;position:relative;z-index:1;background:var(--surface);border:1px solid var(--line)">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
+  const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p>${homeClockNote()}</div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none;position:relative;z-index:1;background:var(--surface);border:1px solid var(--line)">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
   /* nothing on today */
   if(ph==="none"||ph==="future"||ph==="done"){
     const n=on("tab_plan")?nextDuty():null;
@@ -3092,28 +3121,37 @@ function ftDone(t){if(!S.ftDone||S.ftDone.date!==t)S.ftDone={date:t,list:[]};ret
    (AirLabs, the crew member's own free key) set the timer. Only the flight number is sent. */
 let ftLiveBusy=false,ftLiveMsg="";
 function ftLiveOf(f){const L=S.ftLive&&S.ftLive[f];return L&&L.date===today()?L:null}
+function homeClockNote(){if(!window.CREWDAY_HOME_CLOCK)return "";const o=new Date().getTimezoneOffset();let p=0;try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:window.CREWDAY_PHONE_TZ,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(window.Date.now()),[h,m]=f.split(":").map(Number),u=new Date();p=(h*60+m)-(u.getHours()*60+u.getMinutes());if(p>720)p-=1440;if(p<-720)p+=1440}catch(e){}
+  if(!p)return "";const city=String(window.CREWDAY_PHONE_TZ).split("/").pop().replace(/_/g," ");
+  return `<p class="note" style="margin:4px 0 0">Your phone is on ${esc(city)} time (${p>0?"+":"−"}${hmDur(Math.abs(p))}). Crew Day keeps UK time, your base, so trains, alarms and duty times stay right.</p>`}
+function liveLand(L){return L?(L.arrAct||(/landed|arrived/i.test(L.status||"")?(L.arrEst||L.arrSched):0)):0}
+// the online flight is the one on this day (a flight number flies every day, so check the scheduled time matches)
+function liveMatches(t,x,L){if(!L||!x||!x.dep||!L.depSched)return !!L;return Math.abs(r2lDT(t,x.dep).getTime()-L.depSched)<4*3600000}
+function liveFill(t,x,L){if(!liveMatches(t,x,L))return;const ms2r=v=>(RZ()?hmZ:hm)(new Date(v)),land=liveLand(L);
+  if(L.depAct&&!x.offb){x.offb=ms2r(L.depAct);x.offbLive=true}if(land&&!x.onb){x.onb=ms2r(land);x.onbLive=true}}
+async function liveFetch(flt,key){const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(flt)+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
+  const R=r&&r.response;if(!R||r.error)throw new Error((r&&r.error&&r.error.message)||"not found");
+  return {R,L:{date:today(),at:Date.now(),status:R.status||"",depSched:+alUTC(R.dep_time_utc)||0,depEst:+alUTC(R.dep_estimated_utc)||0,depAct:+alUTC(R.dep_actual_utc)||0,
+    arrSched:+alUTC(R.arr_time_utc)||0,arrEst:+alUTC(R.arr_estimated_utc)||0,arrAct:+alUTC(R.arr_actual_utc)||0}}}
 function alUTC(v){if(!v)return null;const d=new Date(String(v).replace(" ","T")+"Z");return isNaN(d)?null:d}
 async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,key=(S.me.flightKey||"").trim();
   if(!x||!x.flt){if(manual){ftLiveMsg="No flight number for this sector.";render()}return}
   if(!key){if(manual){ftLiveMsg="Live times need a free flight lookup key: Profile › Flight lookup.";render()}return}
   if(ftLiveBusy||navigator.onLine===false){if(manual){ftLiveMsg="No signal right now.";render()}return}
   ftLiveBusy=true;if(manual){ftLiveMsg="Checking live times…";render()}
-  try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
-    const R=r&&r.response;if(!R||r.error)throw new Error((r&&r.error&&r.error.message)||"not found");
+  try{const {R,L:LL}=await liveFetch(cleanFlt(x.flt),key);
     if(R.reg_number&&!x.reg)x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");
-    if(!S.ftLive)S.ftLive={};S.ftLive[cleanFlt(x.flt)]={date:today(),at:Date.now(),status:R.status||"",
-      depSched:+alUTC(R.dep_time_utc)||0,depEst:+alUTC(R.dep_estimated_utc)||0,depAct:+alUTC(R.dep_actual_utc)||0,
-      arrSched:+alUTC(R.arr_time_utc)||0,arrEst:+alUTC(R.arr_estimated_utc)||0,arrAct:+alUTC(R.arr_actual_utc)||0};
+    if(!S.ftLive)S.ftLive={};S.ftLive[cleanFlt(x.flt)]=LL;
     ftLiveMsg="";
     // with a flight key the block times come from online: filled in when found, never over times crew typed
-    {const L0=S.ftLive[cleanFlt(x.flt)],ms2r=v=>(RZ()?hmZ:hm)(new Date(v));
-      if(L0.depAct&&!x.offb){x.offb=ms2r(L0.depAct);x.offbLive=true}if(L0.arrAct&&!x.onb){x.onb=ms2r(L0.arrAct);x.onbLive=true}}
+    liveFill(ftState().t,x,LL);
     // the aircraft is off blocks and the timer isn't running yet: start it from the real time
     const L=S.ftLive[cleanFlt(x.flt)],ft=S.ft&&S.ft.date===ftState().t?S.ft:null;
     if(L.depAct&&ft&&ft.start&&!ft.stop&&Math.abs(ft.start-L.depAct)>60000&&!ft.liveSet){ft.start=L.depAct;ft.liveSet=true}
     if(ft&&ft.start&&ft.liveSet&&L.arrEst&&L.arrEst>ft.start)ft.est=Math.round((L.arrEst-ft.start)/60000);
-    if(ft&&ft.start&&ft.liveSet&&L.arrAct&&L.arrAct>ft.start){const {t:t3}=ftState(),blk=Math.round((L.arrAct-ft.start)/60000);ftDone(t3).push(ft.i);S.ftLast={date:t3,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null}
-    else if(L.depAct&&!(ft&&ft.start)&&!L.arrAct&&!(S.ftNoAuto&&S.ftNoAuto===today()+"|"+cleanFlt(x.flt))){const {t:t2,secs:s2,i:i2}=ftState(),y=i2>=0?s2[i2]:null;const est=(y&&(y.est||blockMins(y)))||(L.arrEst?Math.round((L.arrEst-L.depAct)/60000):0);
+    const landAt=liveLand(L);
+    if(ft&&ft.start&&ft.liveSet&&landAt&&landAt>ft.start){const {t:t3}=ftState(),blk=Math.round((landAt-ft.start)/60000);ftDone(t3).push(ft.i);S.ftLast={date:t3,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null}
+    else if(L.depAct&&!(ft&&ft.start)&&!landAt&&!(S.ftNoAuto&&S.ftNoAuto===today()+"|"+cleanFlt(x.flt))){const {t:t2,secs:s2,i:i2}=ftState(),y=i2>=0?s2[i2]:null;const est=(y&&(y.est||blockMins(y)))||(L.arrEst?Math.round((L.arrEst-L.depAct)/60000):0);
       if(y&&est){S.ft={date:t2,i:i2,start:L.depAct,taxi:L.depAct+TAXI_BUF*60000,est,liveSet:true,auto:true};y.est=est}}
   }catch(e){if(manual)ftLiveMsg="Couldn't get live times ("+String(e.message||e).slice(0,60)+").";}
   ftLiveBusy=false;render();save()}
@@ -3122,7 +3160,16 @@ async function ftLiveCheck(manual){const {secs,i}=ftState(),x=i>=0?secs[i]:null,
 setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===false||!(S.me.flightKey||"").trim())return;const {t,secs,i,ft}=ftState(),x=i>=0?secs[i]:null;if(!x||!x.flt||!x.dep)return;
   const L=ftLiveOf(cleanFlt(x.flt)),now=Date.now(),std=r2lDT(t,x.dep).getTime(),since=L?now-L.at:1e12;
   if(!L||!L.depAct){if(now>=std-600000&&now<=std+3600000&&since>=175000)ftLiveCheck(false);return}
-  const land=(L.arrEst||L.arrSched||0);if(!L.arrAct&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
+  const land=(L.arrEst||L.arrSched||0);if(!liveLand(L)&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
+// the day's other flights: fill missing block times from online once each has landed (one look per flight every 20 min, for a day)
+const liveTried={};
+setInterval(()=>{const key=(S.me.flightKey||"").trim();if(!key||document.visibilityState!=="visible"||navigator.onLine===false)return;const now=Date.now();
+  for(const t of [today(),addDays(today(),-1)]){const r=S.roster[t];if(!r||!r.sectors)continue;
+    for(const x of r.sectors){if(!x.flt||!x.dep||(x.offb&&x.onb))continue;const std=r2lDT(t,x.dep).getTime(),k=t+"|"+cleanFlt(x.flt);
+      if(now<std+20*60000||now>std+26*3600000||(liveTried[k]&&now-liveTried[k]<1200000))continue;
+      const run=S.ft&&S.ft.start&&!S.ft.stop&&S.ft.date===t&&r.sectors[S.ft.i]===x;if(run)continue;
+      liveTried[k]=now;liveFetch(cleanFlt(x.flt),key).then(({R,L})=>{if(R.reg_number&&!x.reg&&liveMatches(t,x,L))x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");const b=x.offb+"|"+x.onb;liveFill(t,x,L);if(x.offb+"|"+x.onb!==b){render();save()}}).catch(()=>{});
+      return}}},30000);
 async function regCheck(t,j){const d=S.roster[t],x=d&&d.sectors&&d.sectors[j],key=(S.me.flightKey||"").trim();if(!x||!x.flt||x.reg||!key)return;
   if(!S.regChk)S.regChk={};S.regChk[t+"|"+j]=Date.now();
   try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
