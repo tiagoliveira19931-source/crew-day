@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.33.0";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.34.0";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -1503,7 +1503,7 @@ function viewSick(){
     <div class="row"><div class="field"><label for="sk-from">First sick day</label><input id="sk-from" type="date" value="${t}"></div><div class="field"><label for="sk-to">Expect to be off until</label><input id="sk-to" type="date" value="${t}"></div></div>
     <div class="field"><label for="sk-type">Covered by</label><select id="sk-type"><option value="self">Self-certification (up to 7 days)</option><option value="fitnote">Fit note from a doctor</option></select></div>
     ${assetsNS?`<div class="field"><label for="sk-file">Fit note (PDF or photo, optional)</label><input id="sk-file" type="file" accept="application/pdf,image/*"></div>`:`<p class="note">Keep your fit note safe: this version can't store files.</p>`}
-    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="80" placeholder="e.g. migraine, stomach bug" value=""><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
+    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="200" placeholder="${isRyr()?"Condition and symptoms, e.g. Viral infection: fever, sore throat":"e.g. migraine, stomach bug"}" value=""><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
     <div class="btns"><button class="primary" id="addsick">Record sick leave</button></div>
     <p class="note" id="sickmsg" role="status">Your sick days are private to you.</p>
   </section>
@@ -1542,6 +1542,7 @@ function viewSick(){
     <p class="note">Make sure each day shows as sick, so you aren't marked as a no-show and your sick pay is right.</p>
     <div>${days.map(d=>{const ok=!!(ep.rosterOk||{})[d],fut=d>t;return `<label class="chk ${ok?"done":""}"><input type="checkbox" ${ok?"checked":""} ${fut?"disabled":""} data-skday="${d}"><span>${esc(fmtDate(d,{weekday:"short",day:"numeric",month:"short"}))}${ep.prev&&ep.prev[d]&&ep.prev[d].kind!=="sick"?` <span class="note">(was ${esc(KIND_NAME[ep.prev[d].kind]||"")}${ep.prev[d].report?" "+esc(ep.prev[d].report):""})</span>`:""}</span><span class="note" style="flex:none">${fut?"Later":ok?"Checked":"To check"}</span></label>`}).join("")}</div>
   </section>
+  ${scCard(ep)}
   <section class="card">
     <h2>Messages ready to send</h2>
     <div style="display:grid;gap:6px"><span class="label">Calling in sick</span><p style="margin:0;background:var(--bg);border-radius:10px;padding:10px;font-size:14px">${esc(M.callIn)}</p><div class="btns"><button data-copysick="callIn">Copy</button></div></div>
@@ -1552,7 +1553,7 @@ function viewSick(){
     <h2>Change your dates</h2>
     <div class="row"><div class="field"><label for="sk-from">First sick day</label><input id="sk-from" type="date" value="${esc(ep.from)}"></div><div class="field"><label for="sk-to">Off until</label><input id="sk-to" type="date" value="${esc(ep.to)}"></div></div>
     <div class="field"><label for="sk-type">Covered by</label><select id="sk-type"><option value="self" ${ep.type==="self"?"selected":""}>Self-certification</option><option value="fitnote" ${ep.type==="fitnote"?"selected":""}>Fit note</option></select></div>
-    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="80" placeholder="e.g. migraine, stomach bug" value="${esc(ep.reason||"")}"><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
+    <div class="field"><label for="sk-reason">Reason (optional)</label><input id="sk-reason" type="text" maxlength="200" placeholder="${isRyr()?"Condition and symptoms, e.g. Viral infection: fever, sore throat":"e.g. migraine, stomach bug"}" value="${esc(ep.reason||"")}"><span class="note" style="margin:0">Added to your message. You don't have to share medical details.</span></div>
     <div class="btns"><button class="primary" id="updsick">Update</button><button id="endsick">I'm better: back tomorrow</button><button class="ghost" data-delsick="${ep.id}">${pendingDel===ep.id?"Tap to delete":"Delete"}</button></div>
     <p class="note">Changing dates updates your roster. Deleting puts your roster back how it was.</p>
   </section>
@@ -1599,6 +1600,99 @@ async function makeFitNotePdf(btn){
   }catch(err){btn.disabled=false;msg.textContent=err&&err.code?uploadMsg(err):"That file couldn't be turned into a PDF. If it's a protected PDF, try a photo of it instead."}
 }
 
+/* ---------- Self-certificate (Ryanair group): the app draws the form itself, filled from Profile and the sick days ---------- */
+const SC_CONTRACTS=["FR","CWK","WFI","BRK","STM","SKY"];
+function pfSC(){const m=S.me;return `<p class="note" style="margin:0">Used to fill in your self-certificate when you're off sick. Everything stays on this phone.</p>
+    <div class="field"><label for="sc-emp">Staff number</label><input id="sc-emp" type="text" inputmode="numeric" maxlength="12" value="${esc(m.empNo||"")}" data-k="me.empNo" placeholder="From your payslip or crew ID"><span class="note" style="margin:0">Your crew code is the one at the top of Profile.</span></div>
+    <div class="row"><div class="field"><label for="sc-dept">Department</label><input id="sc-dept" type="text" maxlength="30" value="${esc(m.dept||"")}" data-k="me.dept" placeholder="e.g. Inflight"></div>
+    <div class="field"><label for="sc-rank">Rank</label><input id="sc-rank" type="text" maxlength="12" value="${esc(m.rank||"")}" data-k="me.rank" placeholder="e.g. PU, JU"></div></div>
+    <div class="row"><div class="field"><label for="sc-entry">Date of entry</label><input id="sc-entry" type="date" value="${esc(m.entry||"")}" data-k="me.entry"></div>
+    <div class="field"><label for="sc-con">Contract</label><select id="sc-con" data-k="me.contract"><option value="">Choose</option>${SC_CONTRACTS.map(c=>`<option ${m.contract===c?"selected":""}>${c}</option>`).join("")}</select></div></div>
+    <div class="field"><label for="sc-med">Company medical email</label><input id="sc-med" type="email" autocomplete="off" value="${esc(m.medEmail||"")}" data-k="me.medEmail" placeholder="Where self-certificates are sent"></div>
+    <div class="field"><span class="label">Your signature</span>
+      ${m.sig?`<img src="${esc(m.sig)}" alt="Your saved signature" style="max-width:260px;background:#fff;border:1px solid var(--line);border-radius:10px">`:`<p class="note" style="margin:0">Sign once with your finger below. It goes on every self-certificate.</p>`}
+      <canvas id="sigpad" width="900" height="300" style="width:100%;max-width:100%;aspect-ratio:3/1;background:#fff;border:1px dashed var(--accent);border-radius:12px;touch-action:none" aria-label="Sign here with your finger"></canvas>
+      <div class="btns" style="margin:0"><button class="primary" id="sigsave">Save signature</button><button id="sigclear">Clear</button>${m.sig?`<button class="ghost" id="sigdel">Remove saved signature</button>`:""}</div></div>`}
+// signature pad
+let sigDraw=null,sigInk=false;
+document.addEventListener("pointerdown",e=>{const c=e.target;if(!c||c.id!=="sigpad")return;e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),x=c.getContext("2d");
+  x.lineWidth=5;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#0b2a6b";const P=ev=>[(ev.clientX-r.left)*c.width/r.width,(ev.clientY-r.top)*c.height/r.height];const [a,b]=P(e);x.beginPath();x.moveTo(a,b);sigDraw={c,x,P,last:[a,b]};sigInk=true});
+document.addEventListener("pointermove",e=>{if(!sigDraw)return;const [a,b]=sigDraw.P(e),[la,lb]=sigDraw.last,mx=(a+la)/2,my=(b+lb)/2;sigDraw.x.quadraticCurveTo(la,lb,mx,my);sigDraw.x.stroke();sigDraw.x.beginPath();sigDraw.x.moveTo(mx,my);sigDraw.last=[a,b]});
+let sigFull="";
+document.addEventListener("pointerup",()=>{if(sigDraw){try{sigFull=sigDraw.c.toDataURL("image/png")}catch(e){}}sigDraw=null});
+// a screen refresh mustn't wipe a signature being drawn
+function hydrateSig(){const c=document.getElementById("sigpad");if(!c||!sigFull||c.dataset.done)return;c.dataset.done="1";const im=new Image();im.onload=()=>c.getContext("2d").drawImage(im,0,0);im.src=sigFull}
+function sigTrim(c){const x=c.getContext("2d"),d=x.getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;
+  for(let y=0;y<c.height;y+=2)for(let i=0;i<c.width;i+=2){const k=(y*c.width+i)*4;if(d[k+3]>10&&d[k]<200){if(i<x0)x0=i;if(i>x1)x1=i;if(y<y0)y0=y;if(y>y1)y1=y}}
+  if(x1<=x0)return "";const pad=12,w=Math.min(c.width,x1-x0+2*pad),h=Math.min(c.height,y1-y0+2*pad),o=document.createElement("canvas");o.width=w;o.height=h;o.getContext("2d").drawImage(c,Math.max(0,x0-pad),Math.max(0,y0-pad),w,h,0,0,w,h);return o.toDataURL("image/png")}
+// the numbers on the form
+function scCounts(ep){const days=sickDays(ep),off=days.filter(d=>ep.prev&&ep.prev[d]&&["off","leave"].includes(ep.prev[d].kind)).length;return {total:days.length,off,work:days.length-off}}
+function scShort(ep){const r=String(ep.reason||"").trim();let w=(r.split(/[:,.;(]/)[0]||"").trim().split(/\s+/).slice(0,3).join(" ");w=w.replace(/[^A-Za-z0-9 \-]/g,"").trim();return w?w.charAt(0).toUpperCase()+w.slice(1).toLowerCase():"Sickness"}
+function scName(ep){return `Self-Certificate-${scShort(ep)}-${ep.from}.pdf`}
+function scMissing(){const m=S.me,miss=[];[["name","your name"],["staffNo","crew code"],["empNo","staff number"],["dept","department"],["rank","rank"],["entry","date of entry"],["contract","contract"],["sig","signature"]].forEach(([k,l])=>{if(!m[k])miss.push(l)});return miss}
+const dmy=(d,full)=>{const [y,mo,da]=String(d||"").split("-");return y?da+"/"+mo+"/"+(full?y:y.slice(2)):""};
+async function scMakePdf(ep){
+  const {PDFDocument,StandardFonts,rgb}=window.PDFLib,doc=await PDFDocument.create(),pg=doc.addPage([595.28,841.89]);
+  const H=await doc.embedFont(StandardFonts.Helvetica),HB=await doc.embedFont(StandardFonts.HelveticaBold),HI=await doc.embedFont(StandardFonts.HelveticaBoldOblique),CB=await doc.embedFont(StandardFonts.CourierBold),CR=await doc.embedFont(StandardFonts.Courier);
+  const ink=rgb(0,0,0),blue=rgb(0.043,0.165,0.42),grey=rgb(0.85,0.85,0.85),dark=rgb(0.23,0.23,0.23),white=rgb(1,1,1);
+  const L=34,R=561,W=R-L;let y=808; // y = top of the next block (pdf origin is bottom-left)
+  const T=(t,x,yy,f,sz,c)=>pg.drawText(pdfSafe(t),{x,y:yy,font:f,size:sz,color:c||ink});
+  const wrap=(t,f,sz,w)=>{const out=[];String(t).split("\n").forEach(par=>{let line="";pdfSafe(par).split(" ").forEach(word=>{const tr=line?line+" "+word:word;if(f.widthOfTextAtSize(tr,sz)>w&&line){out.push(line);line=word}else line=tr});out.push(line)});return out};
+  const box=(x,yy,w,h,fill)=>pg.drawRectangle({x,y:yy-h,width:w,height:h,borderColor:ink,borderWidth:0.8,color:fill});
+  const para=(t,f,sz,align,pad,lh)=>{const lines=wrap(t,f,sz,W-2*(pad||5));lh=lh||sz*1.28;const h=lines.length*lh+6;box(L,y,W,h);lines.forEach((ln,i)=>{const tw=f.widthOfTextAtSize(ln,sz),x=align==="c"?L+(W-tw)/2:L+(pad||5);T(ln,x,y-4-sz-i*lh,f,sz)});y-=h};
+  const band=(t,sz,fill,fc,align,f)=>{const lines=wrap(t,f||HB,sz,W-10),h=lines.length*sz*1.25+6;box(L,y,W,h,fill);lines.forEach((ln,i)=>{const tw=(f||HB).widthOfTextAtSize(ln,sz);T(ln,align==="c"?L+(W-tw)/2:L+5,y-3-sz-i*sz*1.25,f||HB,sz,fc)});y-=h};
+  const cell=(x,w,h,label,val,opt)=>{opt=opt||{};box(x,y,w,h);if(label){wrap(label,HB,7.6,w-8).forEach((ln,i)=>T(ln,x+4,y-10-i*9.5,HB,7.6))}if(val!=null&&val!==""){const sz=opt.sz||11;const vw=CB.widthOfTextAtSize(pdfSafe(val),sz),vx=opt.center?x+(w-vw)/2:x+4,vy=opt.vy!=null?opt.vy:y-h+6;T(val,vx,vy,CB,sz,blue)}};
+  const m=S.me,c=scCounts(ep),up=v=>String(v||"").toUpperCase();
+  band("SELF-CERTIFICATE ABSENCE FORM FOR CREW OPERATING ON RYANAIR AIRCRAFT",11.5,dark,white,"c");
+  band("THIS FORM MUST BE COMPLETED FOR ALL SICKNESS",9,white,ink,"c");
+  const intro="If you are unable to attend work due to illness or injury (or for any other reason other than approved leave) you must notify Crew Control by phone at least two hours prior to the start of your working day or shift. Once you have notified Crew Control of your absence (by phone) you must complete this form and submit it (by fax) to Crew Control on the first day you are absent unless you are bed-bound, in which case it must be submitted on your first day back at work. Please make sure you complete this form legibly, in English and in BLOCK capital letters.";
+  {const l1=wrap(intro,H,8.4,W-10),lh=10.6,h=l1.length*lh+36;box(L,y,W,h);l1.forEach((ln,i)=>T(ln,L+5,y-12-i*lh,H,8.4));
+    const a="Crew Control Phone No: +353 1 248 0557",b="Crew Control Fax No - Cabin Crew: +353 1 945 1683 Pilots: +353 1 812 1695";T(a,L+(W-HB.widthOfTextAtSize(a,9.4))/2,y-h+18,HB,9.4);T(b,L+(W-HB.widthOfTextAtSize(b,9.4))/2,y-h+6,HB,9.4);y-=h}
+  band("Statutory (Government Sickness Benefits)",9.6,grey,ink,"l");
+  para("UK - Crew based in the UK may be eligible for statutory sick pay (SSP) which will be processed automatically through the Payroll system subject to your compliance with the certification procedures.\nEuro Zone - Crew who are paying Irish social insurance (PRSI) must submit an \"Illness Benefit Claim Form\" to the Dept. of Social Welfare for any absences lasting 3 or more consecutive days. If you are based in Ireland, you can obtain this form from your GP. If you are based outside of Ireland, you should request this form from your Base Supervisor/Base Captain.",H,7.8,"c",5,9.6);
+  band("Ryanair Sickness Benefit Scheme (Ryanair employees only)",9.6,grey,ink,"l");
+  para("All employees who are employed by Ryanair in a full-time capacity, have successfully completed their probation period and comply with the correct absence reporting procedures may be eligible to receive payments under the Ryanair Sickness Benefit Scheme during their absence (see \"Absence from Work Fact Sheet\" in the Rough Guide to Ryanair for full details). Your absence must be medically certified by a qualified medical practitioner and accompanied by an official English translation (if applicable). You cannot be considered for discretionary sickness benefits if you do not comply with the absence reporting procedures. It should be clearly understood that this scheme is a discretionary Company benefit and not a statutory right.",H,7.8,"l",5,9.6);
+  band("Personal Details",9.6,grey,ink,"l");
+  {const w1=W*0.3,w2=W*0.22,w3=W*0.2,w4=W-w1-w2-w3,h=30;
+    cell(L,w1,h,"Staff No:",up(m.empNo));cell(L+w1,w2,h,"Crew Code:",up(m.staffNo));cell(L+w1+w2,w3,h,"Base:",up(S.profile.base));cell(L+w1+w2+w3,w4,h,"Contract (please circle)",null);
+    let cx=L+w1+w2+w3+5;SC_CONTRACTS.forEach((k,i)=>{const t=k+(i<SC_CONTRACTS.length-1?",":""),tw=H.widthOfTextAtSize(t,8.6);T(t,cx,y-h+7,H,8.6);if(k===m.contract){const kw=H.widthOfTextAtSize(k,8.6);pg.drawEllipse({x:cx+kw/2,y:y-h+10,xScale:kw/2+3,yScale:7,borderColor:blue,borderWidth:1.3})}cx+=tw+(k===m.contract||SC_CONTRACTS[i+1]===m.contract?9:5)});y-=h;
+    cell(L,w1,h,"Name:",up(m.name));cell(L+w1,w2,h,"Dept:",up(m.dept));cell(L+w1+w2,w3,h,"Position:",up(m.rank));cell(L+w1+w2+w3,w4,h,"Date of Entry:",dmy(m.entry,true));y-=h}
+  band("Type of Absence (Tick appropriate box)",9.6,grey,ink,"l");
+  {const tw=70,rows=[["General Sickness (up to 2 calendar days)",!ep.partial&&c.total<=2],["General Sickness (3 or more calendar days) - must submit a medical certificate",!ep.partial&&c.total>=3],["Offload / Partial day",!!ep.partial]];
+    rows.forEach(([lab,on])=>{const h=17;box(L,y,tw,h);box(L+tw,y,W-tw,h);T(lab,L+tw+5,y-12,HB,8.4);if(on){pg.drawLine({start:{x:L+tw/2-7,y:y-9},end:{x:L+tw/2-2,y:y-14},thickness:2,color:blue});pg.drawLine({start:{x:L+tw/2-2,y:y-14},end:{x:L+tw/2+8,y:y-4},thickness:2,color:blue})}y-=h})}
+  band("Absence Details",9.6,grey,ink,"l");
+  {const a=W*0.25,b=W*0.13,d=W*0.16,cc=W-a-b-d,h1=24,h2=19;
+    cell(L,a,h1,"First day of absence (date):",null);cell(L+a,b,h1,"",dmy(ep.from));cell(L+a+b,cc,h1,"Last day of absence (date): Total number of days absent:",null);cell(L+a+b+cc,d,h1,"",dmy(ep.to));y-=h1;
+    box(L,y,a,2*h2);T("Total no. of days absent:",L+4,y-10,HB,7.6);box(L+a,y,b,2*h2);{const v=String(c.total),vw=CB.widthOfTextAtSize(v,12);T(v,L+a+(b-vw)/2,y-h2-4,CB,12,blue)}
+    cell(L+a+b,cc,h2,"No. of normal calendar days off or A/L included",null);cell(L+a+b+cc,d,h2,"",String(c.off),{center:true});y-=h2;
+    pg.drawRectangle({x:L+a+b,y:y-h2,width:cc,height:h2,borderColor:ink,borderWidth:0.8});T("Total days absence excluding days off & A/L",L+a+b+4,y-10,HB,7.6);cell(L+a+b+cc,d,h2,"",String(c.work),{center:true});y-=h2}
+  band("Reason for Absence: If your absence is due to sickness of any kind please give the name of your condition and a detailed description of the symptoms. \"Sick\" is not an acceptable description and neither is \"Flu\").",7.8,grey,ink,"l");
+  {const h=70;box(L,y,W,h);wrap(ep.reason||"",CB,10.5,W-12).slice(0,5).forEach((ln,i)=>T(ln,L+6,y-15-i*13,CB,10.5,blue));y-=h}
+  band("PLEASE ENSURE THAT ALL SECTIONS OF THE FORM ARE COMPLETED AND SIGN THE DECLARATION BELOW:",7.8,grey,ink,"l");
+  {const h=66;box(L,y,W,h);wrap("I confirm that the above details are accurate and I understand that providing inaccurate or false information may be treated as gross misconduct which may lead to disciplinary action up to and including dismissal.",H,8.4,W-10).forEach((ln,i)=>T(ln,L+5,y-12-i*10.6,H,8.4));
+    const sy=y-h+12;T("Crew Member Signature:",L+5,sy,HB,8.6);pg.drawLine({start:{x:L+112,y:sy-2},end:{x:L+310,y:sy-2},thickness:0.7,color:ink});
+    if(m.sig){try{const png=await doc.embedPng(m.sig),sc=Math.min(190/png.width,32/png.height);pg.drawImage(png,{x:L+116,y:sy-3,width:png.width*sc,height:png.height*sc})}catch(e){}}
+    T("Date:",L+325,sy,HB,8.6);pg.drawLine({start:{x:L+352,y:sy-2},end:{x:L+450,y:sy-2},thickness:0.7,color:ink});T(dmy(today(),true),L+358,sy,CB,11,blue);y-=h}
+  {const t="Note to Crew Control / Manager - Once complete, this form must be submitted to the HR Department to be added to the individual's employee file.",lines=wrap(t,HI,8,W-10),h=lines.length*10+6;box(L,y,W,h);lines.forEach((ln,i)=>T(ln,L+(W-HI.widthOfTextAtSize(ln,8))/2,y-11-i*10,HI,8));y-=h}
+  {const h=13;box(L,y,W,h);T("Version No: DB/082014",L+5,y-9.5,H,7.4);y-=h}
+  return new Blob([await doc.save()],{type:"application/pdf"})}
+function scEmail(ep){const c=scCounts(ep),m=S.me,f=d=>fmtDate(d,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  return {subject:`Self-certificate - ${m.name||""} - ${m.staffNo||""} - ${dmy(ep.from,true)}`,
+    body:`Hello,\n\nPlease find attached my self-certificate for sickness absence from ${f(ep.from)} to ${f(ep.to)} (${c.total} day${c.total===1?"":"s"}${c.off?", including "+c.off+" day"+(c.off===1?"":"s")+" off":""}).\nReason: ${ep.reason||""}\n\nKind regards,\n${m.name||""}\nStaff number: ${m.empNo||""}\nCrew code: ${m.staffNo||""}\n${S.profile.base||""}`}}
+let scMsg="";
+function scCard(ep){if(!isRyr()||ep.type!=="self")return "";const miss=scMissing(),D=docsState(),e=ep.scDoc&&D.files.find(x=>x.id===ep.scDoc),E=scEmail(ep),c=scCounts(ep);
+  return `<section class="card"><h2>Self-certificate form</h2>
+    <p class="note" style="margin:0">The app fills in the Ryanair self-certificate from your Profile and these sick days: ${c.total} day${c.total===1?"":"s"}, ${c.off} day${c.off===1?"":"s"} off included, ${c.work} working day${c.work===1?"":"s"}.</p>
+    ${miss.length?`<p class="note" style="margin:0">Still needed in Profile: ${esc(miss.join(", "))}. <button class="linkbtn" data-goto="more:profile">Open Profile</button></p>`:""}
+    ${!ep.reason?`<p class="note" style="margin:0">Add the reason below: the name of your condition and your symptoms. The form says "Sick" or "Flu" alone isn't accepted.</p>`:""}
+    <label class="chk" style="border:0;padding:0"><input type="checkbox" id="sc-part" ${ep.partial?"checked":""}><span>I went sick during a duty I'd already started (offload / partial day)</span></label>
+    <div class="btns"><button class="primary" id="scmake" ${miss.length||!ep.reason?"disabled":""}>${e?"Prepare it again":"Prepare self-certificate"}</button></div>
+    ${scMsg?`<p class="note" role="status" style="margin:0">${esc(scMsg)}</p>`:""}
+    ${e?`<div class="seccard"><span class="label">Ready · saved in Documents › Self-certificates</span><div class="links"><a ${blobAttr(e.asset,e.name)}>Open ${esc(e.name)} ↗</a></div>
+      <div class="btns" style="margin:0">${navigator.canShare?`<button class="primary" id="scshare">Send by email (attached)</button>`:""}${m_mail(E)}</div>
+      <p class="note" style="margin:0">${navigator.canShare?"Send by email opens your phone's share menu: pick your email app, and the PDF and message are added. Type or paste the medical email in To. ":""}${S.me.medEmail?"Email "+esc(S.me.medEmail)+" opens a ready email; attach the PDF from Documents if it isn't added.":"Add the company medical email in Profile to get a ready-addressed email."}</p></div>`:""}
+  </section>`}
+function m_mail(E){return S.me.medEmail?`<a class="btn" style="text-decoration:none" href="mailto:${encodeURIComponent(S.me.medEmail)}?subject=${encodeURIComponent(E.subject)}&body=${encodeURIComponent(E.body)}">Email ${esc(S.me.medEmail)}</a>`:""}
 /* ---------- Documents: crew's own folders of PDFs and pictures for work, kept on this phone ---------- */
 const DOC_START=["Self-certificates","Trip notes"];
 let docMsg="",docOpen="",docDel="";
@@ -3502,6 +3596,7 @@ function viewProfile(){
   ${fold("pf_travel","Getting to work",()=>travelFieldsInner(),false,tHas()?[tHas("train")?"Train":"",tHas("bus")?"Bus":"","Car"].filter(Boolean).join(", "):"Car")}
   ${fold("pf_food","Food needs",foodNeedsFields,false,dietTxt||"None set")}
   ${fold("pf_cc","Crew control contacts",()=>pfCC(),false,S.me.ccPhone?"Saved":"Not set")}
+  ${isRyr()?fold("pf_sc","For your self-certificate",()=>pfSC(),false,scMissing().length?"Missing: "+scMissing().length:"Ready"):""}
   ${fold("pf_key","Flight lookup",()=>pfKey(),false,S.me.flightKey?"Key saved":"Optional")}
   ${on("more_docs")?fold("pf_docs","Documents",()=>`<p class="note" style="margin:0">${S.docs.length?(docsDue?docsDue+" to renew soon":"All in date"):"Add expiry dates to get reminders at 12 and 6 months."}</p>`+viewDocs(),false,docsDue?docsDue+" to renew":""):""}`;
 }
@@ -3780,7 +3875,9 @@ window.addEventListener("click",flushR);/* after the app's own click handler (wi
 // Re-renders from a tap or change run inside an event and handle their own fields; the others keep typed text and focus.
 function render(){
   if(ptrDown){pendingR=true;return}
-  if(window.event){renderNow();return}
+  // a refresh caused by one field saving (on leaving it) mustn't take away the field you just moved to
+  if(window.event){const ev=window.event.target,f=document.activeElement,keep=f&&(f!==ev||!/^(change|input)$/.test(window.event.type))&&f.id&&/^(INPUT|TEXTAREA)$/.test(f.tagName)?[f.id,f.value,f.selectionStart,f.selectionEnd]:null;
+    renderNow();if(keep){const el=document.getElementById(keep[0]);if(el&&document.activeElement!==el){if(el.value===el.defaultValue&&keep[1]!==el.value)el.value=keep[1];el.focus();try{if(keep[2]!=null)el.setSelectionRange(keep[2],keep[3])}catch(e){}}}return}
   const kept=[];document.querySelectorAll("main input[id], main textarea[id]").forEach(el=>{if(/^(text|search|password|number|email|tel|url|textarea)$/.test(el.type)&&el.value!==el.defaultValue)kept.push([el.id,el.value])});
   const f=document.activeElement,fid=f&&f.id&&/^(INPUT|TEXTAREA)$/.test(f.tagName)?f.id:"",sel=fid?[f.selectionStart,f.selectionEnd]:null;
   renderNow();
@@ -3832,7 +3929,7 @@ function renderNow(){
   const v={today:viewToday,trip:viewTrip,plan:viewPlan,me:viewMe,more:viewMore}[S.tab]||viewToday;
   $("#main").dataset.art=S.tab==="more"?(S.moreView||"more"):S.tab;
   $("#main").innerHTML=v()+`<p class="status" id="status">${esc(status)}</p>`;
-  hydrateBlobs();
+  hydrateBlobs();hydrateSig();
   $("#tabs").innerHTML=TABS.filter(x=>x[0]==="today"||x[0]==="more"||on("tab_"+x[0])).map(x=>`<button data-tab="${x[0]}" ${S.tab===x[0]?'aria-current="page"':""}>${ICON[x[0]]}<span>${x[1]}</span></button>`).join("");
 }
 function uploadMsg(err){const c=err&&err.code;
@@ -3883,6 +3980,16 @@ document.addEventListener("click",e=>{
   if(b.id==="chkupd"){const m=$("#updmsg");if(!navigator.onLine){if(m)m.textContent="You're offline. It checks again when you have signal.";return}
     if(m)m.textContent="Checking…";Promise.resolve(window.crewdayCheckUpdate?window.crewdayCheckUpdate():false).then(found=>{const m2=$("#updmsg");if(m2)m2.textContent=found?"New version found. It loads in a few seconds.":"You have the latest version."});return}
   if(b.dataset.delalso){const [d,i]=b.dataset.delalso.split("|"),x=S.roster[d];if(x&&x.also){x.also.splice(+i,1);if(!x.also.length)delete x.also}render();save();return}
+  if(b.id==="sigclear"){const c=$("#sigpad");if(c)c.getContext("2d").clearRect(0,0,c.width,c.height);sigInk=false;sigFull="";return}
+  if(b.id==="sigsave"){const c=$("#sigpad");const u=c&&(sigInk||sigFull)?sigTrim(c):"";if(!u){scMsg="";const c2=$("#sigpad");if(c2)c2.style.borderStyle="solid";return}S.me.sig=u;sigInk=false;sigFull="";render();save();return}
+  if(b.id==="sigdel"){delete S.me.sig;render();save();return}
+  if(b.id==="scmake"){const ep=currentSick();if(!ep)return;if(!window.PDFLib){scMsg="The form maker couldn't load. Open the app once with signal, then try again.";render();return}
+    b.disabled=true;scMsg="Preparing your self-certificate…";render();
+    scMakePdf(ep).then(async blob=>{const name=scName(ep),D=docsState();if(ep.scDoc){const old=D.files.find(x=>x.id===ep.scDoc);if(old){try{assetsNS&&assetsNS.delete(old.asset)}catch(e){}D.files=D.files.filter(x=>x.id!==old.id)}}
+      const e=await docSave("Self-certificates",blob,name);ep.scDoc=e.id;scMsg="";render();save()}).catch(err=>{scMsg="Couldn't prepare the form"+(err&&err.code?": "+uploadMsg(err):".");render()});return}
+  if(b.id==="scshare"){const ep=currentSick(),D=docsState(),e=ep&&D.files.find(x=>x.id===ep.scDoc);if(!e)return;const E=scEmail(ep);
+    Promise.resolve(isLocal(e.asset)?IDB.get(e.asset).then(openBlob):fetch("/_blob/"+e.asset).then(r=>r.blob())).then(blob=>{const f=new File([blob],e.name,{type:"application/pdf"});
+      if(navigator.canShare&&navigator.canShare({files:[f]}))return navigator.share({files:[f],title:E.subject,text:(S.me.medEmail?"To: "+S.me.medEmail+"\n\n":"")+E.body});throw new Error("share")}).catch(err=>{if(err&&err.name==="AbortError")return;scMsg="This phone can't attach it automatically. Use the email button and attach the PDF from Documents › Self-certificates.";render()});return}
   if(b.dataset.docopen!==undefined){docOpen=b.dataset.docopen;docMsg="";docDel="";render();return}
   if(b.id==="docnew"){const v=(($("#doc-nf")||{}).value||"").trim();if(!v){docMsg="Type a name for the folder.";render();return}if(docsState().folders.some(x=>x.name.toLowerCase()===v.toLowerCase())){docMsg="There's already a folder called "+v+".";render();return}docFolder(v.slice(0,40));docMsg="";render();save();return}
   if(b.dataset.docdelf){const id=b.dataset.docdelf;if(docDel!==id){docDel=id;render();return}const D=docsState(),e=D.files.find(x=>x.id===id);if(e){try{assetsNS&&assetsNS.delete(e.asset)}catch(x){}D.files=D.files.filter(x=>x.id!==id)}docDel="";render();save();return}
@@ -3916,7 +4023,7 @@ document.addEventListener("click",e=>{
     const to=to0<from?from:to0;
     let ep=b.id==="updsick"?currentSick():null;
     if(!ep){ep={id:uid(),from,to,type,file:null,steps:{},rosterOk:{},prev:{}};S.sick.push(ep)}
-    ep.type=type;ep.reason=(($("#sk-reason")||{}).value||"").trim().slice(0,80);applySick(ep,from,to);
+    ep.type=type;ep.reason=(($("#sk-reason")||{}).value||"").trim().slice(0,200);applySick(ep,from,to);
     const fEl=$("#sk-file"),f=fEl&&fEl.files[0];
     render();save();
     if(f&&assetsNS){assetsNS.upload(f).then(r=>{ep.file=r.id;render();save()},err=>{const m=$("#sickmsg");if(m)m.textContent=uploadMsg(err)})}
@@ -4015,7 +4122,7 @@ document.addEventListener("click",e=>{
   if(b.id==="sball"){sbShowAll=!sbShowAll;render();return}
   if(b.dataset.mode){S.ui.mode=b.dataset.mode;render();save();return}
   if(b.dataset.color){S.ui.color=b.dataset.color;render();save();return}
-  if(b.id==="setupdone"){S.profile.setup=true;render();window.scrollTo(0,0);save();return}
+  if(b.id==="setupdone"){const nm=$("#pr-n"),sn=$("#pr-s");if(nm&&nm.value.trim())S.me.name=nm.value.trim();if(sn&&sn.value.trim())S.me.staffNo=sn.value.trim();S.profile.setup=true;render();window.scrollTo(0,0);save();return}
   if(b.dataset.timer||b.id==="tmstart"){
     let mins,label;if(b.dataset.timer){mins=+b.dataset.timer;label=b.dataset.tlabel}else{mins=parseFloat($("#tm-min").value);label=$("#tm-lab").value.trim()||"Timer"}
     if(!(mins>0&&mins<=600))return;
@@ -4134,6 +4241,7 @@ ${text?"Roster text:\n"+text.slice(0,20000):"The roster is in the attached image
 document.addEventListener("change",e=>{
   const el=e.target;
   if(/^sc-flt-\d+$/.test(el.id)){el.value=cleanFlt(el.value);fltFill(+el.id.slice(7));return}
+  if(el.id==="sc-part"){const ep=currentSick();if(ep){ep.partial=el.checked;render();save()}return}
   if(el.id==="nb-t"){nbOf(nbKey()).text=el.value;save();return}
   if(el.id==="nb-k"){S.nbView=el.value===((S.duty&&S.duty.date)||today())?"":el.value;render();return}
   if(el.dataset.nbtick){const it=nbOf(nbKey()).items.find(x=>x.id===el.dataset.nbtick);if(it)it.done=el.checked;render();save();return}
