@@ -17,9 +17,9 @@ with sync_playwright() as p:
     pg.set_content("<!doctype html><html><head><meta charset=utf-8></head><body>"+html+"</body></html>")
     pg.fill("#pr-n","Tiago"); pg.fill("#pr-s","AB1"); pg.click("#setupdone")
     pg.click("[data-tab=trip]"); pg.wait_for_timeout(200)
-    if pg.locator('[data-fold="dest"][aria-expanded="false"]').count(): pg.click('[data-fold="dest"]')
+    (pg.click('[data-fold="destfacts"]') if pg.locator('[data-fold="destfacts"][aria-expanded="false"]').count() else None); pg.evaluate("document.querySelectorAll('details.chgplace').forEach(d=>d.open=true)")
     pg.select_option("#tr-c","Germany"); pg.wait_for_timeout(150); pg.fill("#tr-city","Cologne"); pg.locator("#tr-city").dispatch_event("change"); pg.wait_for_timeout(800)
-    pg.click('[data-fold^="destfacts"]'); pg.wait_for_timeout(500)
+    (pg.click('[data-fold^="destfacts"]') if pg.locator('[data-fold^="destfacts"][aria-expanded="false"]').count() else None); pg.wait_for_timeout(500)
     box=pg.locator('[data-fold^="destfacts"]').locator("xpath=..")
     t=box.inner_text(); print(t[:1100]); 
     pg.locator("summary").filter(has_text="Stay safe").click()

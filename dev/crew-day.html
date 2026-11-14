@@ -1849,8 +1849,11 @@ function newsCache(){if(NEWSC)return NEWSC;try{NEWSC=JSON.parse(localStorage.get
 function newsStore(c){NEWSC=c;try{localStorage.setItem("crewday_news",JSON.stringify(c))}catch(e){try{c.items=c.items.slice(0,25).map(x=>Object.assign({},x,{d:(x.d||"").slice(0,8000)}));localStorage.setItem("crewday_news",JSON.stringify(c))}catch(e2){}}if(S.newsCache){delete S.newsCache;save()}}
 let newsBusy=false;
 function newsText(h){const d=document.createElement("div");d.innerHTML=String(h||"").replace(/<\/(p|h\d|li|div|blockquote)>/gi,"\n\n").replace(/<br\s*\/?>/gi,"\n");return (d.textContent||"").replace(/[ \t]+/g," ").replace(/\n\s*\n\s*/g,"\n\n").trim()}
+let newsTried=0;
 function newsFetch(force){
   if(newsBusy||navigator.onLine===false)return;const c=newsCache();if(!force&&c&&Date.now()-c.at<3*3600000)return;
+  // a failed try waits 10 minutes before the next automatic one (no retry on every screen refresh)
+  if(!force&&Date.now()-newsTried<600000)return;newsTried=Date.now();
   newsBusy=true;if(force)render();
   const feeds=NEWS_FEEDS.filter(f=>f[2]!=="airline"||(isRyr()&&/ryanair/i.test(f[0]))||(S.profile.airline==="Jet2"&&/jet2/i.test(f[0])));
   Promise.allSettled(feeds.map(([n,u,cat])=>fetch("https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(u)).then(r=>r.ok?r.json():null).then(j=>((j&&j.items)||[]).slice(0,8).map(x=>{
@@ -2332,7 +2335,7 @@ function viewSales(){
    ===================================================================== */
 
 /* ---------- folding sections (Today folds remember per phase, reset daily) ---------- */
-function isOpen(k,def){return S.fold&&k in S.fold?!!S.fold[k]:!!def}
+function isOpen(k,def){return S.fold&&k in S.fold?!!S.fold[k]:(!!def||(!!window.CREWDAY_TEST_OPEN&&/^(nextduty|alarms|planday|kitcheck|todo|water|home|coming|dutytimes|morning|core|travel)(\||$)/.test(k)))}
 function fold(k,title,body,def,hint){const o=isOpen(k,def);
   return `<section class="card fold"><button class="foldh" data-fold="${k}" data-def="${def?1:0}" aria-expanded="${o}"><span class="ft">${title}</span><span class="fhint">${!o&&hint?hint:""}</span><span class="chev" aria-hidden="true"></span></button>${o?`<div class="fbody">${typeof body==="function"?body():body}</div>`:""}</section>`}
 function fmtIn(ms){const m=Math.max(0,Math.round(ms/60000)),h=Math.floor(m/60);return h?h+"h "+String(m%60).padStart(2,"0")+"m":m+" min"}
@@ -2757,7 +2760,7 @@ function nowItems(p){const it=[];if(p.split)it.push({at:p.wake,label:"Wake up ·
   it.push({at:p.rep,label:"Report",key:1});
   return it.filter(x=>x.at&&!isNaN(x.at)).sort((a,b)=>a.at-b.at)}
 function nowCardHTML(o){const pct=o.from&&o.to?Math.max(2,Math.min(100,Math.round((Date.now()-o.from)/(o.to-o.from)*100))):0;
-  return `<section class="card nowcard2" role="status"><span class="label">${o.lab||"Now"}</span><b class="nwhat">${esc(o.title)}</b>
+  return `<section class="card nowcard nowcard2" role="status"><span class="label">${o.lab||"Now"}</span><b class="nwhat">${esc(o.title)}</b>
     ${o.to?`<span class="nleft"><span data-cdto="${o.to.getTime?o.to.getTime():o.to}" data-s>${fmtCD(o.to-Date.now(),1)}</span> <small>${esc(o.unit||"left")}</small></span>`:""}
     ${pct?`<span class="nbar"><i style="width:${pct}%"></i></span>`:""}
     ${o.lines?o.lines.map(l=>`<span class="note" style="margin:0">${l}</span>`).join(""):""}${o.btn||""}</section>`}
@@ -2775,7 +2778,9 @@ function nowDuty(p){const now=Date.now(),{t,secs,ft,i}=ftState(),x=i>=0?secs[i]:
   if(x&&x.dep&&x.arr&&!x.onb){const std=r2lDT(t,x.dep);let sta=r2lDT(t,x.arr);if(sta<std)sta=new Date(sta.getTime()+86400000);if(std<=now&&sta>now)return nowCardHTML({lab:"Flying (by the schedule)",title:(x.flt||"Flight")+" "+x.from+"→"+x.to,from:std,to:sta,unit:"to on blocks ("+r2z(t,x.arr)+"Z)",lines:["Start the timer on Trip, or add a flight key, for real times."],btn:trip})}
   if(x&&x.dep){const std=r2lDT(t,x.dep);if(std>now)return nowCardHTML({lab:"Next flight",title:(x.flt||"Flight")+" "+x.from+"→"+x.to,to:std,unit:"to STD "+r2z(t,x.dep)+"Z",lines:[],btn:trip})}
   return nowCardHTML({lab:"Now",title:"On duty",to:fdpEnd(),unit:"FDP left",lines:[],btn:trip})}
-function comingUpBody(p){const now=Date.now();return `<div>${nowItems(p).map(x=>{const past=x.at.getTime()<=now;return `<div class="tip" style="align-items:center;${past?"opacity:.45":""}"><span class="t clk">${hm(x.at)}</span><span style="flex:1">${x.key?"<b>":""}${esc(x.label)}${x.key?"</b>":""}</span><span class="note" style="margin:0;white-space:nowrap">${past?"done":"in "+fmtIn(x.at-now)}</span></div>`}).join("")}</div>`}
+function comingUpBody(p){const now=Date.now(),ph=phaseOf(),d=S.duty,asb=d.kind==="asby",trg=d.kind==="training";
+  const cell=(k,label,t,sub)=>`<div class="${k===ph?"now":""}"><span class="k">${label}</span><span class="v clk ${k===ph?"hl":""}">${hm(t)}</span><span class="d">${sub}</span></div>`;
+  return `<section class="pass" aria-label="Your duty" style="border:0;padding:0 0 8px">${cell("ready","Wake up",p.first,day(p.first))}${cell("go","Leave by",p.leave,esc(p.tr&&p.tr.chosen?(p.tr.rk==="bus"?"Bus ":"Train ")+p.tr.chosen.t:modeName(RK.includes(d.mode)?"driving":d.mode)))}${cell("duty",asb?"Standby":trg?"Start":"Report",p.rep,esc(placeOf(d).split(" ").slice(0,2).join(" ")))}</section><div>${nowItems(p).map(x=>{const past=x.at.getTime()<=now;return `<div class="tip" style="align-items:center;${past?"opacity:.45":""}"><span class="t clk">${hm(x.at)}</span><span style="flex:1">${x.key?"<b>":""}${esc(x.label)}${x.key?"</b>":""}</span><span class="note" style="margin:0;white-space:nowrap">${past?"done":"in "+fmtIn(x.at-now)}</span></div>`}).join("")}</div>`}
 function comingUpHint(p){return "leave "+hm(p.leave)+(p.tr&&p.tr.chosen?" · "+(p.tr.rk==="bus"?"bus":"train")+" "+p.tr.chosen.t:"")}
 function viewToday(){
   const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",now=new Date(),F=k=>k+"|"+ph;

@@ -17,7 +17,7 @@ with sync_playwright() as p:
     pg.fill("#n-dest","TLL"); pg.locator("#n-dest").dispatch_event("change"); print("plan dest from code:",pg.input_value("#n-dest"))
     pg.clock.set_system_time(datetime.datetime(2026,7,11,4,0)); pg.click("[data-tab=today]"); pg.wait_for_timeout(100); pg.click("[data-tab=today]")
     print("today:",pg.inner_text("main header").replace("\n"," "),"|",pg.inner_text(".pass").replace("\n"," "))
-    pg.click("[data-tab=trip]"); pg.click('[data-fold="dest"]'); pg.fill("#tr-city","bcn"); pg.locator("#tr-city").dispatch_event("change"); print("trip city:",pg.input_value("#tr-city"),pg.input_value("#tr-c"))
+    pg.click("[data-tab=trip]"); (pg.click('[data-fold="destfacts"]') if pg.locator('[data-fold="destfacts"][aria-expanded="false"]').count() else None); pg.evaluate("document.querySelectorAll('details.chgplace').forEach(d=>d.open=true)"); pg.fill("#tr-city","bcn"); pg.locator("#tr-city").dispatch_event("change"); print("trip city:",pg.input_value("#tr-city"),pg.input_value("#tr-c"))
     pg.clock.set_system_time(datetime.datetime(2026,7,11,5,40)); pg.click("[data-tab=trip]"); pg.wait_for_timeout(100)
     print("timer:",pg.locator(".ftcard").inner_text().replace("\n"," | ")[:200])
     pg.fill("#ft-est","2:40"); pg.click("#ftgo"); print("running:",pg.locator(".ftcard").inner_text().replace("\n"," | ")[:200])

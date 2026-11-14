@@ -26,7 +26,7 @@ with sync_playwright() as p:
     pg.clock.set_system_time(datetime.datetime(2026,11,12,6,30)); pg.click("[data-tab=today]")
     print("5 06:30:",pg.inner_text(".nowcard").replace("\n"," "))
     pg.click("[data-tab=trip]"); print("  trip:",H(pg),"| clock:",pg.inner_text("[aria-label='Duty clock']").replace("\n"," "))
-    pg.click('[data-fold="timers"]'); pg.click('[data-timer="15"]'); print("  timer:",pg.locator("[id^=tm-]").count())
+    (pg.click('[data-fold="timers"]') if pg.locator('[data-fold="timers"][aria-expanded="false"]').count() else None); pg.click('[data-timer="15"]'); print("  timer:",pg.locator("[id^=tm-]").count())
     pg.screenshot(path="trip.png",full_page=True)
     pg.click("[data-tab=plan]"); print("6 plan (on duty 12th):",H(pg)[:6])
     pg.clock.set_system_time(datetime.datetime(2026,11,13,5,10)); pg.click("[data-tab=today]")

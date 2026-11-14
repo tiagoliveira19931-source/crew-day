@@ -48,7 +48,7 @@ with sync_playwright() as p:
     pg.click("[data-ftlivego]"); pg.wait_for_timeout(300)
     t=pg.inner_text("main"); assert "Running from online times" in t, [l for l in t.split("\n") if "online" in l]
     assert pg.locator("#ftgo").count()==0 and pg.locator("#ftrestart").count()==0
-    t=pg.inner_text("main"); assert "On blocks" in t and "off blocks ~13:38" in t, [l for l in t.split("\n") if "13:" in l]
+    t=pg.inner_text("main"); assert "Stop now" in t and "13:38Z" in t and "PREDICTED ON" in t.upper(), [l for l in t.split("\n") if "13:" in l]
     # with a key, off blocks is filled from online (roster time is Zulu: 13:38Z)
     R=pg.evaluate("window.CREWDAY_TEST.roster()['2026-11-14'].sectors[0]"); print("sector:",{k:R.get(k) for k in ("offb","onb")})
     assert R.get("offb")=="13:38" and not R.get("onb"), R

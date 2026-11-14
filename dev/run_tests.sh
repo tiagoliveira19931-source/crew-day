@@ -3,7 +3,8 @@
 # Usage: bash dev/run_tests.sh        → prints one line per test and "ALL PASSED" or the failures.
 set -u
 DEV="$(cd "$(dirname "$0")" && pwd)"
-cp "$DEV/crew-day.html" /home/claude/crew-day.html   # tests read the app from this fixed path
+# tests read the app from this fixed path; sections start open for the older tests (the app itself starts them folded)
+{ echo '<script>window.CREWDAY_TEST_OPEN=1</script>'; cat "$DEV/crew-day.html"; } > /home/claude/crew-day.html
 cd "$DEV/tests"
 fail=0
 for t in *.py; do
