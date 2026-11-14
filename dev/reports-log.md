@@ -27,3 +27,11 @@ Reports from More › Report an issue that have been handled. The repo is public
 | 14/11/2026 15:14:51 | With a flight key, timer should run from online times, not buttons | Fixed in 1.35.1 and 1.35.2: buttons hidden with a key, stops itself at online on blocks, empty block times filled from online |
 
 Also 1.35.3 (from a screenshot Tiago sent): Getting home tidy-up: Take this buttons beside each row, times marked L, Caught it/Missed it only near off duty, Change button readable over the drawing.
+
+## 14 Nov 2026 evening (1.36.0, from Tiago's own testing)
+- Phone abroad on local time: app keeps UK (base) time; trains home and plans no longer shift.
+- Live times: timer stops when the feed says landed (no exact on-block time); missing block times filled for every flight of the day.
+- Block times always in Zulu; timer shows Zulu first with local time at each airport; predicted landing beside the running clock.
+- Duty ends on blocks + 30, logged in hours once all on-block times are in; "off quickly" trains from on blocks + 20 min (setting).
+- Today: Now card with the current step and time left; everything else folds (also Plan and Trip). Destination card removed (place comes from flights).
+- Dish drawings with a full view (ingredients, how to make it).
