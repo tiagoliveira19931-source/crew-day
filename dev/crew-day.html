@@ -3585,6 +3585,10 @@ function dayShift(){const d=S.duty,r=S.roster[d.date]||{},sec=r.sectors||[],t=d.
   const at=v=>{let x=r2lDT(t,v);if(x<st)x=new Date(x.getTime()+86400000);return x};
   for(let i=sec.length-1;i>=0;i--){const x=sec[i];if(!x.arr)continue;
     if(x.onb)return {min:Math.round((at(x.onb)-at(x.arr))/60000),why:"actual on blocks "+hmL(at(x.onb))+" ("+(x.flt||x.to)+")"};
+    // the predicted landing: online estimate first, then the running timer's on-block estimate
+    {const L=x.flt?ftLiveOf(cleanFlt(x.flt)):null,ft=S.ft&&S.ft.start&&!S.ft.stop&&S.ft.date===t&&S.ft.i===i?S.ft:null;
+      const pred=(L&&liveMatches(t,x,L)&&(L.depAct||L.depEst)&&L.arrEst)?L.arrEst:ft&&ft.est?ft.start+ft.est*60000:0;
+      if(pred)return {min:Math.round((pred-at(x.arr))/60000),why:"predicted landing "+hmL(new Date(pred))+" ("+(x.flt||x.to)+")"}}
     if(x.offb){const bm=x.est||blockMins(x)||0;if(bm){const exp=new Date(at(x.offb).getTime()+bm*60000);return {min:Math.round((exp-at(x.arr))/60000),why:"off blocks "+hmL(at(x.offb))+" ("+(x.flt||x.to)+"), landing ~"+hmL(exp)}}}}
   return null}
 // when duty really ends: last actual on blocks + the post-flight time on the roster (usually 30 min)
@@ -3673,7 +3677,7 @@ function transitCard(n,pn,rk){rk=rk||"train";
 }
 function travelFieldsInner(){
   return `<div class="field"><span class="label">When both a train and a bus could work</span><div class="seg" role="tablist" aria-label="Preferred transport">${[["train","Prefer the train"],["bus","Prefer the bus"],["fastest","Whichever is faster"]].map(x=>`<button role="tab" aria-selected="${tPref()===x[0]}" data-tpref="${x[0]}">${x[1]}</button>`).join("")}</div><span class="note" style="margin:0">The app suggests your choice unless only the other gets you there or home in time (within 30 minutes).</span></div>
-  <div class="field"><label for="pr-tostn">Quickest from on blocks to the station or stop (minutes)</label><input id="pr-tostn" class="num" type="number" min="5" max="60" step="5" inputmode="numeric" value="${toStn()}" data-k="profile.toStn"><span class="note" style="margin:0">Duty ends 30 min after on blocks, but you can often head off sooner. Trains and buses from this point are shown as "if you're off quickly".</span></div>`+travelFieldsCore()}
+  <div class="field"><label for="pr-tostn">Quickest from landing (on blocks) to the station or stop, in minutes</label><input id="pr-tostn" class="num" type="number" min="5" max="60" step="5" inputmode="numeric" value="${toStn()}" data-k="profile.toStn"><span class="note" style="margin:0">Duty ends 30 min after on blocks, but you can often head off sooner. Trains and buses from this point are shown as "if you're off quickly".</span></div>`+travelFieldsCore()}
 function toStn(){const v=+S.profile.toStn;return v>=5&&v<=60?v:20}
 function travelFieldsCore(){
   const d=S.duty,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
