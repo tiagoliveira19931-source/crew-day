@@ -35,3 +35,4 @@ Also 1.35.3 (from a screenshot Tiago sent): Getting home tidy-up: Take this butt
 - Duty ends on blocks + 30, logged in hours once all on-block times are in; "off quickly" trains from on blocks + 20 min (setting).
 - Today: Now card with the current step and time left; everything else folds (also Plan and Trip). Destination card removed (place comes from flights).
 - Dish drawings with a full view (ingredients, how to make it).
+- 1.36.1 (Tiago): "if you're off quickly" counts from the predicted landing (online estimate or running timer) + quickest time to the stop; sketches behind the Now card; dish photos from Wikipedia (dish name only looked up) with the drawing as fallback.
