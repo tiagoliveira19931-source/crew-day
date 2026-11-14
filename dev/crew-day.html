@@ -202,6 +202,21 @@ main[data-art="settings"] header:first-of-type::before{content:"";-webkit-mask-i
 main[data-art="issues"] header:first-of-type::before{content:"";-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M150%2030%20H270%20V92%20H206%20L184%20114%20V92%20H150%20Z%22%2F%3E%3Cpath%20d%3D%22M180%2052%20H240%20M180%2070%20H226%22%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M150%2030%20H270%20V92%20H206%20L184%20114%20V92%20H150%20Z%22%2F%3E%3Cpath%20d%3D%22M180%2052%20H240%20M180%2070%20H226%22%2F%3E%3C%2Fsvg%3E")}
 main[data-art="backup"] header:first-of-type::before{content:"";-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M164%20100%20Q140%20100%20142%2080%20Q144%2062%20164%2064%20Q170%2038%20198%2040%20Q222%2040%20228%2060%20Q256%2058%20258%2080%20Q258%20100%20236%20100%20Z%22%2F%3E%3Cpath%20d%3D%22M200%2092%20V64%20M188%2076%20L200%2064%20L212%2076%22%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M164%20100%20Q140%20100%20142%2080%20Q144%2062%20164%2064%20Q170%2038%20198%2040%20Q222%2040%20228%2060%20Q256%2058%20258%2080%20Q258%20100%20236%20100%20Z%22%2F%3E%3Cpath%20d%3D%22M200%2092%20V64%20M188%2076%20L200%2064%20L212%2076%22%2F%3E%3C%2Fsvg%3E")}
 .ftcard{border-color:var(--accent)}
+.dishpic{flex:none;width:52px;height:52px;padding:3px;border-radius:14px;background:var(--accent-soft);color:var(--accent);border:0;display:inline-flex;align-items:center;justify-content:center;min-height:0}
+#dishview{position:fixed;inset:0;z-index:60;background:rgba(10,20,24,.55);display:flex;align-items:flex-end;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 0 0}
+#dishview .dvbox{background:var(--surface);width:100%;max-width:560px;max-height:100%;overflow:auto;border-radius:22px 22px 0 0;padding:18px max(18px,env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:10px;position:relative}
+#dishview .dvpic{display:flex;justify-content:center;background:var(--accent-soft);color:var(--accent);border-radius:18px;padding:18px}
+#dishview .dvx{position:absolute;top:10px;right:10px;width:40px;height:40px;min-height:0;padding:0;border-radius:50%}
+#dishview .btnlink{display:inline-flex;align-items:center;padding:10px 16px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;text-decoration:none}
+.chgplace{margin-top:10px}.chgplace summary{cursor:pointer;color:var(--accent);font-weight:700;padding:6px 0}
+.nowcard2{border:2px solid var(--accent);background:linear-gradient(var(--accent-soft),var(--surface));display:grid;gap:4px}
+.nowcard2 .nwhat{font:800 22px var(--display)}.nowcard2 .nleft{font:800 clamp(30px,10vw,38px) var(--mono);color:var(--accent);font-variant-numeric:tabular-nums}.nowcard2 .nleft small{font:700 14px var(--body);color:var(--muted)}
+.nowcard2 .nbar{display:block;height:7px;background:var(--line);border-radius:9px;overflow:hidden;margin:2px 0}.nowcard2 .nbar i{display:block;height:100%;background:var(--accent)}
+.ftclock{display:grid;gap:2px}.ftclock .k,.ftboxes .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.ftclock .big{font:800 clamp(34px,11vw,44px) var(--mono);font-variant-numeric:tabular-nums;line-height:1.1}
+.ftclock .bar{display:block;height:7px;background:var(--line);border-radius:9px;overflow:hidden;margin-top:4px}.ftclock .bar i{display:block;height:100%;background:var(--accent)}
+.ftboxes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ftboxes>div{display:grid;gap:1px;background:var(--bg);border-radius:12px;padding:8px 10px;min-width:0}
+.ftboxes>div.pred{background:var(--accent-soft)}.ftboxes .v{font:800 20px var(--mono);font-variant-numeric:tabular-nums}.ftboxes .pred .v{color:var(--accent)}.ftboxes .d{font-size:12px;color:var(--muted)}
 .ftcard .pass{border:0;padding:4px 2px;background:transparent;overflow:visible}
 .app.tzL .clk::after{content:"L";font-size:.55em;margin-left:2px;color:var(--muted);font-weight:700;letter-spacing:0}
 #lock[hidden]{display:none!important}
@@ -700,7 +715,9 @@ const NOTE_CATS=["Food","Coffee","Supermarket","Gym","Pharmacy","Sights","Tip"];
 function daysBetween(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/86400000)}
 function addDays(d,n){const x=new Date(d+"T00:00:00");x.setDate(x.getDate()+n);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
 function fmtDate(d,o){return new Date(d+"T00:00:00").toLocaleDateString("en-GB",o||{day:"numeric",month:"short",year:"numeric"})}
-function dutyHours(d){const [rh,rm]=(d.report||"0:0").split(":").map(Number),[oh,om]=(d.off||"0:0").split(":").map(Number);let m=(oh*60+om)-(rh*60+rm);if(m<=0)m+=1440;return m/60}
+// once every flight of the day has its on-block time (online or typed), duty is logged to on blocks + 30
+function actualOff(e){const sec=(e&&e.sectors||[]).filter(x=>x.arr);if(!sec.length||!sec.every(x=>x.onb))return "";const [h,m]=sec[sec.length-1].onb.split(":").map(Number);const t=(h*60+m+30)%1440;return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}
+function dutyHours(d){const [rh,rm]=(d.report||"0:0").split(":").map(Number),[oh,om]=(d.offAct||d.off||"0:0").split(":").map(Number);let m=(oh*60+om)-(rh*60+rm);if(m<=0)m+=1440;return m/60}
 function packFor(c0,city0,date0){
   const c=c0!==undefined?c0:S.trip.country,city=city0!==undefined?city0:S.trip.city,mo=new Date((date0||S.duty.date||today())+"T00:00:00").getMonth()+1;
   let climate;
@@ -845,7 +862,7 @@ function parseICS(text){
     const H=RZ()?hmZ:hm;return {date:o.date,kind,report:st?H(st):"",off:en?H(en):"",dest:kind==="flying"?(destFromSectors(o.sectors)||cityFrom(o.text.join(" "))):"",note:o.text.join(" · ").slice(0,120),sectors:o.sectors.sort((a,b)=>a.dep.localeCompare(b.dep))}});
 }
 function rosterAll(){/* manual duties plus roster flying/standby days, one per date */
-  const fromRoster=Object.entries(S.roster).filter(([d,e])=>isDutyK(e.kind)&&e.report&&e.off).map(([d,e])=>({id:"r"+d,date:d,report:e.report,off:e.off,fromRoster:true,kind:e.kind}));
+  const fromRoster=Object.entries(S.roster).filter(([d,e])=>isDutyK(e.kind)&&e.report&&e.off).map(([d,e])=>({id:"r"+d,date:d,report:e.report,off:e.off,offAct:actualOff(e),fromRoster:true,kind:e.kind}));
   const manual=S.duties.filter(x=>!fromRoster.some(r=>r.date===x.date));return manual.concat(fromRoster);
 }
 /* roster times are Zulu (UTC) by default; the app shows and plans in local time */
@@ -857,6 +874,16 @@ function l2r(date,t){t=cleanTime(t);if(!t||!RZ()||!date)return t||"";const d=new
 const hmL=d=>hm(d)+(RZ()?"L":"");
 const LL=()=>RZ()?" (L)":"";
 const hmZ=d=>String(d.getUTCHours()).padStart(2,"0")+":"+String(d.getUTCMinutes()).padStart(2,"0");
+// block times are always shown and typed in Zulu, whatever the roster uses
+function r2z(date,t){t=cleanTime(t);if(!t||!date)return t||"";return RZ()?t:hmZ(r2lDT(date,t))}
+function z2r(date,t){t=cleanTime(t);if(!t||!date)return t||"";if(RZ())return t;const [y,mo,da]=date.split("-").map(Number),[h,m]=t.split(":").map(Number);return hm(new Date(Date.UTC(y,mo-1,da,h,m)))}
+// local time at an airport: UK bases on UK time, islands on their own zone, the rest from the country
+const ISLAND_TZ={TFS:"Atlantic/Canary",TFN:"Atlantic/Canary",LPA:"Atlantic/Canary",ACE:"Atlantic/Canary",FUE:"Atlantic/Canary",SPC:"Atlantic/Canary",PDL:"Atlantic/Azores",TER:"Atlantic/Azores"};
+function aptTZ(code){code=String(code||"").toUpperCase();if(ISLAND_TZ[code])return ISLAND_TZ[code];if(BASE_CODES.includes(code)||/^(MAN|BHX|EMA|LBA|NCL|GLA|EDI|BRS|BFS|LPL|EXT|BOH|NWI|PIK|ABZ|INV|CWL|SOU|DSA|MME|HUY)$/.test(code))return "Europe/London";
+  try{const city=typeof IATA!=="undefined"&&IATA[code],c=city&&CITIES.find(x=>(x.name||x[0])===city),f=c&&CFACTS[c.country||c[1]];return f&&f.tz||""}catch(e){return ""}}
+function hmTZ(ms,tz){try{return new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(ms))}catch(e){return ""}}
+// "15:40Z" big with the airport's local time underneath
+function zlBox(ms,apt,extra){const tz=aptTZ(apt),l=tz?hmTZ(ms,tz):"";return `<span class="v">${hmZ(new Date(ms))}Z</span><span class="d">${l?l+"L":""}${extra?(l?" · ":"")+extra:""}</span>`}
 function useDay(d){
   const e=S.roster[d];if(!e)return;
   const R=t=>r2l(d,t);
@@ -1192,7 +1219,7 @@ function ocrClean(t){return String(t||"").split("\n").map(l=>l
   .replace(/\b(Stn|Lis|Bgy|Ber|Dub|Mad|Lpa|Alc|Arn|Nte|Opo|Agp|Ein|Hhn|Kir|Tfs)\b/g,m=>m.toUpperCase())
   .replace(/\s[=—–]+\s/g," → ")
   .replace(/\bF\s?R\s?S?([0-9SOEBIlGZ]{4})\b/g,(m,d)=>"FR"+d.replace(/S/g,"5").replace(/O/g,"0").replace(/[EG]/g,"6").replace(/B/g,"8").replace(/[Il]/g,"1").replace(/Z/g,"2"))).join("\n")}
-window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),careful:t=>rpZ(t).map(rpCareful)});
+window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{aptTZ:c=>aptTZ(c),ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),careful:t=>rpZ(t).map(rpCareful)});
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
     // each picture: read the cleaned-up version; if no roster days come out, try again another way and keep the best
@@ -1317,6 +1344,42 @@ function suggestSnacks(ws,only){const M=mealsState(),used={};
     for(let k=0;k<SNACK_N[t];k++){const c=pool.filter(n=>!pick.includes(n)).sort((a,b)=>(used[a]||0)-(used[b]||0)||(((i*31+k*17+a.length*7+a.charCodeAt(0))%23)-((i*31+k*17+b.length*7+b.charCodeAt(0))%23)))[0];if(c){pick.push(c);used[c]=(used[c]||0)+1}}
     M.snacks[d]=pick}}
 // full method online (meals are made at home, before the duty, so a link is fine)
+/* ---------- dish pictures: soft line drawings (no photos to download), tap for the full view ---------- */
+const DISH_SVG={
+ bowl:'<path d="M8 30h48c0 13-10 22-24 22S8 43 8 30z"/><path d="M22 52h20"/><path d="M18 30c2-6 6-9 10-9 3 0 5 2 6 4 2-3 5-5 9-4 4 1 6 5 6 9"/><circle cx="26" cy="26" r="1.6"/><circle cx="38" cy="25" r="1.6"/>',
+ wrap:'<path d="M14 46 40 14c4-4 10-2 11 3 1 4-1 7-4 9L20 52c-3 2-7 1-8-2-1-1 0-3 2-4z"/><path d="M40 14c-3 6-1 11 7 12"/><path d="M24 36l6 6M30 30l5 5"/>',
+ sandwich:'<path d="M10 34 32 16l22 18"/><path d="M10 34v6l22 8 22-8v-6"/><path d="M10 34c6 2 8-1 12 1s7 3 10 0 6-2 10 0 8-1 12-1"/><path d="M10 40l22 8 22-8"/>',
+ box:'<rect x="8" y="18" width="48" height="32" rx="6"/><path d="M30 18v32M30 34h26"/><circle cx="18" cy="30" r="3"/><circle cx="21" cy="40" r="3"/><path d="M38 24l4 4 4-4M42 40c3-3 7-3 9 0"/>',
+ muffin:'<path d="M16 34h32l-4 18H20z"/><path d="M14 34c0-9 8-16 18-16s18 7 18 16"/><path d="M24 34v18M32 34v18M40 34v18"/><circle cx="28" cy="25" r="1.5"/><circle cx="37" cy="27" r="1.5"/>',
+ bar:'<rect x="8" y="22" width="48" height="20" rx="5" transform="rotate(-12 32 32)"/><path d="M20 30l2 1M30 27l2 2M40 25l2 1M24 38l2 1M36 35l2 1"/>',
+ pasta:'<path d="M8 32h48c0 11-10 20-24 20S8 43 8 32z"/><path d="M14 32c4-8 8-8 10 0s6 8 8 0 6-8 8 0 6 8 8 0"/><path d="M44 10 34 28M50 12 38 29"/>',
+ soup:'<rect x="20" y="16" width="24" height="38" rx="6"/><rect x="22" y="9" width="20" height="7" rx="2"/><path d="M20 28h24M20 44h24"/><path d="M50 22c3 3 3 7 0 10"/>',
+ riceball:'<path d="M32 12 54 48c1 3-1 5-4 5H14c-3 0-5-2-4-5z"/><rect x="22" y="38" width="20" height="15" rx="2"/><circle cx="27" cy="28" r="1.4"/><circle cx="36" cy="25" r="1.4"/>',
+ tray:'<rect x="6" y="22" width="52" height="28" rx="5"/><path d="M6 30h52"/><ellipse cx="20" cy="40" rx="7" ry="5"/><circle cx="36" cy="40" r="4"/><circle cx="47" cy="38" r="3"/><circle cx="46" cy="45" r="2.5"/>',
+ pizza:'<path d="M32 10 54 50c-14 6-30 6-44 0z"/><path d="M14 44c12 4 24 4 36 0"/><circle cx="32" cy="26" r="3"/><circle cx="26" cy="38" r="3"/><circle cx="38" cy="39" r="3"/>',
+ noodles:'<path d="M8 32h48c0 11-10 20-24 20S8 43 8 32z"/><path d="M16 32c0-6 6-6 6 0M24 32c0-8 8-8 8 0M34 32c0-6 6-6 6 0"/><path d="M40 8 30 30M48 10 36 31"/><circle cx="46" cy="28" r="2"/>',
+ fruit:'<path d="M32 20c-8-6-20-2-20 12 0 12 9 22 15 22 2 0 3-1 5-1s3 1 5 1c6 0 15-10 15-22 0-14-12-18-20-12z"/><path d="M32 20c0-5 2-9 6-11"/><path d="M34 14c4-4 9-4 12-2-3 4-8 5-12 2z"/>',
+ egg:'<path d="M32 10c9 0 18 15 18 27 0 10-8 17-18 17s-18-7-18-17c0-12 9-27 18-27z"/><circle cx="32" cy="38" r="7"/>',
+ drink:'<path d="M18 16h28l-4 38H22z"/><path d="M19 26h26"/><path d="M36 16 42 6h6"/><circle cx="28" cy="36" r="1.5"/><circle cx="36" cy="42" r="1.5"/>',
+ nuts:'<path d="M10 40h44c0 7-8 13-22 13S10 47 10 40z"/><ellipse cx="22" cy="34" rx="6" ry="4"/><ellipse cx="34" cy="31" rx="6" ry="4" transform="rotate(20 34 31)"/><ellipse cx="44" cy="35" rx="5" ry="4"/><path d="M22 32v4M34 29v4"/>',
+ plate:'<circle cx="32" cy="34" r="20"/><circle cx="32" cy="34" r="12"/><path d="M8 12v12c0 3 2 4 4 4v26M12 12v10M16 12v12c0 3-2 4-4 4"/>'};
+function dishCat(n){n=String(n||"").toLowerCase();const T=[["drink",/smoothie|shake|latte/],["riceball",/onigiri|rice ball|sushi/],["wrap",/wrap|burrito(?! bowl)|tortilla|quesadilla|fajita/],["sandwich",/sandwich|bagel|toast|pitta(?! pizza)|panini|sub\b|roll\b|croissant/],["pizza",/pizza/],["muffin",/muffin|frittata|quiche|cake\b/],["bar",/bar\b|bars|flapjack|cookie|biscuit/],["noodles",/noodle|ramen|pad thai/],["pasta",/pasta|spaghetti|orzo|penne|lasagne|mac/],["soup",/soup|flask|stew|chilli|curry|dhal|dal\b|broth/],["tray",/tray|roast|bake|salmon|chicken thigh|fish/],["box",/box|bento|platter|crudit|picnic|veg stick|sugar snap|cheese cube|turkey slice/],["egg",/egg/],["fruit",/fruit|apple|banana|grape|berr|orange|melon|mango|pear|date|clementine|kiwi/],["nuts",/nut|trail|popcorn|cracker|rice cake|oatcake|crisps|seeds|edamame|olive|pretzel|crispbread|straw|biltong|seaweed|energy ball|chocolate|malt loaf/],["bowl",/bowl|oat|porridge|yoghurt|yogurt|salad|quinoa|couscous|poke|chia|granola|rice|bean/]];
+  const f=T.find(x=>x[1].test(n));return f?f[0]:"plate"}
+function dishSVG(n,size){return `<svg viewBox="0 0 64 64" width="${size||44}" height="${size||44}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DISH_SVG[dishCat(n)]}</svg>`}
+function dishThumb(n){return `<button class="dishpic" data-dish="${esc(n)}" aria-label="See ${esc(n)}: how to make it">${dishSVG(n)}</button>`}
+function mealInfo(n){for(const k of Object.keys(MEALS)){const m=MEALS[k].find(x=>x[0]===n);if(m)return m}return null}
+function openDish(n){const R=RECIPES[n]||{},m=mealInfo(n),old=document.getElementById("dishview");if(old)old.remove();
+  const q=i=>i[1]?(" "+(i[1]<1?i[1]:Math.round(i[1]*10)/10)+(i[2]?" "+i[2]:"")):"";
+  const el=document.createElement("div");el.id="dishview";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label",n);
+  el.innerHTML=`<div class="dvbox"><button class="ghost dvx" data-dvclose="1" aria-label="Close">✕</button><div class="dvpic">${dishSVG(n,180)}</div>
+    <h2 style="margin:0">${esc(n)}</h2>${m?`<p class="note" style="margin:0">${esc(m[2])}${R.keeps?" · keeps "+R.keeps+" day"+(R.keeps===1?"":"s"):""}</p>${m[1]!==R.how?`<p style="margin:0">${esc(m[1])}</p>`:""}`:R.keeps?`<p class="note" style="margin:0">Keeps ${R.keeps} day${R.keeps===1?"":"s"}</p>`:""}
+    ${R.ing&&R.ing.length?`<span class="label">You need (one portion)</span><ul class="plain">${R.ing.map(i=>`<li>${esc(i[0])}${esc(q(i))}</li>`).join("")}</ul>`:""}
+    ${R.how?`<span class="label">How to make it</span><p style="margin:0">${esc(R.how)}</p>`:""}
+    ${MEAL_LIQUID.includes(n)?`<p style="margin:0;font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</p>`:""}
+    <div class="btns" style="margin:0">${howLink(n).replace('class="note" style="margin:0"','class="btnlink"')}<button data-dvclose="1">Close</button></div></div>`;
+  el.addEventListener("click",e=>{if(e.target===el||e.target.closest("[data-dvclose]"))el.remove()});
+  (document.querySelector(".app")||document.body).appendChild(el);const b=el.querySelector(".dvx");if(b)b.focus()}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const d=document.getElementById("dishview");if(d)d.remove()}});
 function howLink(name){return `<a class="note" style="margin:0" href="https://www.google.com/search?q=${encodeURIComponent(name+" recipe")}" target="_blank" rel="noopener">How to make it ↗</a>`}
 function snacksFor(d){const M=mealsState();return (M.snacks[d]||[]).filter(Boolean)}
 const ALL_MEALS=()=>[].concat(...Object.keys(MEALS).map(k=>MEALS[k].map(m=>m[0])));
@@ -1352,7 +1415,7 @@ function viewMeals(){
       ${t?`<span class="note" style="align-self:center">Snacks</span><div style="display:flex;flex-direction:column;gap:4px;min-width:0">${[...Array(Math.max(SNACK_N[t],(M.snacks[d]||[]).length))].map((_,k)=>{const sn=(M.snacks[d]||[])[k]||"";return `<select data-msnack="${d}|${k}" aria-label="Snack ${k+1} for ${esc(d)}" style="min-width:0;font-size:14px"><option value="">No snack</option>${SNACK_NAMES.map(n=>`<option ${sn===n?"selected":""}>${esc(n)}</option>`).join("")}</select>`}).join("")}</div>`:""}</div>`}).join("")}</div>
     <div class="btns" style="margin:0"><button data-msuggest="${ws}">Suggest again</button></div>
   </section>
-  ${bn.length?`<section class="card"><h2>Prep plan</h2><p class="note" style="margin:0">Make these in batches so you're not cooking every day.</p><div>${bn.map(x=>`<div class="ex"><b>${esc(x.m)}</b><span class="note">${x.groups.map(g=>g.length>1?`Make ${g.length} portions on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${g.map(d=>fmtDate(d,{weekday:"short"})).join(", ")}`:`Make on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${fmtDate(g[0],{weekday:"short"})}`).join(" · ")}. Keeps ${(RECIPES[x.m]||{}).keeps||1} day${((RECIPES[x.m]||{}).keeps||1)===1?"":"s"}.</span><span class="note">${esc((RECIPES[x.m]||{}).how||"")}</span></div>`).join("")}</div></section>`:""}
+  ${bn.length?`<section class="card"><h2>Prep plan</h2><p class="note" style="margin:0">Make these in batches so you're not cooking every day.</p><div>${bn.map(x=>`<div class="ex"><div style="display:flex;gap:10px;align-items:center">${dishThumb(x.m)}<b>${esc(x.m)}</b></div><span class="note">${x.groups.map(g=>g.length>1?`Make ${g.length} portions on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${g.map(d=>fmtDate(d,{weekday:"short"})).join(", ")}`:`Make on ${fmtDate(addDays(g[0],-1),{weekday:"short"})} for ${fmtDate(g[0],{weekday:"short"})}`).join(" · ")}. Keeps ${(RECIPES[x.m]||{}).keeps||1} day${((RECIPES[x.m]||{}).keeps||1)===1?"":"s"}.</span><span class="note">${esc((RECIPES[x.m]||{}).how||"")}</span></div>`).join("")}</div></section>`:""}
   <section class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Shopping list</h2><span class="chip">${left} to buy</span></div>
     ${list.length?AISLES.map((a,ai)=>{const L=list.filter(x=>x.a===ai);return L.length?`<span class="label">${esc(a)}</span><div>${L.map(x=>`<label class="chk ${M.got[x.key]?"done":""}"><input type="checkbox" ${M.got[x.key]?"checked":""} data-mgot="${esc(x.key)}"><span>${esc(x.it)} <b>${esc(qty(x))}</b><span class="note" style="display:block">${esc(x.for.join(", "))}</span></span></label>`).join("")}</div>`:""}).join(""):`<p class="note">Pick some meals above and the list fills in.</p>`}
@@ -2495,7 +2558,7 @@ function calledCard(){
     <button class="danger bigbtn" id="called">I've been called</button>
   </section>`;
 }
-function fmtCD(ms){const t=Math.max(0,Math.round(ms/1000));return Math.floor(t/3600)+":"+String(Math.floor(t%3600/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}
+function fmtCD(ms,short){const t=Math.max(0,Math.round(ms/1000));if(short&&t<3600)return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");return Math.floor(t/3600)+":"+String(Math.floor(t%3600/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}
 function cdCell(label,to,sub,hl){sub=RZ()?String(sub).replace(/(\d\d:\d\d)(?![\d:])/g,"$1L"):sub;return `<div><span class="k">${label}</span><span class="v ${hl?"hl":""}" data-cdto="${to.getTime()}">${fmtCD(to-Date.now())}</span><span class="d">${sub}</span></div>`}
 function cdSince(label,from,sub){sub=RZ()?String(sub).replace(/(\d\d:\d\d)(?![\d:])/g,"$1L"):sub;return `<div><span class="k">${label}</span><span class="v" data-cdfrom="${from.getTime()}">${fmtCD(Date.now()-from)}</span><span class="d">${sub}</span></div>`}
 function calledOutBody(){
@@ -2686,6 +2749,34 @@ function saveToday(){
   else{S.standby.calledAt=null;if(!entry.dest&&!(entry.sectors||[]).length){S.trip.city="";S.trip.country="Other"}useDay(t);if(k==="standby"){S.standby.start=st;S.standby.end=en}if(k==="asby")S.duty.end=en;delete S.duty.calledFrom}
   S.foldDay="";ET={open:false};return ""
 }
+/* ---------- Today: what to do now, with the time left ---------- */
+function nowItems(p){const it=[];if(p.split)it.push({at:p.wake,label:"Wake up · free time"});
+  S.steps.forEach((s,i)=>{if(p.times[i])it.push({at:p.times[i],label:s.label})});
+  it.push({at:p.leave,label:"Leave the house",key:1});
+  if(p.tr&&p.tr.chosen)it.push({at:p.tr.chosen.dep,label:"Catch the "+(p.tr.rk==="bus"?"bus":"train")+(p.tr.chosen.n?" "+p.tr.chosen.n:""),key:1});
+  it.push({at:p.rep,label:"Report",key:1});
+  return it.filter(x=>x.at&&!isNaN(x.at)).sort((a,b)=>a.at-b.at)}
+function nowCardHTML(o){const pct=o.from&&o.to?Math.max(2,Math.min(100,Math.round((Date.now()-o.from)/(o.to-o.from)*100))):0;
+  return `<section class="card nowcard2" role="status"><span class="label">${o.lab||"Now"}</span><b class="nwhat">${esc(o.title)}</b>
+    ${o.to?`<span class="nleft"><span data-cdto="${o.to.getTime?o.to.getTime():o.to}" data-s>${fmtCD(o.to-Date.now(),1)}</span> <small>${esc(o.unit||"left")}</small></span>`:""}
+    ${pct?`<span class="nbar"><i style="width:${pct}%"></i></span>`:""}
+    ${o.lines?o.lines.map(l=>`<span class="note" style="margin:0">${l}</span>`).join(""):""}${o.btn||""}</section>`}
+function nowBefore(p){const now=Date.now(),it=nowItems(p),ci=it.map(x=>x.at.getTime()<=now).lastIndexOf(true),cur=ci>=0?it[ci]:null,nx=it[ci+1];
+  if(!nx)return "";const key=it.slice(ci+1).find(x=>x.key&&x!==nx),lines=[];
+  if(cur)lines.push(`Next: ${esc(nx.label)} at ${hmL(nx.at)}`);
+  if(key)lines.push(`<b>${esc(key.label)}</b> at ${hmL(key.at)} · ${fmtIn(key.at-now)} left`);
+  return nowCardHTML(cur?{lab:"Now"+(ci>=0?" · step "+(ci+1)+" of "+it.length:""),title:cur.label,from:cur.at,to:nx.at,unit:"left",lines}
+    :{lab:"Next",title:nx.label+" at "+hmL(nx.at),to:nx.at,unit:"to go",lines})}
+function nowDuty(p){const now=Date.now(),{t,secs,ft,i}=ftState(),x=i>=0?secs[i]:null,running=ft&&ft.start&&!ft.stop,trip=on("tab_trip")?`<div class="btns" style="margin:0"><button data-tab="trip">Open Trip</button></div>`:"";
+  if(running&&x){const end=new Date(ft.start+ft.est*60000);return nowCardHTML({lab:"Flying",title:(x.flt||"Flight")+" "+x.from+"→"+x.to,from:new Date(ft.start),to:end,unit:"to on blocks ("+hmZ(end)+"Z)",lines:[`Duty ends about ${hmZ(new Date(end.getTime()+30*60000))}Z`],btn:trip})}
+  const allIn=secs.length&&secs.every((y,j)=>y.onb||ftDone(t).includes(j)),h=homeRide(),end=homeEnd();
+  if(allIn&&h&&h.dep&&!h.caught&&h.dep>now)return nowCardHTML({lab:"Now",title:"Catch the "+String(h.name||"train").toLowerCase()+" home",to:new Date(h.dep),unit:"to the "+hm(new Date(h.dep))+"L",lines:[end?`Duty ends ${hmL(end)}, but you can head off now`:""].filter(Boolean),btn:`<div class="btns" style="margin:0"><button class="primary" data-hcaught="1">Caught it</button><button class="ghost" data-hmiss="1">Missed it</button></div>`});
+  if(allIn&&end&&end>now)return nowCardHTML({lab:"Now",title:"Disembark and check",to:end,unit:"to off duty",lines:[]});
+  if(x&&x.dep&&x.arr&&!x.onb){const std=r2lDT(t,x.dep);let sta=r2lDT(t,x.arr);if(sta<std)sta=new Date(sta.getTime()+86400000);if(std<=now&&sta>now)return nowCardHTML({lab:"Flying (by the schedule)",title:(x.flt||"Flight")+" "+x.from+"→"+x.to,from:std,to:sta,unit:"to on blocks ("+r2z(t,x.arr)+"Z)",lines:["Start the timer on Trip, or add a flight key, for real times."],btn:trip})}
+  if(x&&x.dep){const std=r2lDT(t,x.dep);if(std>now)return nowCardHTML({lab:"Next flight",title:(x.flt||"Flight")+" "+x.from+"→"+x.to,to:std,unit:"to STD "+r2z(t,x.dep)+"Z",lines:[],btn:trip})}
+  return nowCardHTML({lab:"Now",title:"On duty",to:fdpEnd(),unit:"FDP left",lines:[],btn:trip})}
+function comingUpBody(p){const now=Date.now();return `<div>${nowItems(p).map(x=>{const past=x.at.getTime()<=now;return `<div class="tip" style="align-items:center;${past?"opacity:.45":""}"><span class="t clk">${hm(x.at)}</span><span style="flex:1">${x.key?"<b>":""}${esc(x.label)}${x.key?"</b>":""}</span><span class="note" style="margin:0;white-space:nowrap">${past?"done":"in "+fmtIn(x.at-now)}</span></div>`}).join("")}</div>`}
+function comingUpHint(p){return "leave "+hm(p.leave)+(p.tr&&p.tr.chosen?" · "+(p.tr.rk==="bus"?"bus":"train")+" "+p.tr.chosen.t:"")}
 function viewToday(){
   const d=S.duty,ph=phaseOf(),sb=d.kind==="standby",now=new Date(),F=k=>k+"|"+ph;
   const head=(h,sub)=>`<header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="min-width:0"><h1>${h}</h1><p class="sub">${sub}</p>${homeClockNote()}</div><button class="${ET.open?"":"ghost"}" id="etopen" aria-expanded="${!!ET.open}" style="flex:none;position:relative;z-index:1;background:var(--surface);border:1px solid var(--line)">${ET.open?"Close":"Change"}</button></header>${ET.open?editTodayCard():""}${setupCard()}`;
@@ -2738,20 +2829,17 @@ function viewToday(){
     <button class="primary" id="asbycall" style="min-height:56px;font-size:17px">I've been called to fly</button></section>
   ${nudgeCard("asby",{rep:p.rep})}`;
   return head(asb?"Airport standby":trg?"Training day":adt?"Airport duty":"Duty day",(asb?"Standby ":trg?"Training ":adt?"Starts ":"Report ")+hm(p.rep)+(asb||trg||adt?"–"+esc(d.end||""):"")+(RZ()?"L":"")+(asb||trg||adt?"":dest?" · "+esc(dest):"")+(trg&&d.loc?" · "+esc(d.loc):""))+todayAlerts(p)+`
-  ${ph==="duty"?`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdSince("On duty",p.rep,"since "+hm(p.rep))}${cdCell("FDP left",fdpEnd(),"ends by "+hm(fdpEnd()),true)}</section>`:`<section class="pass" aria-label="Your duty">
-    ${cell("ready","Wake up",p.first,day(p.first))}
-    ${cell("go","Leave by",p.leave,esc(p.tr&&p.tr.chosen?(p.tr.rk==="bus"?"Bus ":"Train ")+p.tr.chosen.t:modeName(RK.includes(d.mode)?"driving":d.mode)))}
-    ${cell("duty",asb?"Standby":trg?"Start":"Report",p.rep,esc(placeOf(d).split(" ").slice(0,2).join(" ")))}
-  </section>${leaveWhy(p)}`}
-  ${ph==="duty"&&homeEnd()&&Date.now()>=homeEnd().getTime()-3*3600000?homeCard():""}
-  <section class="card nowcard" role="status"><span class="label">Now</span><b>${esc(stage[0])}</b><span class="note" style="margin:0">${ph==="duty"?"Live flights, water and timers are on Trip.":"In "+fmtIn(stage[1]-now)}</span>${ph==="duty"&&on("tab_trip")?`<button class="primary" data-tab="trip" style="justify-self:start">Open Trip</button>`:""}</section>
+  ${ph==="duty"?nowDuty(p):nowBefore(p)}
+  ${ph==="duty"?fold(F("dutytimes"),"Duty times",()=>`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr));border:0;padding:0">${cdSince("On duty",p.rep,"since "+hm(p.rep))}${cdCell("FDP left",fdpEnd(),"ends by "+hm(fdpEnd()),true)}</section>${homeEnd()?`<p class="note" style="margin:0">Duty ends ${hmL(homeEnd())} · ${hmZ(homeEnd())}Z (on blocks + 30)</p>`:""}`,false,"FDP left "+fmtIn(fdpEnd()-Date.now()))
+    :fold(F("coming"),"Coming up",()=>comingUpBody(p)+leaveWhy(p),false,comingUpHint(p))}
+  ${ph==="duty"&&homeEnd()&&Date.now()>=homeEnd().getTime()-3*3600000&&homeCard()?fold(F("home"),"Getting home",()=>homeCard().replace(/^<section class="card"><h2>Getting home<\/h2>/,"").replace(/<\/section>$/,""),false,(()=>{const h=homeRide();return h&&h.dep?String(h.name||"").toLowerCase()+" "+hm(new Date(h.dep)):""})()):""}
   ${["soon","ready","go"].includes(ph)?aircraftCard():""}
   ${ph==="go"?ccBar(ph):""}
   ${ph==="ready"||ph==="go"?nudgeCard(ph,{city:dutyCity(S.duty)||S.trip.city,from:p.leave,to:p.rep,land:landTime(S.duty,p.rep)}):ph==="duty"?nudgeCard("duty",{rep:p.rep}):""}
   ${ph==="duty"?"":`
-  ${fold(F("morning"),"Wake up and get ready",()=>morningBody(p),ph==="soon"||ph==="ready",ph==="go"?"Done":"First alarm "+hm(p.first))}
-  ${on("core")?fold(F("core"),"Before you leave",coreBody,ph==="ready",c.length&&cd===c.length?"All set":cd+" of "+c.length):""}
-  ${on("travel")?fold(F("travel"),"Getting there",travelBody,ph==="go",ph==="go"?"":"Opens at "+hm(leaveOpen)):""}
+  ${fold(F("morning"),"Wake up and get ready",()=>morningBody(p),false,ph==="go"?"Done":"First alarm "+hm(p.first))}
+  ${on("core")?fold(F("core"),"Before you leave",coreBody,false,c.length&&cd===c.length?"All set":cd+" of "+c.length):""}
+  ${on("travel")?fold(F("travel"),"Getting there",travelBody,false,ph==="go"?"":"Opens at "+hm(leaveOpen)):""}
 `}
   ${fold(F("details"),"Duty details",dutyDetailsBody,false,esc(d.report)+(S.roster[d.date]&&(S.roster[d.date].sectors||[]).length?" · "+S.roster[d.date].sectors.length+" sectors":""))}`;
 }
@@ -3071,7 +3159,11 @@ function wordsBody(){const P=PHRASES[S.trip.country],C=CS[S.trip.country];if(!P)
   ${sayMsg?`<p class="note" style="margin:0" role="status">${esc(sayMsg)}</p>`:""}
   ${C?`<span class="label">On board · ${esc(P.lang)}</span><div>${CS_KEYS.map((k,i)=>row(k,C[i],"cs|"+i)).join("")}</div>`:""}
   <span class="label">Out and about</span><div>${PHRASE_KEYS.map((k,i)=>row(k,P.p[i],"p|"+i)).join("")}</div>`}
+// the destination comes from today's flights (first place away from base); crew can still change it in Facts
+function tripAutoDest(){try{const d=S.duty;if(!d.date)return;const c=dutyCity(d);if(!c)return;const k=d.date+"|"+c;if(S.trip.auto===k)return;
+  const m=CITIES.find(x=>(x.name||x[0])===c);S.trip.city=c;if(m)S.trip.country=m.country||m[1];S.trip.auto=k}catch(e){}}
 function viewTrip(){
+  tripAutoDest();
   const ph=phaseOf(),now=new Date(),r=S.roster[S.duty.date],sec=(r&&r.kind==="flying"&&r.sectors)||[],first=sec.find(x=>x.flt);
   const w=S.water,dest=S.trip.city||(S.trip.country!=="Other"?S.trip.country:""),P=PHRASES[S.trip.country];
   const running=(S.timers||[]).filter(t=>t.end>Date.now()).length;
@@ -3089,17 +3181,16 @@ function viewTrip(){
   const showFt=on("ftimer")&&(((S.duty.date===today()||ph==="duty")&&S.duty.kind==="flying"&&["soon","ready","go","duty"].includes(ph))||(S.ft&&S.ft.start&&!S.ft.stop));
   return `<header><h1>Trip</h1><p class="sub">${dest?"Today: "+esc(dest):"What you need on duty and away"}</p></header>
   ${showFt?flightTimerCard():""}
-  ${(()=>{if(ph!=="duty"||!sec.length)return "";const last=sec[sec.length-1],ft=S.ft;const onLast=(ft&&ft.start&&!ft.stop&&ft.i===sec.length-1)||(last.offb&&!last.onb)||(last.dep&&Date.now()>=r2lDT(S.duty.date,last.dep).getTime());return onLast?homeCard():""})()}
+  ${(()=>{if(ph!=="duty"||!sec.length)return "";const last=sec[sec.length-1],ft=S.ft;const onLast=(ft&&ft.start&&!ft.stop&&ft.i===sec.length-1)||(last.offb&&!last.onb)||(last.dep&&Date.now()>=r2lDT(S.duty.date,last.dep).getTime());const hc=onLast?homeCard():"";return hc?fold("home","Getting home",()=>homeCard().replace(/^<section class="card"><h2>Getting home<\/h2>/,"").replace(/<\/section>$/,""),false,(()=>{const h=homeRide();return h&&h.dep?String(h.name||"").toLowerCase()+" "+hm(new Date(h.dep)):""})()):""})()}
   ${clock}
   ${on("trip_flights")&&sec.length?fold("flights","My flights",tripFlightsBody,["soon","ready","go","duty"].includes(ph),sec.length+" sector"+(sec.length===1?"":"s")):""}
   ${on("weather")?fold("wxtoday","Weather today",()=>wxDayBody(today(),dutyCity(S.duty)||S.trip.city).html+`<p class="note" style="margin:0">Tomorrow's weather is on Plan.</p>`,false,""):""}
   ${S.profile.role==="pilot"&&on("pilot")?fold("pilot","Pilot briefing",pilotBody,false,"Wind and runways"):""}
-  ${on("more_water")?fold("water","Water",waterBody,true,w.ml+" / "+w.goal+" ml"):""}
+  ${on("more_water")?fold("water","Water",waterBody,false,w.ml+" / "+w.goal+" ml"):""}
   ${on("notebook")?fold("notebook","Notebook",notebookBody,false,(()=>{const N=nbOf(nbKey()),left=N.items.filter(x=>!x.done).length;return N.items.length?left+" to do":N.text?"Notes saved":"Notes and lists"})()):""}
   ${on("timers")?fold("timers","Timers",timersBody,running>0,running?running+" running":""):""}
   ${on("moves")?fold("moves","Exercises and stretches",movesBody,false,"On board, after, layover"):""}
-  ${fold("dest","Destination",destPick,!dest,dest?esc(dest):"Not set")}
-  ${on("destfacts")?fold("destfacts","Facts and what's on",factsBody,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
+  ${on("destfacts")?fold("destfacts","Facts and what's on",()=>factsBody()+`<details class="chgplace"${dest?"":" open"}><summary>${dest?"Change place ("+esc(dest)+")":"Choose a place"}</summary>${destPick}</details>`,false,(dlGet(S.trip.city)||{}).ok?"Saved for offline":(CFACTS[S.trip.country]||DFACTS[S.trip.city])?"Works offline":""):""}
   ${on("words")?fold("words","Useful words",wordsBody,false,P?esc(P.lang):""):""}
   ${on("more_currency")?fold("currency","Currency",viewCurrency,false,(CURRENCY[S.trip.country]||"")):""}
   ${on("more_news")?fold("news","News",viewNews,false,((newsCache()||{}).items||[]).length?(newsCache().items.length+" saved for offline"):""):""}`;
@@ -3107,9 +3198,9 @@ function viewTrip(){
 function addM(t,m){const [h,mi]=t.split(":").map(Number);let x=((h*60+mi+m)%1440+1440)%1440;return String(Math.floor(x/60)).padStart(2,"0")+":"+String(x%60).padStart(2,"0")}
 function vsSched(t,sta){let d=blockMins({dep:sta,arr:t});if(d>720)d-=1440;return d===0?"on time":Math.abs(d)+" min "+(d>0?"late":"early")}
 function blockNote(x,pb,ab){
-  const dt=S.duty.date||today(),L=RZ()?"L":"";
-  if(x.onb&&x.arr)return `<p style="margin:0"><b>On blocks ${r2l(dt,x.onb)}${L}</b>: ${vsSched(x.onb,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled.</p>`;
-  const bm=x.est||pb;if(x.offb&&bm){const eta=addM(x.offb,bm);return `<p style="margin:0"><b>Expected on blocks ${r2l(dt,eta)}${L}</b>${x.arr?`: ${vsSched(eta,x.arr)} against ${r2l(dt,x.arr)}${L} scheduled`:""}. Based on ${x.est?"today's "+fmtMins(bm)+" block from the briefing":"the planned "+fmtMins(bm)+" block"}.</p>`}
+  const dt=S.duty.date||today(),L="Z";
+  if(x.onb&&x.arr)return `<p style="margin:0"><b>On blocks ${r2z(dt,x.onb)}${L}</b>: ${vsSched(x.onb,x.arr)} against ${r2z(dt,x.arr)}${L} scheduled.</p>`;
+  const bm=x.est||pb;if(x.offb&&bm){const eta=addM(x.offb,bm);return `<p style="margin:0"><b>Expected on blocks ${r2z(dt,eta)}${L}</b>${x.arr?`: ${vsSched(eta,x.arr)} against ${r2z(dt,x.arr)}${L} scheduled`:""}. Based on ${x.est?"today's "+fmtMins(bm)+" block from the briefing":"the planned "+fmtMins(bm)+" block"}.</p>`}
   return "";
 }
 /* ---------- flight timer: block time from the briefing, start at taxi ---------- */
@@ -3183,10 +3274,10 @@ function aircraftCard(){const t=S.duty&&S.duty.date,d=t&&S.roster[t];if(!d||d.ki
   if(!regs.length)return key?`<section class="card"><span class="label">Your aircraft</span><p class="note" style="margin:0">Not assigned yet. From 3 hours before departure the app checks once an hour while it's open.</p></section>`:"";
   return `<section class="card"><span class="label">Your aircraft</span>${regs.map(r=>{const legs=d.sectors.filter(x=>x.reg===r).map(x=>esc(x.flt||"")).join(", ");return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span><b>${esc(r.replace(/^(9H|EI|SP|OE|HB)(?=[A-Z]{3}$)/,"$1-").replace(/^G(?=[A-Z]{4}$)/,"G-"))}</b> <span class="note">${legs}</span></span><a class="btn" style="text-decoration:none" href="https://www.flightradar24.com/data/aircraft/${encodeURIComponent(r.toLowerCase())}" target="_blank" rel="noopener">Where is it now ↗</a></div>`}).join("")}
     <p class="note" style="margin:0">See if it's on time while you're on your way in.</p></section>`}
-function ftLiveHTML(x,running){if(!x||!x.flt)return "";const L=ftLiveOf(cleanFlt(x.flt)),key=(S.me.flightKey||"").trim(),t2=v=>v?hm(new Date(v)):"";
+function ftLiveHTML(x,running){if(!x||!x.flt)return "";const L=ftLiveOf(cleanFlt(x.flt)),key=(S.me.flightKey||"").trim(),t2=v=>v?hmZ(new Date(v))+"Z":"";
   return `<div class="seccard" style="margin:0"><span class="label">Live times · trial</span>
     ${L?`<p style="margin:0">${L.depAct?`Off blocks <b>${t2(L.depAct)}</b>`:L.depEst?`Expected off blocks <b>${t2(L.depEst)}</b>`:`Scheduled ${t2(L.depSched)}`}${L.arrAct?` · landed <b>${t2(L.arrAct)}</b>`:L.arrEst?` · expected on blocks <b>${t2(L.arrEst)}</b>`:""}</p>
-      <p class="note" style="margin:0">Checked ${t2(L.at)}${L.status?" · "+esc(L.status):""}.${L.depAct&&running?(S.ft&&S.ft.auto?" The timer started by itself from the real off-block time.":" The timer is set from the real off-block time."):""}</p>
+      <p class="note" style="margin:0">Checked ${hm(new Date(L.at))}${L.status?" · "+esc(L.status):""}.${L.depAct&&running?(S.ft&&S.ft.auto?" The timer started by itself from the real off-block time.":" The timer is set from the real off-block time."):""}</p>
       ${L.depAct&&!running?`<div class="btns" style="margin:0"><button data-ftlivego="1">Start the timer from off blocks ${t2(L.depAct)}</button></div>`:""}`
     :`<p class="note" style="margin:0">${key?"Keep Crew Day open on Trip during boarding or taxi: from 10 minutes before departure it checks the flight and starts the timer by itself from the real off-block time.":"Add a free flight lookup key in Profile › Flight lookup to try this."}</p>`}
     ${ftLiveMsg?`<p class="note" style="margin:0" role="status">${esc(ftLiveMsg)}</p>`:""}
@@ -3202,24 +3293,33 @@ function flightTimerCard(){
   const nameOf=y=>(y.typ==="dh"?"Deadhead ":y.typ==="gt"?"🚌 ":"")+(y.flt||(y.typ==="gt"?"Transfer":"Flight"))+" "+y.from+"→"+y.to;
   const last=S.ftLast&&S.ftLast.date===t?S.ftLast:null;
   if(running){let end=new Date(ft.start+ft.est*60000);if(x&&x.ctot){const sl=new Date(r2lDT(t,x.ctot).getTime()+(ft.est-15)*60000);if(sl>end)end=sl}
+    const fromA=x?x.from:"",toA=x?x.to:"";
     return `<section class="card ftcard"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>${x?esc(nameOf(x)):"Flight timer"}</h2><span class="chip">Block ${fmtMins(ft.est)}</span></div>
-      <div class="pass" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:0">${cdSince("Block so far",new Date(ft.start),"taxi "+hm(new Date(ft.taxi||ft.start+TAXI_BUF*60000))+" · off blocks ~"+hm(new Date(ft.start)))}${cdCell("Block left",end,"on blocks ~"+hm(end),true)}</div>
-      ${x&&x.ctot?`<p class="note" style="margin:0">Slot ${r2l(t,x.ctot)}${RZ()?"L":""}: ${slotLine(t,x)}</p>`:""}
+      <div class="ftclock"><span class="k">Block so far</span><span class="big" data-cdfrom="${ft.start}">${fmtCD(Date.now()-ft.start)}</span><span class="bar"><i style="width:${Math.max(2,Math.min(100,Math.round((Date.now()-ft.start)/(end-ft.start)*100)))}%"></i></span></div>
+      <div class="ftboxes"><div><span class="k">Off blocks</span>${zlBox(ft.start,fromA,ft.liveSet?"online":"taxi − "+TAXI_BUF+" min")}</div>
+        <div class="pred"><span class="k">Predicted on</span>${zlBox(end.getTime(),toA)}<span class="d"><b data-cdto="${end.getTime()}">${fmtCD(end-Date.now())}</b> left</span></div></div>
+      <p class="note" style="margin:0">Duty ends about <b>${hmZ(new Date(end.getTime()+30*60000))}Z</b> (on blocks + 30)${aptTZ(toA)?" · "+hmTZ(end.getTime()+30*60000,aptTZ(toA))+"L":""}</p>
+      ${x&&x.ctot?`<p class="note" style="margin:0">Slot ${r2z(t,x.ctot)}Z: ${slotLine(t,x)}</p>`:""}
       ${ftLiveHTML(x,true)}
       ${liveMode()&&ft.liveSet?`<p class="note" style="margin:0">Running from online times. It stops by itself once the landing time is online.</p><div class="btns" style="margin:0"><button class="ghost" id="ftstop">Stop now</button><button class="ghost" id="ftundo">Cancel the timer</button></div>`:`<button class="primary bigbtn" id="ftstop">On blocks</button>
       <div class="btns" style="margin:0"><button id="ftrestart">Pressed too early? Restart from taxi now</button><button class="ghost" id="ftundo">Cancel the timer</button></div>`}</section>`}
   if(!x&&secs.length&&!ft)return last?`<section class="card ftcard"><h2>Flights done</h2><p style="margin:0">Last block ${fmtMins(last.block)}${last.est?" ("+(last.block>last.est?"+":last.block<last.est?"−":"±")+fmtMins(Math.abs(last.block-last.est))+" against "+fmtMins(last.est)+")":""}.</p></section>`:"";
   return `<section class="card ftcard">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h2>Flight timer</h2>${last?`<span class="chip">Last block ${fmtMins(last.block)}${last.est?" · "+(last.block>last.est?"+":last.block<last.est?"−":"±")+Math.abs(last.block-last.est)+" min":""}</span>`:""}</div>
-    ${secs.length>1?`<div class="btns" style="margin:0">${secs.map((y,j)=>`<button class="pick" aria-pressed="${j===i}" data-ftsec="${j}" ${y.onb?"disabled":""}>${esc(nameOf(y))}${y.onb?" ✓":""}</button>`).join("")}</div>`:x?`<p style="margin:0"><b>${esc(nameOf(x))}</b>${x.dep?` · sched ${r2l(t,x.dep)}${RZ()?"L":""}`:""}</p>`:""}
+    ${secs.length>1?`<div class="btns" style="margin:0">${secs.map((y,j)=>`<button class="pick" aria-pressed="${j===i}" data-ftsec="${j}" ${y.onb?"disabled":""}>${esc(nameOf(y))}${y.onb?" ✓":""}</button>`).join("")}</div>`:x?`<p style="margin:0"><b>${esc(nameOf(x))}</b></p>`:""}
+    ${landedBox(t,secs,i)}
+    ${x&&x.dep&&x.arr?(()=>{const d0=r2lDT(t,x.dep);let a0=r2lDT(t,x.arr);if(a0<d0)a0=new Date(a0.getTime()+86400000);return `<div class="ftboxes"><div><span class="k">Sched off</span>${zlBox(d0.getTime(),x.from)}</div><div><span class="k">Sched on</span>${zlBox(a0.getTime(),x.to)}</div></div>`})():""}
     <div class="row2"><div class="field"><label for="ft-est">Block time today</label><input id="ft-est" type="text" inputmode="numeric" placeholder="e.g. 2:35" value="${est?fmtMins(est):""}"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">From the briefing.${x&&blockMins(x)?" Planned "+fmtMins(blockMins(x))+".":""}</span></div></div>
-    ${x?`<div class="row2"><div class="field"><label for="ft-slot">Slot (CTOT)${RZ()?" L":""}</label><input id="ft-slot" type="time" value="${x.ctot?r2l(t,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">${x.ctot?slotLine(t,x):"Add it if ATC gives you one. The landing estimate then moves with it."}</span></div></div>`:""}
+    ${x?`<div class="row2"><div class="field"><label for="ft-slot">Slot (CTOT) Z</label><input id="ft-slot" type="time" value="${x.ctot?r2z(t,x.ctot):""}" data-secf="${i}:ctot"></div><div class="field" style="align-self:end"><span class="note" style="margin:0">${x.ctot?slotLine(t,x):"Add it if ATC gives you one. The landing estimate then moves with it."}</span></div></div>`:""}
     ${ftLiveHTML(x,false)}
     ${liveMode()?`<p class="note" style="margin:0">With your flight key, times come from online: no buttons needed. Have Crew Day open during boarding or taxi.</p><div class="btns" style="margin:0"><button class="ghost" id="ftmanual">No signal? Start by hand instead</button></div>`:`<button class="primary bigbtn" id="ftgo">Start at taxi</button>
     <p class="note" style="margin:0">Block time counts from pushback, so the timer adds the ${TAXI_BUF} minutes before taxi.</p>`}
     ${last&&last.prev?`<div class="btns" style="margin:0"><button class="ghost" id="ftunstop">Pressed On blocks by mistake? Carry on timing</button></div>`:""}
   </section>`;
 }
+// the flight just finished: block time with off and on blocks in Zulu
+function landedBox(t,secs,i){const j=(i>=0?i:secs.length)-1,y=j>=0?secs[j]:null;if(!y||!y.offb||!y.onb)return "";const o=r2lDT(t,y.offb);let n=r2lDT(t,y.onb);if(n<o)n=new Date(n.getTime()+86400000);
+  return `<div class="seccard" style="margin:0"><span class="label">Last flight · ${esc(y.flt||"")} ${esc(y.from)}→${esc(y.to)} · block ${fmtMins(Math.round((n-o)/60000))}</span><div class="ftboxes"><div><span class="k">Off blocks</span>${zlBox(o.getTime(),y.from)}</div><div><span class="k">On blocks</span>${zlBox(n.getTime(),y.to)}</div></div>${y.offbLive||y.onbLive?`<span class="note" style="margin:0">Filled in from online. Change it in My flights if yours differs.</span>`:""}</div>`}
 // slot: how it moves the day (taxi-out ~15 min is a planning figure)
 function slotLine(t,x){const now=new Date(),sl=r2lDT(t,x.ctot),mins=Math.round((sl-now)/60000),std=x.dep?r2lDT(t,x.dep):null,late=std?Math.round((sl-std)/60000)-15:0;
   const bm=blockMins(x)||x.est||0,land=bm?new Date(sl.getTime()+(bm-15)*60000):null;
@@ -3229,11 +3329,11 @@ function tripFlightsBody(){
   if(!sec.length)return `<p class="note" style="margin:0">Add today's flights in More › Roster and they show here.</p>`;
   let tot=0,plan=0;
   const rows=sec.map((x,i)=>{const pb=blockMins(x),ab=x.offb&&x.onb?blockMins({dep:x.offb,arr:x.onb}):0,op=!x.typ||x.typ==="op";if(op){plan+=pb;tot+=ab}
-    return `<div class="seccard"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${x.typ==="dh"?"Deadhead ":x.typ==="gt"?"🚌 ":""}${esc(x.flt||(x.typ==="gt"?"Ground transfer":"Flight "+(i+1)))} · ${esc(x.from)}→${esc(x.to)}</b><span class="note" style="margin:0">Sched ${x.dep?r2l(dt,x.dep):"--:--"}–${x.arr?r2l(dt,x.arr):"--:--"}${RZ()?"L":""}${x.reg?" · "+esc(x.reg):""}</span></div>
+    return `<div class="seccard"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${x.typ==="dh"?"Deadhead ":x.typ==="gt"?"🚌 ":""}${esc(x.flt||(x.typ==="gt"?"Ground transfer":"Flight "+(i+1)))} · ${esc(x.from)}→${esc(x.to)}</b><span class="note" style="margin:0">Sched ${x.dep?r2z(dt,x.dep):"--:--"}–${x.arr?r2z(dt,x.arr):"--:--"}Z${x.reg?" · "+esc(x.reg):""}</span></div>
       <div class="blkgrid">
-        <label for="ts-o-${i}">Off blocks${RZ()?" (L)":""}</label><input id="ts-o-${i}" type="time" value="${x.offb?r2l(dt,x.offb):""}" data-secf="${i}:offb"><button class="pick" data-secnow="${i}:offb">Now</button>
-        <label for="ts-n-${i}">On blocks${RZ()?" (L)":""}</label><input id="ts-n-${i}" type="time" value="${x.onb?r2l(dt,x.onb):""}" data-secf="${i}:onb"><button class="pick" data-secnow="${i}:onb">Now</button>
-        <label for="ts-c-${i}">Slot${RZ()?" (L)":""}</label><input id="ts-c-${i}" type="time" value="${x.ctot?r2l(dt,x.ctot):""}" data-secf="${i}:ctot"><span></span>
+        <label for="ts-o-${i}">Off blocks (Z)</label><input id="ts-o-${i}" type="time" value="${x.offb?r2z(dt,x.offb):""}" data-secf="${i}:offb"><button class="pick" data-secnow="${i}:offb">Now</button>
+        <label for="ts-n-${i}">On blocks (Z)</label><input id="ts-n-${i}" type="time" value="${x.onb?r2z(dt,x.onb):""}" data-secf="${i}:onb"><button class="pick" data-secnow="${i}:onb">Now</button>
+        <label for="ts-c-${i}">Slot (Z)</label><input id="ts-c-${i}" type="time" value="${x.ctot?r2z(dt,x.ctot):""}" data-secf="${i}:ctot"><span></span>
         <label for="ts-b-${i}">Block today</label><input id="ts-b-${i}" type="text" inputmode="numeric" placeholder="${pb?"Planned "+fmtMins(pb):"e.g. 2:35"}" value="${x.est?fmtMins(x.est):""}" data-secest="${i}"><span class="note" style="margin:0">From the briefing</span>
       </div>
       ${blockNote(x,pb,ab)}
@@ -3356,12 +3456,12 @@ function dayPlanBody(p,x){
 }
 function foodBody(p){
   const type=dutyType(p.rep),D=DUTY[type],dk=p.rep.getFullYear()+"-"+String(p.rep.getMonth()+1).padStart(2,"0")+"-"+String(p.rep.getDate()).padStart(2,"0"),mine=on("more_meals")?mealFor(dk):null,R=mine&&RECIPES[mine];
-  return `${mine?`<div class="seccard"><span class="label">Your meal for this duty</span><b>${esc(mine)}</b>${R?`<span class="note" style="margin:0">${esc(R.how)}</span><span class="note" style="margin:0">${esc(R.ing.map(i=>i[0]).join(", "))}</span>${howLink(mine)}`:""}${MEAL_LIQUID.includes(mine)?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${snacksFor(dk).length?`<span class="label">Your snacks</span><ul class="plain">${snacksFor(dk).map(n=>`<li><b>${esc(n)}</b>: ${esc((RECIPES[n]||{}).how||"")} ${howLink(n)}</li>`).join("")}</ul>`:""}<div class="btns" style="margin:0"><button class="linkbtn" data-goto="more:meals">Change or see the shopping list</button></div></div>`:on("more_meals")?`<p class="note" style="margin:0">Plan the week's meals and get one shopping list in <button class="linkbtn" data-goto="more:meals">Meals and shopping</button>.</p>`:""}`+`<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+  return `${mine?`<div class="seccard"><span class="label">Your meal for this duty</span><div style="display:flex;gap:10px;align-items:center">${dishThumb(mine)}<b>${esc(mine)}</b></div>${R?`<span class="note" style="margin:0">${esc(R.how)}</span><span class="note" style="margin:0">${esc(R.ing.map(i=>i[0]).join(", "))}</span>${howLink(mine)}`:""}${MEAL_LIQUID.includes(mine)?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${snacksFor(dk).length?`<span class="label">Your snacks</span><ul class="plain">${snacksFor(dk).map(n=>`<li style="display:flex;gap:10px;align-items:flex-start">${dishThumb(n)}<span><b>${esc(n)}</b>: ${esc((RECIPES[n]||{}).how||"")} ${howLink(n)}</span></li>`).join("")}</ul>`:""}<div class="btns" style="margin:0"><button class="linkbtn" data-goto="more:meals">Change or see the shopping list</button></div></div>`:on("more_meals")?`<p class="note" style="margin:0">Plan the week's meals and get one shopping list in <button class="linkbtn" data-goto="more:meals">Meals and shopping</button>.</p>`:""}`+`<span class="label">Eating for this duty</span><ul class="plain">${D.food.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
     <p class="note" style="margin:0">Your food needs: <b>${S.diet.length?esc(DIETS.filter(d=>S.diet.includes(d[0])).map(d=>d[1]).join(", ")):"none set"}</b>. <button class="linkbtn" data-goto="more:profile">Change in Profile</button></p>
     ${S.diet.some(d=>DIET_LINKS[d])?`<div class="links">${[...new Set(S.diet.filter(d=>DIET_LINKS[d]).map(d=>DIET_LINKS[d][1]))].map(u=>{const k=S.diet.find(d=>DIET_LINKS[d]&&DIET_LINKS[d][1]===u);return `<a href="${u}" target="_blank" rel="noopener">${esc(DIET_LINKS[k][0])} ↗</a>`}).join("")}</div>`:""}
     <span class="label">Easy meals to prep</span>
     ${(()=>{const L=MEALS[type],k=Math.floor(Date.now()/86400000)%L.length,rot=L.slice(k).concat(L.slice(0,k)); // a different mix each day
-      const card=m=>{const sw=mealSwaps(m[0]),liq=MEAL_LIQUID.includes(m[0]);return `<div class="ex"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(m[0])}</b><span class="note" style="font-family:var(--mono);white-space:nowrap">${esc(m[2])}</span></div><span class="note">${esc(m[1])}</span>${liq?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${sw.map(s=>`<span style="font-size:13px;color:var(--accent);font-weight:600">${esc(s)}</span>`).join("")}</div>`};
+      const card=m=>{const sw=mealSwaps(m[0]),liq=MEAL_LIQUID.includes(m[0]);return `<div class="ex"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center">${dishThumb(m[0])}<b style="flex:1;min-width:0">${esc(m[0])}</b><span class="note" style="font-family:var(--mono);white-space:nowrap">${esc(m[2])}</span></div><span class="note">${esc(m[1])}</span>${liq?`<span style="font-size:13px;color:var(--danger);font-weight:600">Counts as a liquid at security</span>`:""}${sw.map(s=>`<span style="font-size:13px;color:var(--accent);font-weight:600">${esc(s)}</span>`).join("")}</div>`};
       return `<div>${rot.slice(0,4).map(card).join("")}</div>${rot.length>4?`<details><summary class="note"><b>More ideas (${rot.length-4})</b></summary><div>${rot.slice(4).map(card).join("")}</div></details>`:""}`})()}
     <span class="label">Security</span>
     <p class="note" style="margin:0">Yoghurt, soup, stew, hummus, dips, sauces, dressings, jam, nut butter and smoothies count as liquids. At Stansted, as at most airports, each must be in a container of 100 ml or less inside your liquids bag. Otherwise eat them at home or mix them in before you leave, and pack solid food for the duty: sandwiches, wraps, fruit, boiled eggs and snack boxes all go through. Airport food is expensive, so every idea here is made at home. Destination airports may be stricter on the way back, so pack the return leg's food solid too.</p>
@@ -3391,8 +3491,7 @@ function viewPlan(){
   return `<header><h1>Plan</h1><p class="sub">Get organised for your next duty.</p></header>
   ${suggest}
   ${daysBetween(t,n.date)===1?nudgeCard("plan",sb?{from:pn.rep,to:new Date(pn.rep.getTime()+4*3600000)}:{city:dutyCity(n),from:pn.leave,to:pn.rep,land:landTime(n,pn.rep)}):""}
-  <section class="card">
-    <h2>${daysBetween(t,n.date)===1?"Tomorrow":esc(fmtDate(n.date,{weekday:"long",day:"numeric",month:"short"}))}</h2>
+  ${fold("nextduty",(daysBetween(t,n.date)===1?"Tomorrow":esc(fmtDate(n.date,{weekday:"long",day:"numeric",month:"short"}))),()=>`
     <div class="btns" role="radiogroup" aria-label="Next duty is">${[["flying","Flying duty"],["standby","Home standby"],["asby","Airport standby"],["adty","Airport duty"],["training","Training"]].map(k=>`<button class="pick" role="radio" aria-checked="${n.kind===k[0]}" aria-pressed="${n.kind===k[0]}" data-nkind="${k[0]}">${k[1]}</button>`).join("")}</div>
     <div class="row"><div class="field"><label for="n-date">Date</label><input id="n-date" type="date" min="${addDays(t,1)}" value="${esc(n.date)}" data-k="next.date"></div>
     ${sb?`<div class="field"><label for="n-rep">Standby starts${LL()}</label><input id="n-rep" type="time" value="${esc(n.report)}" data-k="next.report"></div>`:`<div class="field"><label for="n-rep">${n.kind==="adty"?"Duty starts":asn?"Standby starts":trn?"Training starts":"Report time"}${LL()}</label><input id="n-rep" type="time" value="${esc(n.report)}" data-k="next.report"></div>`}</div>
@@ -3403,14 +3502,13 @@ function viewPlan(){
     <div class="field"><label for="n-dest">Destination</label><input id="n-dest" type="text" list="citylist3" value="${esc(ds.city||n.dest)}" placeholder="City or airport code" data-k="next.dest"></div><datalist id="citylist3">${CITIES.map(c=>`<option value="${esc(c.name)}">`).join("")}</datalist>`}
     ${n.kind!=="standby"?travelChoice(n,pn):""}
     ${n.kind!=="standby"?restLine(n,pn.rep):""}
-    <p class="note" style="margin:0">On the day, this moves to Today by itself.</p>
-  </section>
-  ${sb?"":fold("alarms","Alarms",()=>morningBody(pn,"next"),true,"First alarm "+hm(pn.first))}
-  ${on("planday")?fold("planday",sb?"Tonight":"Tonight and sleep",()=>dayPlanBody(pn,n),!sb,"Bed by "+hm(sleepPlan(pn,n).bed)):""}
-  ${on("kitcheck")?fold("kitcheck","Kit check",kitCheckBody,true,S.kit.length?kd+" of "+S.kit.length+" packed":""):""}
+    <p class="note" style="margin:0">On the day, this moves to Today by itself.</p>`,false,esc((sb?"Standby ":"Report ")+(n.report||""))+(n.dep?" · STD "+esc(n.dep):""))}
+  ${sb?"":fold("alarms","Alarms",()=>morningBody(pn,"next"),false,"First alarm "+hm(pn.first))}
+  ${on("planday")?fold("planday",sb?"Tonight":"Tonight and sleep",()=>dayPlanBody(pn,n),false,"Bed by "+hm(sleepPlan(pn,n).bed)):""}
+  ${on("kitcheck")?fold("kitcheck","Kit check",kitCheckBody,false,S.kit.length?kd+" of "+S.kit.length+" packed":""):""}
   ${on("packing")&&!sb&&!asn&&!trn?fold("packing","Packing"+(ds.city?" for "+esc(ds.city):""),()=>packingBody(n),false,""):""}
   ${on("weather")?fold("weather","Weather",()=>weatherBody(n,pn),false,ds.city?esc(ds.city):""):""}
-  ${on("todo")?fold("todo","To do",todoBody,true,S.todo.filter(x=>!x.d).length+" left"):""}
+  ${on("todo")?fold("todo","To do",todoBody,false,S.todo.filter(x=>!x.d).length+" left"):""}
   ${on("food")?fold("food","Food and meals",()=>foodBody(pn),false,DUTY[dutyType(pn.rep)].name):""}`;
 }
 
@@ -3506,7 +3604,8 @@ function homeOptions(end,fixed){const d0=S.duty.date,out=[];RK.filter(rk=>ttCoun
     const all=tList(d0,"back",rk).concat(tList(addDays(d0,1),"back",rk));
     all.filter(x=>x.dep>=ready&&x.dep-ready<=3*3600000).forEach(x=>out.push(Object.assign({},x,{rk,ready,home:new Date(x.arr.getTime()+(+T.walk||0)*60000)})));
     // also the one just before, for when you're off quicker than planned (never suggested, only shown)
-    if(!fixed){const lo=Math.max(Date.now(),end.getTime()-30*60000),q=all.filter(x=>x.dep<ready&&x.dep.getTime()>=lo).pop();if(q)out.push(Object.assign({},q,{rk,ready,quick:true,home:new Date(q.arr.getTime()+(+T.walk||0)*60000)}))}});
+    // every one you could make between on blocks + your quickest time to the stop and the end of duty
+    if(!fixed){const lo=Math.max(Date.now(),end.getTime()-30*60000+toStn()*60000);all.filter(x=>x.dep<ready&&x.dep.getTime()>=lo).forEach(q=>out.push(Object.assign({},q,{rk,ready,quick:true,home:new Date(q.arr.getTime()+(+T.walk||0)*60000)})))}});
   out.sort((a,b)=>a.dep-b.dep);
   const best=pickRide(out.filter(x=>!x.quick));
   return {list:out,best}}
@@ -3566,7 +3665,9 @@ function transitCard(n,pn,rk){rk=rk||"train";
     ${live}</div>`;
 }
 function travelFieldsInner(){
-  return `<div class="field"><span class="label">When both a train and a bus could work</span><div class="seg" role="tablist" aria-label="Preferred transport">${[["train","Prefer the train"],["bus","Prefer the bus"],["fastest","Whichever is faster"]].map(x=>`<button role="tab" aria-selected="${tPref()===x[0]}" data-tpref="${x[0]}">${x[1]}</button>`).join("")}</div><span class="note" style="margin:0">The app suggests your choice unless only the other gets you there or home in time (within 30 minutes).</span></div>`+travelFieldsCore()}
+  return `<div class="field"><span class="label">When both a train and a bus could work</span><div class="seg" role="tablist" aria-label="Preferred transport">${[["train","Prefer the train"],["bus","Prefer the bus"],["fastest","Whichever is faster"]].map(x=>`<button role="tab" aria-selected="${tPref()===x[0]}" data-tpref="${x[0]}">${x[1]}</button>`).join("")}</div><span class="note" style="margin:0">The app suggests your choice unless only the other gets you there or home in time (within 30 minutes).</span></div>
+  <div class="field"><label for="pr-tostn">Quickest from on blocks to the station or stop (minutes)</label><input id="pr-tostn" class="num" type="number" min="5" max="60" step="5" inputmode="numeric" value="${toStn()}" data-k="profile.toStn"><span class="note" style="margin:0">Duty ends 30 min after on blocks, but you can often head off sooner. Trains and buses from this point are shown as "if you're off quickly".</span></div>`+travelFieldsCore()}
+function toStn(){const v=+S.profile.toStn;return v>=5&&v<=60?v:20}
 function travelFieldsCore(){
   const d=S.duty,num=(id,k,v,lab,note,step)=>`<div class="field"><label for="${id}">${lab}</label><input id="${id}" class="num" type="number" min="0" step="${step||5}" inputmode="numeric" value="${esc(v)}" data-k="${k}">${note?`<span class="note" style="margin:0">${note}</span>`:""}</div>`;
   return `    <div class="field"><label for="t-ap">Report at</label><input id="t-ap" type="text" value="${esc(d.airport)}" data-k="duty.airport"></div>
@@ -4126,6 +4227,7 @@ document.addEventListener("click",e=>{
     // started at taxi: off blocks (pushback) is counted as 5 minutes earlier, so the block time stays right
     const now=new Date(),off=new Date(now.getTime()-TAXI_BUF*60000);S.ft={date:t,i,start:off.getTime(),taxi:now.getTime(),est};if(i>=0&&secs[i])secs[i].est=est;render();save();ftLiveCheck(false);return}
   if(b.id==="ftstop"){const {t,secs,ft}=ftState(),now=new Date();if(!ft)return;const blk=Math.round((now-ft.start)/60000);ftDone(t).push(ft.i);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null;render();save();return}
+  if(b.dataset.dish){openDish(b.dataset.dish);return}
   if(b.dataset.tpref){S.me.tpref=b.dataset.tpref;render();save();return}
   if(b.dataset.hpick){const end=homeEnd(),x=end&&homeOptions(end).list.find(y=>rideKey(y)===b.dataset.hpick);if(x){const h=homeRide()||{};S.homeRide={date:S.duty.date,key:rideKey(x),rk:x.rk,name:(x.rk==="bus"?"Bus":"Train")+(x.n?" "+x.n:""),dep:x.dep.getTime(),home:x.home.getTime(),missed:h.missed||[],manual:true}}render();save();return}
   if(b.dataset.hcaught){const h=homeRide();if(h){h.caught=true;h.manual=true}render();save();return}
@@ -4316,9 +4418,9 @@ document.addEventListener("change",e=>{
   if(el.dataset.sc!==undefined){const t=today(),x=S.selfcare.items[+el.dataset.sc];let d=S.selfcare.done[t]||[];d=el.checked?d.concat(x):d.filter(y=>y!==x);S.selfcare.done={[t]:d};render();save();return}
   if(el.dataset.k==="trip.city"){const nm=cityFrom(el.value),c=CITIES.find(x=>x.name===nm);S.trip.city=nm;if(c)S.trip.country=c.country;render();save();return}
   if(el.dataset.k==="next.dest"&&S.next){const nm=cityFrom(el.value);S.next.dest=nm||el.value;render();save();return}
-  if(el.dataset.secf&&el.id==="ft-slot"){const [i]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i].ctot=el.value?l2r(S.duty.date,cleanTime(el.value)):"";render();save()}return}
+  if(el.dataset.secf&&el.id==="ft-slot"){const [i]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i].ctot=el.value?z2r(S.duty.date,cleanTime(el.value)):"";render();save()}return}
   if(el.dataset.secest!==undefined){const i=+el.dataset.secest,r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[i]){const v=parseHM(el.value);r.sectors[i].est=v||0;if(S.ft&&S.ft.start&&S.ft.i===i&&v)S.ft.est=v;render();save()}return}
-  if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=l2r(S.duty.date,cleanTime(el.value));r.sectors[+i][f+"Live"]=false;render();save()}return}
+  if(el.dataset.secf){const [i,f]=el.dataset.secf.split(":"),r=S.roster[S.duty.date];if(r&&r.sectors&&r.sectors[+i]){r.sectors[+i][f]=z2r(S.duty.date,cleanTime(el.value));r.sectors[+i][f+"Live"]=false;render();save()}return}
   if(el.dataset.rwy){if(!S.rwy)S.rwy={};S.rwy[el.dataset.rwy]=el.value.toUpperCase().replace(/[^0-9LRC\/ ]/g,"").slice(0,20);render();save();return}
   if(el.id==="is-a"){S.issueDraft=Object.assign({},S.issueDraft||{},{area:el.value});return}
   if(el.dataset.eve!==undefined){const t=today(),x=S.evening.items[+el.dataset.eve];let d=S.evening.done[t]||[];d=el.checked?d.concat(x):d.filter(y=>y!==x);S.evening.done={[t]:d};render();save();return}
@@ -4337,6 +4439,7 @@ document.addEventListener("change",e=>{
   if(el.dataset.k==="next.dep"&&S.next){S.next.dep=el.value;if(el.value)S.next.report=minusMins(el.value,repBefore());render();save();return}
   if(el.dataset.k==="next.flt"&&S.next){S.next.flt=cleanFlt(el.value);render();save();return}
   if(el.dataset.k==="profile.bed"){if(/^\d\d:\d\d$/.test(el.value))S.profile.bed=el.value;render();save();return}
+  if(el.dataset.k==="profile.toStn"){S.profile.toStn=Math.max(5,Math.min(60,parseInt(el.value)||20));render();save();return}
   if(el.dataset.k==="profile.sleepH"){S.profile.sleepH=+el.value;render();save();return}
   if(el.dataset.k==="profile.repBefore"){S.profile.repBefore=Math.max(0,Math.min(180,parseInt(el.value)||45));if(S.next&&S.next.dep)S.next.report=minusMins(S.next.dep,repBefore());render();save();return}
   if(el.dataset.k==="duty.report"&&S.duty.kind==="standby")S.standby.start=el.value;
@@ -4381,7 +4484,7 @@ setInterval(()=>{
   const now=Date.now();let changed=false;
   (S.timers||[]).forEach(t=>{const el=document.getElementById("tm-"+t.id),left=t.end-now;if(el)el.textContent=left>0?fmtLeft(left):"0:00";if(left<=0&&!t.rang){t.rang=true;changed=true;beep();timerNotify(t)}});
   keepAwake((S.timers||[]).some(t=>t.end>now)||!!(S.ft&&S.ft.start&&!S.ft.stop));
-  document.querySelectorAll("[data-cdto]").forEach(el=>{el.textContent=fmtCD(+el.dataset.cdto-now)});
+  document.querySelectorAll("[data-cdto]").forEach(el=>{el.textContent=fmtCD(+el.dataset.cdto-now,"s" in el.dataset)});
   document.querySelectorAll("[data-cdfrom]").forEach(el=>{el.textContent=fmtCD(now-+el.dataset.cdfrom)});
   if(S.tab==="trip"){const a=$("#dc-on"),b=$("#dc-left");if(a||b){const p=plan();if(a)a.textContent=fmtLeft(now-p.rep);if(b)b.textContent=fmtLeft(fdpEnd()-now)}}
   if(changed){save();const f=document.activeElement;if(!f||f.tagName!=="INPUT")render()}
