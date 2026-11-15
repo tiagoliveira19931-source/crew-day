@@ -38,5 +38,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Destination comes from the day's flights (tripAutoDest); the place picker lives in Facts › Change place.
 - Dish pictures: a Wikipedia photo of that kind of dish when online (only the dish name is looked up, via DISH_WIKI), with a built-in line drawing (dishCat) until it loads or offline; tap opens the full view with ingredients and how to make it.
 
+- Roster codes: CODE_SUB/SUBK map airline codes to a kind plus their own name (e.sub, shown via kindName). Ryanair legend: AD airport duty, GD ground duty, SD special duty, DH dead head, GT ground transport (all timed duties, counted as duty), L leave, UL unpaid leave, OFF with availability, pending sick/VTO/unpaid leave. Jet2 codes to come from Tiago's partner.
+
 ## Issue reports
 Crew send problems and ideas from More › Report an issue. They queue offline and go to Tiago's Google Form "Crew Day Reports" (responses in a linked Google Sheet). Columns: Timestamp, Type, Area, Report, Version, Airline.

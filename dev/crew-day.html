@@ -773,7 +773,7 @@ function calStandby(x){const d=x?x.date:(S.duty.date||today()),st=x?x.report:S.s
 function calStandbyChecks(d,o){calStandbyPrev=null;return standbyTimes(o).map((t,i)=>{const [h,m]=t.split(":").map(Number),x=new Date(d+"T00:00:00");x.setHours(h,m,0,0);if(i>0&&x<calStandbyPrev)x.setDate(x.getDate()+1);calStandbyPrev=x;return {uid:"sb-"+d+"-"+t,start:x,title:"📋 Check your roster (standby)"}})}
 let calStandbyPrev=null;
 function calRoster(ym){return Object.entries(S.roster).filter(([d])=>d.slice(0,7)===ym).map(([d,e])=>{
-  const title=(e.kind==="flying"?"✈️ ":e.kind==="standby"||e.kind==="asby"?"📋 ":"")+KIND_NAME[e.kind]+(e.dest?" · "+e.dest:"")+(e.note&&e.note!==e.dest?" · "+e.note:"");
+  const title=(e.kind==="flying"?"✈️ ":e.kind==="standby"||e.kind==="asby"?"📋 ":"")+kindName(e)+(e.dest?" · "+e.dest:"")+(e.note&&e.note!==e.dest?" · "+e.note:"");
   if(e.report&&isDutyK(e.kind)){const [h,m]=e.report.split(":").map(Number),st=new Date(d+"T00:00:00");st.setHours(h,m,0,0);const en=new Date(st.getTime()+(e.off?dutyHours(e):1)*3600000);return {uid:"r-"+d,start:st,end:en,title,alarms:[]}}
   return {uid:"r-"+d,allDay:true,date:d,title,alarms:[]}})}
 function calDocs(){const ev=[];S.docs.forEach(x=>{[[365,"12 months"],[183,"6 months"],[90,"3 months"]].forEach(([n,l])=>{const d=addDays(x.expiry,-n);if(d>=today())ev.push({uid:"doc-"+x.id+"-"+n,allDay:true,date:d,title:"📄 "+x.name+" expires in "+l,desc:"Expiry date "+x.expiry})})});return ev}
@@ -798,6 +798,16 @@ function cityFrom(s){
 }
 const KINDS=[["flying","Flying"],["standby","Home standby"],["asby","Airport standby"],["training","Training"],["adty","Airport duty"],["off","Day off"],["leave","Annual leave"],["vto","VTO"],["sick","Sick"],["other","Other"]];
 const KIND_NAME={flying:"Flying",standby:"Home standby",asby:"Airport standby",training:"Training",adty:"Airport duty",off:"Day off",leave:"Annual leave",vto:"VTO",sick:"Sick",other:"Other"};
+/* Roster codes that become one of the kinds above with their own name (e.sub). Ryanair legend:
+   AD airport duty, GD ground duty, SD special duty, DH dead head, GT ground transport (all timed duties);
+   L leave, UL unpaid leave; OFF with availability; pending sick / VTO / unpaid leave. */
+const CODE_SUB={AD:["adty","Airport duty"],GD:["adty","Ground duty"],SD:["adty","Special duty"],DH:["adty","Dead head"],GT:["adty","Ground transport"],UL:["leave","Unpaid leave (pending)"]};
+const SUBK={ground:["adty","Ground duty"],special:["adty","Special duty"],dh:["adty","Dead head"],gt:["adty","Ground transport"],ul:["leave","Unpaid leave (pending)"],
+  avail_all:["off","Day off · available all day"],avail_early:["off","Day off · available early shift"],avail_late:["off","Day off · available late shift"],pend_sick:["sick","Sick (pending)"],pend_vto:["vto","VTO (pending)"]};
+// words in a calendar entry or a pasted line that name one of those
+function subFromText(t){t=String(t||"");const R=[[/pending\s*unpaid|\bUL\b|unpaid\s*leave/i,"ul"],[/pending\s*sick/i,"pend_sick"],[/pending\s*vto/i,"pend_vto"],[/available\s*all\s*day/i,"avail_all"],[/available\s*early/i,"avail_early"],[/available\s*late/i,"avail_late"],
+  [/ground\s*transport|\bGT\b/i,"gt"],[/dead\s*-?\s*head|\bDH\b|positioning/i,"dh"],[/ground\s*duty|\bGD\b|office\s*duty/i,"ground"],[/special\s*duty|\bSD\b/i,"special"]];const f=R.find(x=>x[0].test(t));return f?f[1]:""}
+function kindName(e){return e&&(e.sub||KIND_NAME[e.kind])||""}
 function isDutyK(k){return k==="flying"||k==="standby"||k==="asby"||k==="training"||k==="adty"}
 function hasEnd(k){return k==="asby"||k==="training"||k==="adty"}
 function placeOf(d){d=d||S.duty;return d.kind==="training"&&d.loc?d.loc:d.airport||""}
@@ -810,7 +820,7 @@ function cleanSectors(a){return (Array.isArray(a)?a:[]).slice(0,10).map(x=>({flt
 function opMins(x){return x.typ&&x.typ!=="op"?0:blockMins(x)}
 function blockMins(x){if(!x.dep||!x.arr)return 0;const [a,b]=x.dep.split(":").map(Number),[c,d]=x.arr.split(":").map(Number);let m=(c*60+d)-(a*60+b);if(m<0)m+=1440;return m}
 function destFromSectors(sec){const t=(sec||[]).map(x=>x.to).find(c=>c&&!BASE_CODES.includes(c));return t?cityFrom(t):""}
-function mergeRoster(days,src){rosterBackup=JSON.parse(JSON.stringify(S.roster));let n=0;days.forEach(e=>{if(!validDay(e))return;const sec=cleanSectors(e.sectors);learnFlights(sec,e.date);S.roster[e.date]={kind:e.kind,report:cleanTime(e.report),off:cleanTime(e.off),dest:cityFrom(e.dest)||destFromSectors(sec),note:String(e.note||"").slice(0,120),src,sectors:sec};n++});
+function mergeRoster(days,src){rosterBackup=JSON.parse(JSON.stringify(S.roster));let n=0;days.forEach(e=>{if(!validDay(e))return;const sec=cleanSectors(e.sectors);learnFlights(sec,e.date);S.roster[e.date]={kind:e.kind,report:cleanTime(e.report),off:cleanTime(e.off),dest:cityFrom(e.dest)||destFromSectors(sec),note:String(e.note||"").slice(0,120),src,sectors:sec};if(e.sub)S.roster[e.date].sub=String(e.sub).slice(0,40);n++});
   const cut=addDays(today(),-120);Object.keys(S.roster).forEach(d=>{if(d<cut)delete S.roster[d]});syncToday();return n}
 function syncToday(){const t=today(),r=S.roster[t];if(r&&isDutyK(r.kind)&&r.report&&!S.standby.calledAt&&!(S.ft&&S.ft.start&&!S.ft.stop))useDay(t)}
 /* calendar file (.ics) import: groups each day's events into one roster day */
@@ -845,11 +855,12 @@ function parseICS(text){
     const day=ymd(s.d),o=byDay[day]||(byDay[day]={date:day,kinds:[],starts:[],ends:[],text:[],sectors:[]});
     if(!s.allDay){const up=sum.toUpperCase(),pr=up.match(/\b([A-Z]{3})\s*(?:-|–|>|\/|TO)\s*([A-Z]{3})\b/),fl=up.match(/\b(FR|RK|LS|EZY|U2|BA|W6|EI|[A-Z]{2})\s?(\d{2,4}[A-Z]?)\b/);if(pr)o.sectors.push({flt:fl?fl[1]+fl[2]:"",from:pr[1],to:pr[2],dep:(RZ()?hmZ:hm)(s.d),arr:(RZ()?hmZ:hm)(e.d)})}
     o.text.push(sum.replace(/\\n/g," ").replace(/\\,/g,",").trim());
+    {const sk=subFromText(sum);if(sk){o.kinds.push(SUBK[sk][0]);o.sub=o.sub||SUBK[sk][1];if(!s.allDay){o.starts.push(s.d);o.ends.push(e.d)}return}}
     o.kinds.push(/\b(sick|sickness|sck|ill)\b/i.test(sum)?"sick":/\b(annual leave|\bAL\b|leave|holiday)\b/i.test(sum)?"leave":/\b(vto|voluntary time off)\b/i.test(sum)?"vto":/\b(adty|airport duty|ground duty|office duty)\b/i.test(sum)?"adty":/\b(asby|airport standby|airport stby|apt sby)\b/i.test(sum)?"asby":/\b(training|trg|recurrent|crm|sep|ground school|e-?learning)\b/i.test(sum)?"training":/\b(h?sby|standby|stand-by|reserve|rsv)\b/i.test(sum)?"standby":/\b(day off|off day|rest day|\bdo\b|\bOFF\b)/i.test(sum)?"off":s.allDay?"other":"flying");
     if(!s.allDay){o.starts.push(s.d);o.ends.push(e.d)}});
-  return Object.values(byDay).map(o=>{const kind=o.kinds.includes("flying")?"flying":o.kinds.includes("asby")?"asby":o.kinds.includes("training")?"training":o.kinds.includes("adty")?"adty":o.kinds.includes("standby")?"standby":o.kinds.includes("off")?"off":"other";
+  return Object.values(byDay).map(o=>{const kind=o.kinds.includes("flying")?"flying":o.kinds.includes("asby")?"asby":o.kinds.includes("training")?"training":o.kinds.includes("adty")?"adty":o.kinds.includes("standby")?"standby":o.kinds.includes("sick")?"sick":o.kinds.includes("leave")?"leave":o.kinds.includes("vto")?"vto":o.kinds.includes("off")?"off":"other";
     const st=o.starts.length?new Date(Math.min(...o.starts)):null,en=o.ends.length?new Date(Math.max(...o.ends)):null;
-    const H=RZ()?hmZ:hm;return {date:o.date,kind,report:st?H(st):"",off:en?H(en):"",dest:kind==="flying"?(destFromSectors(o.sectors)||cityFrom(o.text.join(" "))):"",note:o.text.join(" · ").slice(0,120),sectors:o.sectors.sort((a,b)=>a.dep.localeCompare(b.dep))}});
+    const H=RZ()?hmZ:hm,sub=o.sub&&kind!=="flying"&&SUBK[Object.keys(SUBK).find(k=>SUBK[k][1]===o.sub)][0]===kind?o.sub:undefined;return {date:o.date,kind,sub,report:st?H(st):"",off:en?H(en):"",dest:kind==="flying"?(destFromSectors(o.sectors)||cityFrom(o.text.join(" "))):"",note:o.text.join(" · ").slice(0,120),sectors:o.sectors.sort((a,b)=>a.dep.localeCompare(b.dep))}});
 }
 function rosterAll(){/* manual duties plus roster flying/standby days, one per date */
   const fromRoster=Object.entries(S.roster).filter(([d,e])=>isDutyK(e.kind)&&e.report&&e.off).map(([d,e])=>({id:"r"+d,date:d,report:e.report,off:e.off,offAct:actualOff(e),fromRoster:true,kind:e.kind}));
@@ -877,7 +888,7 @@ function useDay(d){
   const e=S.roster[d];if(!e)return;
   const R=t=>r2l(d,t);
   if(S.duty.date!==d){delete S.duty.asbyCall;delete S.duty.asbyStart;delete S.duty.calledFrom}
-  S.duty.date=d;if(e.report)S.duty.report=R(e.report);S.duty.kind=e.kind==="standby"||hasEnd(e.kind)?e.kind:"flying";if(e.kind==="adty")S.duty.end=R(e.off)||"17:00";if(e.kind==="asby")S.duty.end=R(e.off)||S.duty.end||"13:00";if(e.kind==="training"){S.duty.end=R(e.off)||"17:00";S.duty.loc=e.loc||"";S.duty.course=e.note||""}
+  S.duty.date=d;S.duty.sub=e.sub||"";if(e.report)S.duty.report=R(e.report);S.duty.kind=e.kind==="standby"||hasEnd(e.kind)?e.kind:"flying";if(e.kind==="adty")S.duty.end=R(e.off)||"17:00";if(e.kind==="asby")S.duty.end=R(e.off)||S.duty.end||"13:00";if(e.kind==="training"){S.duty.end=R(e.off)||"17:00";S.duty.loc=e.loc||"";S.duty.course=e.note||""}
   if(e.kind==="standby"){if(e.report)S.standby.start=R(e.report);if(e.off)S.standby.end=R(e.off)}
   const z=(e.sectors||[]).find(y=>y.to&&y.to!==S.profile.base),dn=e.dest||(z?cityFrom(z.to):"");
   const c=CITIES.find(x=>x.name===dn);if(c){S.trip.city=c.name;S.trip.country=c.country}else if(dn){S.trip.city=dn}
@@ -952,7 +963,7 @@ function adsbLook(i,f){
 function nextFlt(f){const m=cleanFlt(f).match(/^([A-Z]{2,3}?)(\d+)$/);if(!m)return "";const n=String(+m[2]+1);return m[1]+(n.length<m[2].length?n.padStart(m[2].length,"0"):n)}
 // Reads roster text copied from a crew app screenshot (Google Lens / iPhone Live Text). Works offline.
 const RP_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-const RP_KIND={OFF:"off",DO:"off",HSBY:"standby",SBY:"standby",HS:"standby",ASBY:"asby",ADTY:"adty",TRNG:"training",TRG:"training",SIM:"training",L:"leave",AL:"leave",LVE:"leave",VTO:"vto",SICK:"sick",SCK:"sick",DUTY:"flying",FLY:"flying"};
+const RP_KIND={AD:"adty",GD:"adty",SD:"adty",DH:"adty",GT:"adty",UL:"leave",OFF:"off",DO:"off",HSBY:"standby",SBY:"standby",HS:"standby",ASBY:"asby",ADTY:"adty",TRNG:"training",TRG:"training",SIM:"training",L:"leave",AL:"leave",LVE:"leave",VTO:"vto",SICK:"sick",SCK:"sick",DUTY:"flying",FLY:"flying"};
 function rpPad(n){return String(n).padStart(2,"0")}
 function rpYear(m,y){if(y)return y<100?2000+y:y;const t=new Date(),cy=t.getFullYear(),cm=t.getMonth()+1;return m<cm-6?cy+1:m>cm+6?cy-1:cy}
 function rpNorm(txt){return String(txt||"").replace(/\r/g,"").replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/[✈✈️🛫🛬]/g," ").replace(/[|•·]/g," ").replace(/(\d)\s*[.:]\s*(\d\d)(?!\d)/g,"$1:$2")}
@@ -998,7 +1009,7 @@ function rpList(txt){
   });
   return out;
 }
-function rpKindOf(t){t=String(t||"");const R=[[/\b(home\s+standby|HSBY|SBY)\b/i,"standby"],[/\b(airport\s+standby|ASBY)\b/i,"asby"],[/\b(airport\s+duty|ADTY)\b/i,"adty"],[/\b(training|TRNG|TRG|SIM|CRMS?|recurrent)\b/i,"training"],[/\b(day\s+off|OFF|rest\s+day)\b/i,"off"],[/\b(annual\s+leave|leave|LVE)\b/i,"leave"],[/\bVTO\b/i,"vto"],[/\b(sick|SCK)\b/i,"sick"],[/\b(DUTY|flying|flights?)\b/i,"flying"]];
+function rpKindOf(t){t=String(t||"");const sk=subFromText(t);if(sk)return SUBK[sk][0];if(/\bAD\b/.test(t))return "adty";const R=[[/\b(home\s+standby|HSBY|SBY)\b/i,"standby"],[/\b(airport\s+standby|ASBY)\b/i,"asby"],[/\b(airport\s+duty|ADTY)\b/i,"adty"],[/\b(training|TRNG|TRG|SIM|CRMS?|recurrent)\b/i,"training"],[/\b(day\s+off|OFF|rest\s+day)\b/i,"off"],[/\b(annual\s+leave|leave|LVE)\b/i,"leave"],[/\bVTO\b/i,"vto"],[/\b(sick|SCK)\b/i,"sick"],[/\b(DUTY|flying|flights?)\b/i,"flying"]];
   // a specific type (standby, training, off…) wins over the general word DUTY
   let best=null,pos=1e9;R.forEach(([re,k])=>{if(k==="flying")return;const m=t.match(re);if(m&&m.index<pos){pos=m.index;best=k}});
   if(!best&&R[R.length-1][0].test(t))best="flying";return best}
@@ -1017,7 +1028,7 @@ function rpCal(txt){
     if(n!==null&&n===next&&(!pend.length||lastDay)){pend.push(n);next++;lastDay=true;continue}
     let kind=null;
     if(n!==null&&n>=1&&n<=8)kind="flying";else if(RP_KIND[code])kind=RP_KIND[code];
-    if(kind&&pend.length){const d=pend.shift();out.push({date:y+"-"+rpPad(mo)+"-"+rpPad(d),kind,report:"",off:"",sectors:[],n:kind==="flying"&&n?n:0});lastDay=false;continue}
+    if(kind&&pend.length){const d=pend.shift();out.push({date:y+"-"+rpPad(mo)+"-"+rpPad(d),kind,sub:CODE_SUB[code]?CODE_SUB[code][1]:undefined,report:"",off:"",sectors:[],n:kind==="flying"&&n?n:0});lastDay=false;continue}
     lastDay=false;
   }
   return out;
@@ -1099,7 +1110,8 @@ function rpLines(txt){
       if(ax){const nm=ax[1].trim(),k=RP_KIND[nm.toUpperCase()]||(RZ_ACT.find(a=>a[0].test(nm))||[])[1],lab=k?ALSO_LABEL[k]:nm.charAt(0).toUpperCase()+nm.slice(1).toLowerCase();also.push({label:lab,from:T(ax[2]),to:T(ax[3])});return}
       const x=f.trim().toUpperCase().match(/^([A-Z0-9]{2,3}\s?\d{1,4}[A-Z]?)\s+([A-Z]{3})\s*[-–>]+\s*([A-Z]{3})(?:\s+([0-2]?\d[:.][0-5]\d)\s*Z?\s*[-–]\s*([0-2]?\d[:.][0-5]\d)(?:\s*Z)?)?(?:\s+([A-Z0-9-]{4,7}))?/);if(x)sec.push({flt:x[1].replace(/\s/g,""),from:x[2],to:x[3],dep:T(x[4]),arr:T(x[5]),reg:(x[6]||"").replace("-","")})});
     const timed=["standby","asby","training","adty","flying"].includes(kind);
-    out.push({date,kind,report:timed?T(m[5]):"",off:timed?T(m[6]):"",sectors:sec,also,lines:1});
+    const sk=CODE_SUB[code]||SUBK[subFromText(m[7]||"")];
+    out.push({date,kind:sk&&!CODE_SUB[code]&&kind!==sk[0]&&!sec.length?sk[0]:kind,sub:sk&&(!sec.length)?sk[1]:undefined,report:timed?T(m[5]):"",off:timed?T(m[6]):"",sectors:sec,also,lines:1});
   });
   return out;
 }
@@ -1108,8 +1120,9 @@ function showGem(b){if($("#gemp"))return;b.insertAdjacentHTML("afterend",`<texta
    or "time Z airport CHECK IN/OUT". Days start at a date line; a date line while a duty is still open (checked in,
    not out) is the next morning of the same duty. */
 const RZ_MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-const ALSO_LABEL={standby:"Home standby",asby:"Airport standby",adty:"Airport duty",vto:"VTO",training:"Training",sick:"Sick",leave:"Annual leave",off:"Day off",special:"Special duty",late:"Late"};
-const RZ_ACT=[[/special\s*du/i,"special"],[/\bLATE\b/i,"late"],[/\bHSBY\b|home\s*standby/i,"standby"],[/\bASBY\b|airport\s*standby/i,"asby"],[/airport\s*duty|\bADTY\b/i,"adty"],[/\bv\s?[tIl1|]\s?[o0]\b/i,"vto"],[/training|\bTRNG\b|\bSIM\b/i,"training"],[/\bSICK\b/i,"sick"],[/annual\s*leave|\bAL\b/,"leave"],[/\bOFF\b/,"off"]];
+const ALSO_LABEL={ground:"Ground duty",dh:"Dead head",gt:"Ground transport",ul:"Unpaid leave (pending)",pend_sick:"Sick (pending)",pend_vto:"VTO (pending)",avail_all:"Available all day",avail_early:"Available early shift",avail_late:"Available late shift",standby:"Home standby",asby:"Airport standby",adty:"Airport duty",vto:"VTO",training:"Training",sick:"Sick",leave:"Annual leave",off:"Day off",special:"Special duty",late:"Late"};
+const RZ_ACT=[[/pending\s*unpaid|\bUL\b|unpaid\s*leave/i,"ul"],[/pending\s*sick/i,"pend_sick"],[/pending\s*vto/i,"pend_vto"],[/available\s*all\s*day/i,"avail_all"],[/available\s*early/i,"avail_early"],[/available\s*late/i,"avail_late"],
+  [/ground\s*transport|\bGT\b/i,"gt"],[/dead\s*-?\s*head|\bDH\b/i,"dh"],[/ground\s*duty|\bGD\b/i,"ground"],[/\bAD\b/,"adty"],[/special\s*du|\bSD\b/i,"special"],[/\bLATE\b/i,"late"],[/\bHSBY\b|home\s*standby/i,"standby"],[/\bASBY\b|airport\s*standby/i,"asby"],[/airport\s*duty|\bADTY\b/i,"adty"],[/\bv\s?[tIl1|]\s?[o0]\b/i,"vto"],[/training|\bTRNG\b|\bSIM\b/i,"training"],[/\bSICK\b/i,"sick"],[/annual\s*leave|\bAL\b/,"leave"],[/\bOFF\b/,"off"]];
 function rpZ(txt){
   const L=String(txt||"").split(/\r?\n/).map(x=>x.replace(/\bCalendar\b|\bV\s?T\s?O\s*Hub\b|\bLegend\b|More\s*Actions\W*|\bRoster\b/gi," ").trim()).filter(Boolean),out=[];let cur=null,dayOff=false;
   const ZT=/(\d{1,2}:\d{2})\s*Z\b/g,FLT=/\b(FR|RK|LS|U2|EZY|BA|W6|N0)\s?(\d{1,4})\b/i;
@@ -1132,12 +1145,14 @@ function rpZ(txt){
     const both=l+" "+(!/\d{1,2}:\d{2}\s*Z/.test(next)?next:"");const act=RZ_ACT.find(a=>a[0].test(both));
     if(act){const sub=(both.match(/\b(CRMS|SEP|CRM|RECURRENT|AD|DUTY TIME)\b/)||[])[1];cur.acts.push({kind:act[1],from:T[0],to:T[1],sub:act[1]==="training"&&sub&&sub!=="AD"?sub:""})}}
   return out.map(e=>{let kind=e.sectors.length?"flying":"",rep=e.report,off=e.off,main=null;
-    if(!kind){main=e.acts.find(x=>!["off","special","late"].includes(x.kind))||e.acts.find(x=>x.kind==="off")||null;if(main){kind=main.kind;if(!rep)rep=main.from;if(!off)off=main.to}}
+    let sub;
+    if(!kind){main=e.acts.find(x=>!["off","special","late"].includes(x.kind)&&!/^avail/.test(x.kind))||e.acts.find(x=>x.kind==="special")||e.acts.find(x=>/^avail/.test(x.kind))||e.acts.find(x=>x.kind==="off")||null;if(main){kind=main.kind;if(!rep)rep=main.from;if(!off)off=main.to}}
+    if(SUBK[kind]){sub=SUBK[kind][1];kind=SUBK[kind][0]}
     const also=e.acts.filter(a=>a!==main&&!(a.kind==="off"&&kind==="off")).map(a=>({label:ALSO_LABEL[a.kind]+(a.sub?" "+a.sub:""),from:a.from,to:a.to}));
     if(main&&main.sub)also.unshift({label:"Training "+main.sub,from:main.from,to:main.to});
     if(!kind)kind=e.hdrOff?"off":(rep?"flying":"");
     if(["off","vto","leave","sick"].includes(kind)){rep="";off=""}
-    return kind?{date:e.date,kind,report:rep||"",off:off||"",sectors:e.sectors,also,note:e.sectors.length&&e.acts.some(a=>a.kind==="standby")?"Called from home standby":""}:null}).filter(Boolean)}
+    return kind?{date:e.date,kind,sub,report:rep||"",off:off||"",sectors:e.sectors,also,note:e.sectors.length&&e.acts.some(a=>a.kind==="standby")?"Called from home standby":""}:null}).filter(Boolean)}
 function rpCareful(e){const old=S.roster[e.date];if(!old)return e;
   const hasOld=old.report||(old.sectors||[]).length,hasNew=e.report||(e.sectors||[]).some(x=>x.dep||x.flt);
   if(hasOld&&!hasNew&&e.kind!==old.kind)return null;          // nothing solid read for a day we already know: leave it
@@ -1163,13 +1178,14 @@ function rpApply(txt,careful){
   rosterBackup=JSON.parse(JSON.stringify(S.roster));let nc=0,nl=0;const OLD=rosterBackup;
   C.forEach(e=>{const cur=S.roster[e.date];
     if(cur&&cur.kind===e.kind&&isDutyK(e.kind)&&(cur.report||(cur.sectors||[]).length))return;
-    const o={kind:e.kind,report:"",off:"",dest:"",note:e.n?e.n+" flights":"",src:"paste",sectors:[]};
+    const o={kind:e.kind,report:"",off:"",dest:"",note:e.n?e.n+" flights":"",src:"paste",sectors:[]};if(e.sub)o.sub=e.sub;
     if(e.kind==="standby"||e.kind==="asby")o.note="Times not shown, add them";
     S.roster[e.date]=o;nc++});
   L.forEach(e=>{const sec=cleanSectors(e.sectors.map(x=>{const m=(!x.dep||!x.arr)&&(S.flights||{})[cleanFlt(x.flt)];const y=Object.assign({},x,{dep:z2roster(e.date,x.dep),arr:z2roster(e.date,x.arr)});if(m&&m.from===x.from&&m.to===x.to){y.dep=y.dep||m.dep;y.arr=y.arr||m.arr}return y}));learnFlights(sec,e.date);
     const K=e._keep;if(K){sec.forEach((x,i)=>{const o=(e.sectors[i]||{})._old;if(o){if(!x.dep)x.dep=o.dep;if(!x.arr)x.arr=o.arr}delete x._old})}
     const also=(e.also||[]).map(a=>({label:a.label,from:cleanTime(z2roster(e.date,a.from)),to:cleanTime(z2roster(e.date,a.to))}));
     S.roster[e.date]={kind:e.kind,report:cleanTime(z2roster(e.date,e.report))||(K&&K.report)||"",off:cleanTime(z2roster(e.date,e.off))||(K&&K.off)||"",dest:destFromSectors(sec),note:e.note||"",src:"paste",sectors:sec};
+    if(e.sub)S.roster[e.date].sub=e.sub;
     if(also.length)S.roster[e.date].also=also;else if(K&&K.also)S.roster[e.date].also=K.also;nl++});
   const dates=L.map(x=>x.date).concat(C.map(x=>x.date)).sort();if(dates[0])jumpTo(dates[0]);syncToday();
   const ch=[...new Set(dates)].map(d=>({date:d,ch:rpDiff(d,OLD[d],S.roster[d])})).filter(x=>x.ch.length);
@@ -1468,7 +1484,7 @@ function viewWeek(){
   <section class="card" style="padding:10px">
     <div class="cal" role="grid" aria-label="Roster calendar">
       ${["M","T","W","T","F","S","S"].map(d=>`<span class="calh" aria-hidden="true">${d}</span>`).join("")}
-      ${G.cells.map(d=>{const x=S.roster[d],out=d.slice(0,7)!==G.ym;return `<button class="calc ${out?"out":""} ${d===t?"istoday":""} ${d===sel?"sel":""} ${x?"k-"+x.kind:""}" data-pick="${d}" aria-label="${esc(fmtDate(d,{weekday:"long",day:"numeric",month:"long"}))}${x?", "+KIND_NAME[x.kind]+(x.report?" "+x.report:""):""}" aria-pressed="${d===sel}"><span class="cd">${+d.slice(8)}</span>${x?`<span class="cb"></span>${x.report?`<span class="ct">${esc(x.report)}</span>`:""}${x.kind==="flying"&&(x.dest||(x.sectors||[]).length)?`<span class="cx">${esc(destCodes(x))}</span>`:KIND_CELL[x.kind]?`<span class="cx cxw">${KIND_CELL[x.kind]}</span>`:""}${(x.also||[]).length?`<span class="cx cxw" style="opacity:.8">+${esc(x.also.map(a=>a.label.split(" ")[0]).join(", "))}</span>`:""}`:""}</button>`}).join("")}
+      ${G.cells.map(d=>{const x=S.roster[d],out=d.slice(0,7)!==G.ym;return `<button class="calc ${out?"out":""} ${d===t?"istoday":""} ${d===sel?"sel":""} ${x?"k-"+x.kind:""}" data-pick="${d}" aria-label="${esc(fmtDate(d,{weekday:"long",day:"numeric",month:"long"}))}${x?", "+KIND_NAME[x.kind]+(x.report?" "+x.report:""):""}" aria-pressed="${d===sel}"><span class="cd">${+d.slice(8)}</span>${x?`<span class="cb"></span>${x.report?`<span class="ct">${esc(x.report)}</span>`:""}${x.kind==="flying"&&(x.dest||(x.sectors||[]).length)?`<span class="cx">${esc(destCodes(x))}</span>`:KIND_CELL[x.kind]?`<span class="cx cxw">${esc(x.sub?x.sub.replace(/^Day off · /,"Off · "):KIND_CELL[x.kind])}</span>`:""}${(x.also||[]).length?`<span class="cx cxw" style="opacity:.8">+${esc(x.also.map(a=>a.label.split(" ")[0]).join(", "))}</span>`:""}`:""}</button>`}).join("")}
     </div>
     <div class="btns" style="justify-content:center;gap:14px;font-size:12px;color:var(--muted)"><span><span class="kind flying" style="padding:2px 6px">&nbsp;</span>Flying</span><span><span class="kind standby" style="padding:2px 6px">&nbsp;</span>Standby</span><span><span class="kind training" style="padding:2px 6px">&nbsp;</span>Training</span><span><span class="kind off" style="padding:2px 6px">&nbsp;</span>Day off</span></div>
     ${IS_PWA?`<div class="btns" style="justify-content:center">${calBtn("roster","Add this month to my calendar")}</div><p class="note" style="text-align:center"></p>`:""}
@@ -2694,15 +2710,15 @@ function viewToday(){
   if(trg&&ph==="training")return head("Training day",esc(placeOf(d)||"Training")+" · "+hm(p.rep)+"–"+hmL(asbyEnd()))+todayAlerts(p)+`
   <section class="pass" aria-label="Training" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdCell("Training left",asbyEnd(),"ends "+hm(asbyEnd()),true)}${cdSince("In training",p.rep,"since "+hm(p.rep))}</section>
   ${nudgeCard("training",{rep:p.rep})}`;
-  if(adt&&ph==="adty")return head("Airport duty",esc((d.airport||"Airport").replace(" Airport",""))+" · "+hm(p.rep)+"–"+hmL(asbyEnd()))+todayAlerts(p)+`
-  <section class="pass" aria-label="Airport duty" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdCell("Duty left",asbyEnd(),"ends "+hm(asbyEnd()),true)}${cdSince("On duty",p.rep,"since "+hm(p.rep))}</section>
+  if(adt&&ph==="adty")return head(esc(d.sub||"Airport duty"),esc((d.airport||"Airport").replace(" Airport",""))+" · "+hm(p.rep)+"–"+hmL(asbyEnd()))+todayAlerts(p)+`
+  <section class="pass" aria-label="${esc(d.sub||"Airport duty")}" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdCell("Duty left",asbyEnd(),"ends "+hm(asbyEnd()),true)}${cdSince("On duty",p.rep,"since "+hm(p.rep))}</section>
   ${nudgeCard("duty",{rep:p.rep})}`;
   if(asb&&ph==="asby")return head("Airport standby","At "+esc((d.airport||"the airport").replace(" Airport",""))+" · "+hm(p.rep)+"–"+hmL(asbyEnd()))+todayAlerts(p)+`
   <section class="pass" aria-label="Airport standby" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cdCell("Standby left",asbyEnd(),"ends "+hm(asbyEnd()),true)}${cdSince("On standby",p.rep,"since "+hm(p.rep))}</section>
   <section class="card nowcard" role="status"><span class="label">Now</span><b>On airport standby</b><span class="note" style="margin:0">Until ${hm(asbyEnd())}${(()=>{const ss=p.rep.getTime(),fs=Date.now(),mx=maxFDP(hm(new Date(fs)),2)*60000-Math.max(0,fs-ss-4*3600000),e=new Date(Math.min(fs+mx,ss+16*3600000));return " · if called now (2 sectors), FDP ends by "+hm(e)})()}</span>
     <button class="primary" id="asbycall" style="min-height:56px;font-size:17px">I've been called to fly</button></section>
   ${nudgeCard("asby",{rep:p.rep})}`;
-  return head(asb?"Airport standby":trg?"Training day":adt?"Airport duty":"Duty day",(asb?"Standby ":trg?"Training ":adt?"Starts ":"Report ")+hm(p.rep)+(asb||trg||adt?"–"+esc(d.end||""):"")+(RZ()?"L":"")+(asb||trg||adt?"":dest?" · "+esc(dest):"")+(trg&&d.loc?" · "+esc(d.loc):""))+todayAlerts(p)+`
+  return head(asb?"Airport standby":trg?"Training day":adt?esc(d.sub||"Airport duty"):"Duty day",(asb?"Standby ":trg?"Training ":adt?"Starts ":"Report ")+hm(p.rep)+(asb||trg||adt?"–"+esc(d.end||""):"")+(RZ()?"L":"")+(asb||trg||adt?"":dest?" · "+esc(dest):"")+(trg&&d.loc?" · "+esc(d.loc):""))+todayAlerts(p)+`
   ${ph==="duty"?nowDuty(p):nowBefore(p)}
   ${ph==="duty"?fold(F("dutytimes"),"Duty times",()=>`<section class="pass" aria-label="Duty clock" style="grid-template-columns:repeat(2,minmax(0,1fr));border:0;padding:0">${cdSince("On duty",p.rep,"since "+hm(p.rep))}${cdCell("FDP left",fdpEnd(),"ends by "+hm(fdpEnd()),true)}</section>${homeEnd()?`<p class="note" style="margin:0">Duty ends ${hmL(homeEnd())} · ${hmZ(homeEnd())}Z (on blocks + 30)</p>`:""}`,false,"FDP left "+fmtIn(fdpEnd()-Date.now()))
     :fold(F("coming"),"Coming up",()=>comingUpBody(p)+leaveWhy(p),false,comingUpHint(p))}
@@ -4046,7 +4062,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.etkind){const sEl=$("#et-s"),eEl=$("#et-e");if(sEl)ET.start=sEl.value;if(eEl)ET.end=eEl.value;ET.kind=b.dataset.etkind;render();return}
   if(b.id==="etsave"){const err=saveToday();if(err){const s2=$("#et-s");if(s2){s2.focus();s2.setCustomValidity(err);s2.reportValidity()}return}render();save();return}
   if(b.id==="asbycall"){const now=Date.now();S.duty.asbyStart=plan().rep.getTime();S.duty.asbyCall=now;S.duty.kind="flying";S.duty.calledFrom=hm(new Date(now));S.foldDay="";render();save();return}
-  if(b.dataset.dkind){S.duty.kind=b.dataset.dkind;if(S.duty.kind==="standby")S.standby.start=S.duty.report;render();save();return}
+  if(b.dataset.dkind){S.duty.kind=b.dataset.dkind;S.duty.sub="";if(S.duty.kind==="standby")S.standby.start=S.duty.report;render();save();return}
   if(b.id==="addsick"||b.id==="updsick"){
     const from=$("#sk-from").value,to0=$("#sk-to").value||from,type=$("#sk-type").value;if(!from)return;
     const to=to0<from?from:to0;
@@ -4066,7 +4082,7 @@ document.addEventListener("click",e=>{
   if(b.id==="fnmake"){makeFitNotePdf(b);return}
   if(b.dataset.mo){monthOff+=+b.dataset.mo;selDay=null;render();return}
   if(b.dataset.pick){selDay=b.dataset.pick;const G=monthGrid();if(selDay.slice(0,7)!==G.ym){const t=new Date(today()+"T00:00:00"),p=new Date(selDay+"T00:00:00");monthOff=(p.getFullYear()-t.getFullYear())*12+(p.getMonth()-t.getMonth())}render();return}
-  if(b.dataset.setkind){const d=selDay||today(),cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual"};cur.kind=b.dataset.setkind;
+  if(b.dataset.setkind){const d=selDay||today(),cur=S.roster[d]||{kind:"flying",report:"",off:"",dest:"",note:"",src:"manual"};cur.kind=b.dataset.setkind;delete cur.sub;
     const kd=cur.kind,f=readDayForm(d);f.kind=kd;S.roster[d]=f;selDay=d;render();save();return}
   if(b.dataset.copyday){const d=b.dataset.copyday,nx=addDays(d,1),src=S.roster[d];if(!src)return;S.roster[nx]=JSON.parse(JSON.stringify(src));selDay=nx;render();save();return}
   if(b.dataset.editday){editDay=editDay===b.dataset.editday?null:b.dataset.editday;render();return}
