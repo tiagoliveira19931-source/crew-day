@@ -37,3 +37,4 @@ Also 1.35.3 (from a screenshot Tiago sent): Getting home tidy-up: Take this butt
 - Dish drawings with a full view (ingredients, how to make it).
 - 1.36.1 (Tiago): "if you're off quickly" counts from the predicted landing (online estimate or running timer) + quickest time to the stop; sketches behind the Now card; dish photos from Wikipedia (dish name only looked up) with the drawing as fallback.
 - 1.36.2: code clean-up: removed unused screens and helpers (old map, notes, week list, payslip leftovers), unused styles and duplicate airport codes; lint clean; tests write screenshots to /tmp.
+- 1.36.3 (Tiago, screenshot 15 Nov): On blocks not filled from online. Now checks as soon as the app opens and every 10 min per flight; treats a flight as landed when the feed is 30+ min past its expected landing; stops a timer left running; says to type the times when the feed has moved on (it only keeps a flight for a few hours).

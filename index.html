@@ -19,7 +19,7 @@ body{margin:0;font:14px system-ui,-apple-system,sans-serif}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.36.2";</script>
+<script>window.CREWDAY_PWA=true;window.CREWDAY_VERSION="1.36.3";</script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap">
@@ -1228,7 +1228,7 @@ function ocrClean(t){return String(t||"").split("\n").map(l=>l
   .replace(/\b(Stn|Lis|Bgy|Ber|Dub|Mad|Lpa|Alc|Arn|Nte|Opo|Agp|Ein|Hhn|Kir|Tfs)\b/g,m=>m.toUpperCase())
   .replace(/\s[=—–]+\s/g," → ")
   .replace(/\bF\s?R\s?S?([0-9SOEBIlGZ]{4})\b/g,(m,d)=>"FR"+d.replace(/S/g,"5").replace(/O/g,"0").replace(/[EG]/g,"6").replace(/B/g,"8").replace(/[Il]/g,"1").replace(/Z/g,"2"))).join("\n")}
-window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{aptTZ:c=>aptTZ(c),ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),careful:t=>rpZ(t).map(rpCareful)});
+window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{aptTZ:c=>aptTZ(c),ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),ft:()=>S.ft?JSON.parse(JSON.stringify(S.ft)):null,careful:t=>rpZ(t).map(rpCareful)});
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
     // each picture: read the cleaned-up version; if no roster days come out, try again another way and keep the best
@@ -3112,7 +3112,10 @@ function ftLiveOf(f){const L=S.ftLive&&S.ftLive[f];return L&&L.date===today()?L:
 function homeClockNote(){if(!window.CREWDAY_HOME_CLOCK)return "";let p=0;try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:window.CREWDAY_PHONE_TZ,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(window.Date.now()),[h,m]=f.split(":").map(Number),u=new Date();p=(h*60+m)-(u.getHours()*60+u.getMinutes());if(p>720)p-=1440;if(p<-720)p+=1440}catch(e){}
   if(!p)return "";const city=String(window.CREWDAY_PHONE_TZ).split("/").pop().replace(/_/g," ");
   return `<p class="note" style="margin:4px 0 0">Your phone is on ${esc(city)} time (${p>0?"+":"−"}${hmDur(Math.abs(p))}). Crew Day keeps UK time, your base, so trains, alarms and duty times stay right.</p>`}
-function liveLand(L){return L?(L.arrAct||(/landed|arrived/i.test(L.status||"")?(L.arrEst||L.arrSched):0)):0}
+// landing time: the real on-block time; or "landed" with its latest expected time; or, when the feed is slow to
+// update, an expected landing that's over 30 minutes ago on a flight that's known to have left
+function liveLand(L){if(!L)return 0;if(L.arrAct)return L.arrAct;const est=L.arrEst||L.arrSched;
+  if(/landed|arrived/i.test(L.status||""))return est||0;if(L.depAct&&est&&Date.now()-est>30*60000)return est;return 0}
 // the online flight is the one on this day (a flight number flies every day, so check the scheduled time matches)
 function liveMatches(t,x,L){if(!L||!x||!x.dep||!L.depSched)return !!L;return Math.abs(r2lDT(t,x.dep).getTime()-L.depSched)<4*3600000}
 function liveFill(t,x,L){if(!liveMatches(t,x,L))return;const ms2r=v=>(RZ()?hmZ:hm)(new Date(v)),land=liveLand(L);
@@ -3151,13 +3154,20 @@ setInterval(()=>{if(document.visibilityState!=="visible"||navigator.onLine===fal
   const land=(L.arrEst||L.arrSched||0);if(!liveLand(L)&&land&&now>=land+300000&&now<=land+5400000&&since>=600000)ftLiveCheck(false)},30000);
 // the day's other flights: fill missing block times from online once each has landed (one look per flight every 20 min, for a day)
 const liveTried={};
-setInterval(()=>{const key=(S.me.flightKey||"").trim();if(!key||document.visibilityState!=="visible"||navigator.onLine===false)return;const now=Date.now();
+// the free feed only keeps a flight until the same flight number's next one replaces it (usually the next day),
+// so this looks as soon as Crew Day is opened, then every 30 s (each flight at most every 10 min)
+function liveBackfill(){const key=(S.me.flightKey||"").trim();if(!key||document.visibilityState!=="visible"||navigator.onLine===false)return;const now=Date.now();
   for(const t of [today(),addDays(today(),-1)]){const r=S.roster[t];if(!r||!r.sectors)continue;
     for(const x of r.sectors){if(!x.flt||!x.dep||(x.offb&&x.onb))continue;const std=r2lDT(t,x.dep).getTime(),k=t+"|"+cleanFlt(x.flt);
-      if(now<std+20*60000||now>std+26*3600000||(liveTried[k]&&now-liveTried[k]<1200000))continue;
-      const run=S.ft&&S.ft.start&&!S.ft.stop&&S.ft.date===t&&r.sectors[S.ft.i]===x;if(run)continue;
-      liveTried[k]=now;liveFetch(cleanFlt(x.flt),key).then(({R,L})=>{if(R.reg_number&&!x.reg&&liveMatches(t,x,L))x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");const b=x.offb+"|"+x.onb;liveFill(t,x,L);if(x.offb+"|"+x.onb!==b){render();save()}}).catch(()=>{});
-      return}}},30000);
+      if(now<std+20*60000||now>std+26*3600000||(liveTried[k]&&now-liveTried[k]<600000))continue;
+      const run=S.ft&&S.ft.start&&!S.ft.stop&&S.ft.date===t&&r.sectors[S.ft.i]===x;
+      if(run&&now<std+90*60000)continue; // the timer's own checks look after a flight in progress
+      liveTried[k]=now;liveFetch(cleanFlt(x.flt),key).then(({R,L})=>{if(!liveMatches(t,x,L))return;if(R.reg_number&&!x.reg)x.reg=String(R.reg_number).toUpperCase().replace(/-/g,"");const b=x.offb+"|"+x.onb;liveFill(t,x,L);
+        // a timer left running on this flight stops at the landing time
+        const ft=S.ft;if(x.onb&&ft&&ft.start&&!ft.stop&&ft.date===t&&r.sectors[ft.i]===x){const land=liveLand(L)||r2lDT(t,x.onb).getTime(),blk=Math.round((land-ft.start)/60000);ftDone(t).push(ft.i);S.ftLast={date:t,block:blk,est:ft.est,prev:Object.assign({},ft)};S.ft=null}
+        if(x.offb+"|"+x.onb!==b||!S.ft){render();save()}}).catch(()=>{});
+      return}}}
+setInterval(liveBackfill,30000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(liveBackfill,1500)});setTimeout(liveBackfill,4000);
 async function regCheck(t,j){const d=S.roster[t],x=d&&d.sectors&&d.sectors[j],key=(S.me.flightKey||"").trim();if(!x||!x.flt||x.reg||!key)return;
   if(!S.regChk)S.regChk={};S.regChk[t+"|"+j]=Date.now();
   try{const r=await fetch("https://airlabs.co/api/v9/flight?flight_iata="+encodeURIComponent(cleanFlt(x.flt))+"&api_key="+encodeURIComponent(key),{cache:"no-store"}).then(r=>r.json());
@@ -3234,6 +3244,7 @@ function tripFlightsBody(){
         <label for="ts-b-${i}">Block today</label><input id="ts-b-${i}" type="text" inputmode="numeric" placeholder="${pb?"Planned "+fmtMins(pb):"e.g. 2:35"}" value="${x.est?fmtMins(x.est):""}" data-secest="${i}"><span class="note" style="margin:0">From the briefing</span>
       </div>
       ${blockNote(x,pb,ab)}
+      ${(S.me.flightKey||"").trim()&&x.arr&&!x.onb&&Date.now()>r2lDT(dt,x.arr).getTime()+6*3600000?`<span class="note" style="margin:0">Online times are only kept for a few hours after landing, so please type ${x.offb?"on blocks":"the block times"} here.</span>`:""}
       ${x.offbLive||x.onbLive?`<span class="note" style="margin:0">${x.offbLive&&x.onbLive?"Off and on blocks":x.offbLive?"Off blocks":"On blocks"} filled in from online. Change it if yours differs.</span>`:""}
       <span class="note" style="margin:0">${ab?`Actual block <b>${fmtMins(ab)}</b>${x.est?` (briefing ${fmtMins(x.est)}, ${ab>x.est?"+":ab<x.est?"−":"±"}${fmtMins(Math.abs(ab-x.est))})`:pb?` (planned ${fmtMins(pb)}, ${ab>pb?"+":ab<pb?"−":"±"}${fmtMins(Math.abs(ab-pb))})`:""}`:x.est?`Today's block ${fmtMins(x.est)}${pb?" (planned "+fmtMins(pb)+")":""}`:pb?`Planned block ${fmtMins(pb)}`:""}${x.ctot&&x.dep?` · slot ${(()=>{const d=blockMins({dep:x.dep,arr:x.ctot});return d>720?"before STD":"+"+d+" min after STD"})()}`:""}</span>
     </div>`});
