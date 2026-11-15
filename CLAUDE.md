@@ -15,7 +15,9 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 ## Rules from Tiago (keep them)
 - Plain words: write "VTO" (never "veto"); no abbreviations like HSBY/ASBY in the interface (say Home standby, Airport standby).
 - Roster times are entered in Zulu; everything else shows local time marked "L".
-- No sales targets, no swap market, no training or annual-leave planner, no payslip storage. Selling staff travel is illegal: never support it.
+- No swap market, no training or annual-leave planner. Selling staff travel is illegal: never support it.
+- Sales: crew log their own sales and commission; they can tick "sales target met" for a flight, but the app never sets, asks for or suggests a target.
+- Payslips: crew may keep them in a Documents folder they create themselves if they want; the app never asks for them, has no payslip feature and makes no payslip folder.
 - Airlines in Profile: Ryanair, Ryanair UK, Jet2, Norse, Other. Home standby call-out: Ryanair and Ryanair UK 1 hour, Jet2 2 hours, Norse not set (crew check their manual). Ryanair group uses a crew code, Jet2 and Norse a staff number.
 - Norse is long-haul: the FTL tools are short-haul only and say so for Norse. Long-haul FTL needs checking against the regulation with Tiago before it's built.
 - Test rosters in dev/tests are made up. Never put a real roster in the repo.
@@ -34,7 +36,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Getting home: "if you're off quickly" options start at on blocks + Profile "Quickest from on blocks to the station" (default 20 min), inside the 30 minutes before duty ends.
 - Layout: Today opens with a Now card (current step and time left, or flight/train countdown on duty); everything else folds (closed by default, also on Plan and Trip). Timers and the Trip flight timer stay open. Older tests run with window.CREWDAY_TEST_OPEN (set by run_tests.sh) so the sections they read start open.
 - Destination comes from the day's flights (tripAutoDest); the place picker lives in Facts › Change place.
-- Dish pictures: a Wikipedia photo of that kind of dish when online (only the dish name is looked up, via DISH_WIKI), with a built-in line drawing (dishCat) until it loads or offline; tap opens the full view with ingredients and how to make it. Payslips are never stored (old data is deleted on load).
+- Dish pictures: a Wikipedia photo of that kind of dish when online (only the dish name is looked up, via DISH_WIKI), with a built-in line drawing (dishCat) until it loads or offline; tap opens the full view with ingredients and how to make it.
 
 ## Issue reports
 Crew send problems and ideas from More › Report an issue. They queue offline and go to Tiago's Google Form "Crew Day Reports" (responses in a linked Google Sheet). Columns: Timestamp, Type, Area, Report, Version, Airline.
