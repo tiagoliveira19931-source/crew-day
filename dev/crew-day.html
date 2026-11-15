@@ -1647,7 +1647,7 @@ async function makeFitNotePdf(btn){
 /* ---------- Self-certificate (Ryanair group): the app draws the form itself, filled from Profile and the sick days ---------- */
 const SC_CONTRACTS=["FR","CWK","WFI","BRK","STM","SKY"];
 // Ryanair group cabin crew ranks (the code goes on forms such as the self-certificate)
-const RYR_RANKS=[["JU","JU · Cabin crew"],["JU Adhoc","JU Adhoc · Cabin crew with CSS training (paid as JU)"],["JUPU","JUPU · Cabin crew on the newer contract"],["CSS","CSS · Cabin service supervisor"],["LC CSS","LC CSS · Line checker"],["SEPI","SEPI · Safety and emergency procedures instructor"],["SEPE","SEPE · Safety and emergency procedures examiner"]];
+const RYR_RANKS=[["JU","JU · Cabin crew"],["JU Adhoc","JU Adhoc · Cabin crew with CSS training (paid as JU)"],["JUPU","JUPU · Junior purser (trained to work as CSS)"],["CSS","CSS · Cabin service supervisor"],["LC CSS","LC CSS · Line checker"],["SEPI","SEPI · Safety and emergency procedures instructor"],["SEPE","SEPE · Safety and emergency procedures examiner"]];
 function rankField(m){if(!isRyr())return `<div class="field"><label for="sc-rank">Rank</label><input id="sc-rank" type="text" maxlength="12" value="${esc(m.rank||"")}" data-k="me.rank" placeholder="e.g. PU, JU"></div>`;
   const known=RYR_RANKS.some(r=>r[0]===m.rank);
   return `<div class="field"><label for="sc-rank">Rank</label><select id="sc-rank" data-k="me.rank"><option value="" ${m.rank?"":"selected"}>Choose…</option>${RYR_RANKS.map(r=>`<option value="${esc(r[0])}" ${m.rank===r[0]?"selected":""}>${esc(r[1])}</option>`).join("")}${m.rank&&!known?`<option value="${esc(m.rank)}" selected>${esc(m.rank)}</option>`:""}</select></div>`}
