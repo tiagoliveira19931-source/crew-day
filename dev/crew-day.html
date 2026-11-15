@@ -194,6 +194,8 @@ main[data-art="settings"] header:first-of-type::before{content:"";-webkit-mask-i
 main[data-art="issues"] header:first-of-type::before{content:"";-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M150%2030%20H270%20V92%20H206%20L184%20114%20V92%20H150%20Z%22%2F%3E%3Cpath%20d%3D%22M180%2052%20H240%20M180%2070%20H226%22%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M150%2030%20H270%20V92%20H206%20L184%20114%20V92%20H150%20Z%22%2F%3E%3Cpath%20d%3D%22M180%2052%20H240%20M180%2070%20H226%22%2F%3E%3C%2Fsvg%3E")}
 main[data-art="backup"] header:first-of-type::before{content:"";-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M164%20100%20Q140%20100%20142%2080%20Q144%2062%20164%2064%20Q170%2038%20198%2040%20Q222%2040%20228%2060%20Q256%2058%20258%2080%20Q258%20100%20236%20100%20Z%22%2F%3E%3Cpath%20d%3D%22M200%2092%20V64%20M188%2076%20L200%2064%20L212%2076%22%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20130%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M164%20100%20Q140%20100%20142%2080%20Q144%2062%20164%2064%20Q170%2038%20198%2040%20Q222%2040%20228%2060%20Q256%2058%20258%2080%20Q258%20100%20236%20100%20Z%22%2F%3E%3Cpath%20d%3D%22M200%2092%20V64%20M188%2076%20L200%2064%20L212%2076%22%2F%3E%3C%2Fsvg%3E")}
 .ftcard{border-color:var(--accent)}
+.slline{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--line)}.slline:first-of-type{border-top:0}
+.slline select,.slone select{width:100%;min-width:0}.slline .row>*,.slper .row>*{min-width:0}.slper input[type=date]{width:100%;min-width:0;box-sizing:border-box}
 .dishpic{flex:none;width:56px;height:56px;padding:3px;border-radius:14px;background:var(--accent-soft);color:var(--accent);border:0;display:inline-flex;align-items:center;justify-content:center;min-height:0;position:relative;overflow:hidden}
 .dishpic .dimg{position:absolute;inset:0;display:block}.dishpic .dimg img{width:100%;height:100%;object-fit:cover;display:block}
 #dishview .dvphoto{margin:0;display:grid;gap:4px}#dishview .dvphoto img{width:100%;max-height:46vh;object-fit:cover;border-radius:18px;background:var(--accent-soft)}#dishview figcaption{font-size:12px;color:var(--muted)}#dishview figcaption a{color:var(--accent);font-weight:700}
@@ -1222,7 +1224,7 @@ function ocrClean(t){return String(t||"").split("\n").map(l=>l
   .replace(/\b(Stn|Lis|Bgy|Ber|Dub|Mad|Lpa|Alc|Arn|Nte|Opo|Agp|Ein|Hhn|Kir|Tfs)\b/g,m=>m.toUpperCase())
   .replace(/\s[=—–]+\s/g," → ")
   .replace(/\bF\s?R\s?S?([0-9SOEBIlGZ]{4})\b/g,(m,d)=>"FR"+d.replace(/S/g,"5").replace(/O/g,"0").replace(/[EG]/g,"6").replace(/B/g,"8").replace(/[Il]/g,"1").replace(/Z/g,"2"))).join("\n")}
-window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{aptTZ:c=>aptTZ(c),ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),ft:()=>S.ft?JSON.parse(JSON.stringify(S.ft)):null,careful:t=>rpZ(t).map(rpCareful)});
+window.CREWDAY_TEST=Object.assign(window.CREWDAY_TEST||{},{aptTZ:c=>aptTZ(c),slip:()=>slipEstimate(),tax:(g,c)=>ukTaxMonth(g,c),ocrPrep:f=>ocrPrep(f),ocrClean:t=>ocrClean(t),rpZ:t=>rpZ(t),roster:()=>JSON.parse(JSON.stringify(S.roster)),ft:()=>S.ft?JSON.parse(JSON.stringify(S.ft)):null,careful:t=>rpZ(t).map(rpCareful)});
 async function ocrRead(files){if(ocrBusy||!files||!files.length)return;ocrBusy=true;ocrMsg="Getting the reader ready… (the first time it downloads about 15 MB, then works offline)";render();let worker=null;
   try{const T=await loadOCR();worker=await T.createWorker("eng");try{await worker.setParameters({tessedit_pageseg_mode:"4"})}catch(e){}let all="";
     // each picture: read the cleaned-up version; if no roster days come out, try again another way and keep the best
@@ -1644,10 +1646,18 @@ async function makeFitNotePdf(btn){
 
 /* ---------- Self-certificate (Ryanair group): the app draws the form itself, filled from Profile and the sick days ---------- */
 const SC_CONTRACTS=["FR","CWK","WFI","BRK","STM","SKY"];
+// Ryanair group cabin crew ranks (the code goes on forms such as the self-certificate)
+const RYR_RANKS=[["JU","JU · Cabin crew"],["JU Adhoc","JU Adhoc · Cabin crew with CSS training (paid as JU)"],["JUPU","JUPU · Cabin crew on the newer contract"],["CSS","CSS · Cabin service supervisor"],["LC CSS","LC CSS · Line checker"],["SEPI","SEPI · Safety and emergency procedures instructor"],["SEPE","SEPE · Safety and emergency procedures examiner"]];
+const RYR_ROLES=[["","None"],["DS","Deputy base supervisor"],["BS","Base supervisor"]];
+function rankField(m){if(!isRyr())return `<div class="field"><label for="sc-rank">Rank</label><input id="sc-rank" type="text" maxlength="12" value="${esc(m.rank||"")}" data-k="me.rank" placeholder="e.g. PU, JU"></div>`;
+  const known=RYR_RANKS.some(r=>r[0]===m.rank);
+  return `<div class="field"><label for="sc-rank">Rank</label><select id="sc-rank" data-k="me.rank"><option value="" ${m.rank?"":"selected"}>Choose…</option>${RYR_RANKS.map(r=>`<option value="${esc(r[0])}" ${m.rank===r[0]?"selected":""}>${esc(r[1])}</option>`).join("")}${m.rank&&!known?`<option value="${esc(m.rank)}" selected>${esc(m.rank)}</option>`:""}</select></div>`}
+function roleField(m){if(!isRyr())return "";return `<div class="field"><label for="sc-role">Base role (on top of your rank)</label><select id="sc-role" data-k="me.role">${RYR_ROLES.map(r=>`<option value="${r[0]}" ${(m.role||"")===r[0]?"selected":""}>${r[1]}</option>`).join("")}</select></div>`}
 function pfSC(){const m=S.me;return `<p class="note" style="margin:0">Used to fill in your self-certificate when you're off sick. Everything stays on this phone.</p>
     <div class="field"><label for="sc-emp">Staff number</label><input id="sc-emp" type="text" inputmode="numeric" maxlength="12" value="${esc(m.empNo||"")}" data-k="me.empNo" placeholder="From your payslip or crew ID"><span class="note" style="margin:0">Your crew code is the one at the top of Profile.</span></div>
     <div class="row"><div class="field"><label for="sc-dept">Department</label><input id="sc-dept" type="text" maxlength="30" value="${esc(m.dept||"")}" data-k="me.dept" placeholder="e.g. Inflight"></div>
-    <div class="field"><label for="sc-rank">Rank</label><input id="sc-rank" type="text" maxlength="12" value="${esc(m.rank||"")}" data-k="me.rank" placeholder="e.g. PU, JU"></div></div>
+    ${rankField(m)}</div>
+    ${roleField(m)}
     <div class="row"><div class="field"><label for="sc-entry">Date of entry</label><input id="sc-entry" type="date" value="${esc(m.entry||"")}" data-k="me.entry"></div>
     <div class="field"><label for="sc-con">Contract</label><select id="sc-con" data-k="me.contract"><option value="">Choose</option>${SC_CONTRACTS.map(c=>`<option ${m.contract===c?"selected":""}>${c}</option>`).join("")}</select></div></div>
     <div class="field"><label for="sc-med">Company medical email</label><input id="sc-med" type="email" autocomplete="off" value="${esc(m.medEmail||"")}" data-k="me.medEmail" placeholder="Where self-certificates are sent"></div>
@@ -2121,8 +2131,93 @@ function viewMoney(){
   return `  <div class="btns" role="tablist" aria-label="Money sections">${moneyViews().map(m=>`<button class="pick" role="tab" aria-selected="${sub===m[0]}" aria-pressed="${sub===m[0]}" data-mv="${m[0]}">${m[1]}</button>`).join("")}</div>
   ${body()}`;
 }
+/* ---------- Pay like my payslip: crew set their own lines and amounts (nothing about any airline's rates is built in) ---------- */
+// England & Wales bank holidays (GOV.UK)
+const BANK_HOLS=["2026-01-01","2026-04-03","2026-04-06","2026-05-04","2026-05-25","2026-08-31","2026-12-25","2026-12-28","2027-01-01","2027-03-26","2027-03-29","2027-05-03","2027-05-31","2027-08-30","2027-12-27","2027-12-28"];
+const SLIP_TYPES=[["month","£ a month (always the same)"],["hour","£ per flight hour"],["day","£ per day of…"],["sales","Sales bonus (from my sales log)"],["sick","Taken off per sick day"]];
+const SLIP_DAYS=[["GD","Ground duty"],["TRNG","Training"],["AD","Airport duty"],["SD","Special duty"],["BH","Duty on a bank holiday"],["SBY","Home standby"],["FLY","Flying day"]];
+// the payslip layout crew can start from: names only, every amount is theirs to type
+const SLIP_RYR=[["Basic Salary","month"],["CSS Allowance","month"],["London Allowance","month"],["UNIMED Allowance","month"],["UNIMED (sick days)","sick"],["Daily Allowance","hour"],["Sales Bonus","sales"],["Ground Duties","day","GD"],["Training","day","TRNG"],["Bank Holiday","day","BH"]];
+function slipOf(){const P=S.pay;if(!P.slip)P.slip={from:"",to:"",lines:[],ded:[],taxCode:"1257L",pen:4,penBasis:"qual"};return P.slip}
+function slipPeriod(){const sl=slipOf(),t=today();let from=sl.from,to=sl.to;if(!from||!to||to<from){from=t.slice(0,8)+"01";to=addDays(addMonths(from,1),-1)}return {from,to}}
+function addMonths(d,n){const [y,m]=d.split("-").map(Number),x=new Date(Date.UTC(y,m-1+n,1));return x.getUTCFullYear()+"-"+String(x.getUTCMonth()+1).padStart(2,"0")+"-01"}
+// what the roster says for the pay period
+function slipCounts(){const {from,to}=slipPeriod();let mins=0,sched=0,fly=0,bh=0;const code={GD:0,TRNG:0,AD:0,SD:0,SBY:0};const now=Date.now();
+  Object.keys(S.roster).filter(d=>d>=from&&d<=to).forEach(d=>{const r=S.roster[d];if(!r)return;
+    if(r.kind==="flying"&&(r.sectors||[]).length)fly++;
+    if(isDutyK(r.kind)&&BANK_HOLS.includes(d))bh++;
+    if(r.kind==="training")code.TRNG++;if(r.kind==="standby")code.SBY++;
+    if(r.kind==="adty"){const sb=r.sub||"Airport duty";if(/ground/i.test(sb))code.GD++;else if(/special/i.test(sb))code.SD++;else if(/airport/i.test(sb))code.AD++}
+    (r.sectors||[]).forEach(x=>{const o=x.offb&&x.onb?[x.offb,x.onb]:null;if(o){let a=r2lDT(d,o[0]),b=r2lDT(d,o[1]);if(b<a)b=new Date(b.getTime()+86400000);mins+=Math.round((b-a)/60000)}
+      else if(x.dep&&x.arr&&r2lDT(d,x.arr).getTime()<now){let a=r2lDT(d,x.dep),b=r2lDT(d,x.arr);if(b<a)b=new Date(b.getTime()+86400000);sched+=Math.round((b-a)/60000)}})});
+  const sick=new Set();(S.sick||[]).forEach(e=>sickDays(e).forEach(d=>{if(d>=from&&d<=to)sick.add(d)}));Object.keys(S.roster).forEach(d=>{if(d>=from&&d<=to&&S.roster[d].kind==="sick")sick.add(d)});
+  const all=mins+sched;return {from,to,mins,sched,paidH:Math.ceil(all/60-1e-9),fly,bh,code,sick:sick.size,
+    sales:S.sales.entries.filter(e=>e.date>=from&&e.date<=to).reduce((s2,e)=>s2+(+e.sales||0)*(+e.rate||0)/100,0)}}
+// sick occasions in the last 12 months from today (days in a row are one occasion)
+function sickOccasions(){const t=today(),y0=addDays(t,-365),set=new Set();(S.sick||[]).forEach(e=>sickDays(e).forEach(d=>{if(d>y0&&d<=t)set.add(d)}));Object.keys(S.roster).forEach(d=>{if(d>y0&&d<=t&&S.roster[d].kind==="sick")set.add(d)});
+  const ds=[...set].sort();let n=0;ds.forEach((d,i)=>{if(i===0||addDays(ds[i-1],1)!==d)n++});return n}
+// UK income tax for one month from the tax code (an estimate: payroll works it out over the whole tax year)
+function ukTaxMonth(taxable,code){code=String(code||"1257L").toUpperCase().replace(/\s|M1|W1|X$/g,"");
+  const sc=/^S/.test(code);code=code.replace(/^[SC]/,"");
+  if(code==="NT")return 0;if(code==="BR")return taxable*0.20;if(code==="D0")return taxable*(sc?0.21:0.40);if(code==="D1")return taxable*(sc?0.42:0.45);if(code==="D2")return taxable*0.45;
+  let allow=0;const k=code.match(/^K(\d+)/),n=code.match(/^(\d+)[A-Z]?$/);if(k)allow=-(+k[1])*10/12;else if(n)allow=(+n[1])*10/12;else if(/^0T/.test(code))allow=0;else allow=12570/12;
+  // bands of taxable pay a year (GOV.UK, rates and thresholds for employers 2026 to 2027), used per month
+  const ti=Math.max(0,taxable-allow)*12,B=sc?[[3967,0.19],[16956,0.20],[31092,0.21],[62430,0.42],[125140,0.45],[Infinity,0.48]]:[[37700,0.20],[125140,0.40],[Infinity,0.45]];
+  let tax=0,lo=0;for(const [hi,r] of B){tax+=Math.max(0,Math.min(ti,hi)-lo)*r;lo=hi;if(ti<=hi)break}return tax/12}
+function slipEstimate(){const sl=slipOf(),C=slipCounts();
+  const val=l=>{const a=+l.amt||0;return l.type==="month"?a:l.type==="hour"?a*C.paidH:l.type==="day"?a*(l.code==="BH"?C.bh:l.code==="FLY"?C.fly:(C.code[l.code]||0)):l.type==="sales"?C.sales:l.type==="sick"?-a*C.sick:0};
+  const rows=sl.lines.map(l=>({l,v:val(l)})),gross=Math.max(0,rows.reduce((s2,x)=>s2+x.v,0));
+  const pen=Math.max(0,(+sl.pen||0)/100*(sl.penBasis==="all"?gross:Math.min(gross,50270/12)-520));
+  const tax=ukTaxMonth(gross,sl.taxCode),ni=Math.max(0,Math.min(gross,4189)-1048)*0.08+Math.max(0,gross-4189)*0.02;
+  const other=(sl.ded||[]).reduce((s2,d)=>s2+(+d.amt||0),0),p2=v=>Math.round(v*100)/100; // payroll rounds each line to the penny
+  const g=p2(gross),pn=p2(pen),tx=p2(tax),n=p2(ni),o=p2(other);return {C,rows,gross:g,pen:pn,tax:tx,ni:n,other:o,net:p2(g-pn-tx-n-o)}}
+function slipBody(){const sl=slipOf(),E=slipEstimate(),C=E.C,hm2=m=>Math.floor(m/60)+":"+String(m%60).padStart(2,"0"),occ=sickOccasions();
+  const typeSel=(l,i)=>`<select id="sl-t-${i}" data-sl="${i}:type" aria-label="How ${esc(l.name||"this line")} is paid">${SLIP_TYPES.map(o=>`<option value="${o[0]}" ${l.type===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>`;
+  const daySel=(l,i)=>l.type==="day"?`<select id="sl-c-${i}" data-sl="${i}:code" aria-label="Which days">${SLIP_DAYS.map(o=>`<option value="${o[0]}" ${l.code===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select>`:"";
+  return `
+  <section class="pass" aria-label="Estimated pay" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+    <div><span class="k">Total payments</span><span class="v">${money(E.gross)}</span><span class="d">${esc(fmtDate(C.from,{day:"numeric",month:"short"}))} – ${esc(fmtDate(C.to,{day:"numeric",month:"short"}))}</span></div>
+    <div><span class="k">Est. net pay</span><span class="v hl">${money(E.net)}</span><span class="d">After tax, NI, pension</span></div>
+  </section>
+  <section class="card slper">
+    <h2>Pay period</h2>
+    <div class="row"><div class="field"><label for="sl-from">From</label><input id="sl-from" type="date" value="${esc(sl.from||C.from)}" data-slk="from"></div><div class="field"><label for="sl-to">To</label><input id="sl-to" type="date" value="${esc(sl.to||C.to)}" data-slk="to"></div></div>
+    <p class="note" style="margin:0">Use the dates your payslip covers. From your roster in this period: <b>${hm2(E.C.mins+E.C.sched)} flight hours → paid ${C.paidH} h</b> (rounded up)${C.sched?`, of which ${hm2(C.sched)} from the schedule where no block times are typed yet`:""}; ${C.fly} flying day${C.fly===1?"":"s"}${C.code.GD?`, ${C.code.GD} ground duty`:""}${C.code.TRNG?`, ${C.code.TRNG} training`:""}${C.bh?`, ${C.bh} on a bank holiday`:""}${C.sick?`, ${C.sick} sick day${C.sick===1?"":"s"}`:""}.</p>
+  </section>
+  <section class="card">
+    <h2>Payments</h2>
+    ${sl.lines.length?"":`<p class="note" style="margin:0">Add the lines from your payslip with your own amounts.</p><div class="btns" style="margin:0">${isRyr()?`<button class="primary" data-sltpl="ryr">Start from the Ryanair payslip layout</button>`:""}<button data-sladd="1">Add a line</button></div>`}
+    ${sl.lines.map((l,i)=>`<div class="slline"><div class="row"><div class="field"><label for="sl-n-${i}">Name on the payslip</label><input id="sl-n-${i}" type="text" value="${esc(l.name)}" data-sl="${i}:name" maxlength="40"></div>
+      <div class="field"><label for="sl-a-${i}">Amount (£)</label><input id="sl-a-${i}" class="num" type="number" step="0.01" min="0" inputmode="decimal" value="${l.type==="sales"?"":esc(l.amt||"")}" ${l.type==="sales"?'disabled placeholder="from sales log"':""} data-sl="${i}:amt"></div></div>
+      <div class="${l.type==="day"?"row":"slone"}">${typeSel(l,i)}${daySel(l,i)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="note" style="margin:0">This period: <b>${E.rows[i].v<0?"−"+money(-E.rows[i].v):money(E.rows[i].v)}</b></span><button class="ghost" data-sldel="${i}" aria-label="Remove ${esc(l.name)}">Remove</button></div></div>`).join("")}
+    ${sl.lines.length?`<div class="btns" style="margin:0"><button data-sladd="1">Add a line</button></div>`:""}
+    ${sl.lines.some(l=>l.type==="sick")?`<p class="note" style="margin:0">Taken off for sick days is given back if the sickness is certified and you've had no more than 3 occasions in 12 months. You have <b>${occ} occasion${occ===1?"":"s"}</b> in the last 12 months.</p>`:""}
+  </section>
+  <section class="card">
+    <h2>Deductions</h2>
+    <div class="row"><div class="field"><label for="sl-tc">Tax code</label><input id="sl-tc" type="text" value="${esc(sl.taxCode||"1257L")}" data-slk="taxCode" maxlength="10" autocapitalize="characters"></div>
+      <div class="field"><label for="sl-pen">Pension you pay (%)</label><input id="sl-pen" class="num" type="number" step="0.5" min="0" inputmode="decimal" value="${esc(sl.pen)}" data-slk="pen"></div></div>
+    <div class="field"><label for="sl-pb">Pension worked out on</label><select id="sl-pb" data-slk="penBasis"><option value="qual" ${sl.penBasis!=="all"?"selected":""}>Pay above £520 a month (like NEST)</option><option value="all" ${sl.penBasis==="all"?"selected":""}>All my pay</option></select></div>
+    ${(sl.ded||[]).map((d,i)=>`<div class="row" style="align-items:end"><div class="field"><label for="sd-n-${i}">Deduction</label><input id="sd-n-${i}" type="text" value="${esc(d.name)}" data-sd="${i}:name" maxlength="40"></div><div class="field"><label for="sd-a-${i}">£ a month</label><input id="sd-a-${i}" class="num" type="number" step="0.01" min="0" inputmode="decimal" value="${esc(d.amt||"")}" data-sd="${i}:amt"></div><button class="ghost" data-sddel="${i}" aria-label="Remove ${esc(d.name)}">Remove</button></div>`).join("")}
+    <div class="btns" style="margin:0"><button data-sdadd="1">Add a deduction (e.g. car park)</button></div>
+    <table><tbody>
+      <tr><td>Total payments</td><td class="r m">${money(E.gross)}</td></tr>
+      <tr><td>Income tax</td><td class="r m">−${money(E.tax)}</td></tr>
+      <tr><td>National Insurance</td><td class="r m">−${money(E.ni)}</td></tr>
+      <tr><td>Pension</td><td class="r m">−${money(E.pen)}</td></tr>
+      ${E.other?`<tr><td>Other deductions</td><td class="r m">−${money(E.other)}</td></tr>`:""}
+      <tr><th scope="row" style="color:var(--ink);font-size:14px;text-transform:none;letter-spacing:0">Estimated net pay</th><td class="r m" style="font-weight:700">${money(E.net)}</td></tr>
+    </tbody></table>
+    <p class="note">An estimate with 2026/27 UK rates for one month (tax code ${esc(sl.taxCode||"1257L")}, National Insurance category A). Payroll works tax out over the whole year, so your payslip can differ by a few pounds. Student loans aren't included. Your payslip is always the final word.</p>
+  </section>`}
 function viewPay(){
-  const P=S.pay,E=estimate();
+  const P=S.pay;
+  const typeSel=`<section class="card"><div class="field" style="margin:0"><label for="p-type">How your airline pays you</label><select id="p-type" data-k="pay.payType">
+      ${[["slip","Like my payslip (my own lines)"],["sector","Sector pay"],["duty","Duty pay (per duty hour)"],["flight","Flight time pay (per block hour)"],["mix","A mix of these"]].map(o=>`<option value="${o[0]}" ${P.payType===o[0]?"selected":""}>${o[1]}</option>`).join("")}
+    </select></div></section>`;
+  if(P.payType==="slip")return typeSel+slipBody();
+  const E=estimate();
   const f=(id,label,k,step,hint)=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" class="num" type="number" min="0" step="${step}" inputmode="decimal" value="${esc(P[k])}" data-k="pay.${k}">${hint?`<span class="note">${hint}</span>`:""}</div>`;
   return `
   <section class="pass" aria-label="Estimated pay this month" style="grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -2132,7 +2227,7 @@ function viewPay(){
   <section class="card">
     <h2>Your pay details</h2>
     <div class="field"><label for="p-type">How your airline pays you</label><select id="p-type" data-k="pay.payType">
-      ${[["sector","Sector pay"],["duty","Duty pay (per duty hour)"],["flight","Flight time pay (per block hour)"],["mix","A mix of these"]].map(o=>`<option value="${o[0]}" ${P.payType===o[0]?"selected":""}>${o[1]}</option>`).join("")}
+      ${[["slip","Like my payslip (my own lines)"],["sector","Sector pay"],["duty","Duty pay (per duty hour)"],["flight","Flight time pay (per block hour)"],["mix","A mix of these"]].map(o=>`<option value="${o[0]}" ${P.payType===o[0]?"selected":""}>${o[1]}</option>`).join("")}
     </select></div>
     ${f("p-basic","Basic salary (£ a year)","basic","100")}
     ${P.payType==="sector"||P.payType==="mix"?`<div class="row">${f("p-sec","Sector pay (£ per sector)","sectorPay","0.5")}${f("p-n","Sectors this month","sectors","1")}</div>`:""}
@@ -4015,6 +4110,12 @@ document.addEventListener("click",e=>{
   if(b.dataset.cal){exportCal(b.dataset.cal,b);return}
   if(b.dataset.gender!==undefined){applyGender(b.dataset.gender);render();save();return}
   if(b.dataset.role){const r=b.dataset.role;if(S.profile.role!==r){S.profile.role=r;if(r==="pilot"){S.hide.m_sales=true}else{delete S.hide.m_sales}}render();save();return}
+  if(b.dataset.sltpl){const sl=slipOf();if(!sl.lines.length){sl.lines=SLIP_RYR.map(x=>({id:uid(),name:x[0],type:x[1],code:x[2]||"",amt:0}));
+    const role=S.me.role;if(role==="DS")sl.lines.push({id:uid(),name:"Deputy Base Super",type:"month",code:"",amt:0});if(role==="BS")sl.lines.push({id:uid(),name:"Base Supervisor Allowance",type:"month",code:"",amt:0})}render();save();return}
+  if(b.dataset.sladd){slipOf().lines.push({id:uid(),name:"",type:"month",code:"",amt:0});render();save();const i=slipOf().lines.length-1,el=$("#sl-n-"+i);if(el)el.focus();return}
+  if(b.dataset.sldel!=null&&b.dataset.sldel!==""){slipOf().lines.splice(+b.dataset.sldel,1);render();save();return}
+  if(b.dataset.sdadd){const sl=slipOf();(sl.ded=sl.ded||[]).push({id:uid(),name:"Car park",amt:0});render();save();return}
+  if(b.dataset.sddel!=null&&b.dataset.sddel!==""){slipOf().ded.splice(+b.dataset.sddel,1);render();save();return}
   if(b.id==="payfill"){const ym=today().slice(0,7),days=Object.entries(S.roster).filter(([d,x])=>d.slice(0,7)===ym);
     S.pay.sectors=days.filter(([d,x])=>x.kind==="flying").reduce((n,[d,x])=>n+((x.sectors||[]).length),0);
     S.pay.flightHours=Math.round(days.reduce((n,[d,x])=>n+(x.sectors||[]).reduce((q,y)=>q+opMins(y),0),0)/60*100)/100;
@@ -4316,6 +4417,9 @@ document.addEventListener("change",e=>{
   if(el.dataset.k==="next.dep"&&S.next){S.next.dep=el.value;if(el.value)S.next.report=minusMins(el.value,repBefore());render();save();return}
   if(el.dataset.k==="next.flt"&&S.next){S.next.flt=cleanFlt(el.value);render();save();return}
   if(el.dataset.k==="profile.bed"){if(/^\d\d:\d\d$/.test(el.value))S.profile.bed=el.value;render();save();return}
+  if(el.dataset.sl){const [i,f]=el.dataset.sl.split(":"),l=slipOf().lines[+i];if(l){l[f]=f==="amt"?(parseFloat(el.value)||0):el.value;if(f==="type"&&l.type==="day"&&!l.code)l.code="GD";render();save()}return}
+  if(el.dataset.sd){const [i,f]=el.dataset.sd.split(":"),d=slipOf().ded[+i];if(d){d[f]=f==="amt"?(parseFloat(el.value)||0):el.value;render();save()}return}
+  if(el.dataset.slk){const sl=slipOf(),k=el.dataset.slk;sl[k]=k==="pen"?(parseFloat(el.value)||0):k==="taxCode"?el.value.toUpperCase().trim().slice(0,10):el.value;render();save();return}
   if(el.dataset.k==="profile.toStn"){S.profile.toStn=Math.max(5,Math.min(60,parseInt(el.value)||20));render();save();return}
   if(el.dataset.k==="profile.sleepH"){S.profile.sleepH=+el.value;render();save();return}
   if(el.dataset.k==="profile.repBefore"){S.profile.repBefore=Math.max(0,Math.min(180,parseInt(el.value)||45));if(S.next&&S.next.dep)S.next.report=minusMins(S.next.dep,repBefore());render();save();return}
