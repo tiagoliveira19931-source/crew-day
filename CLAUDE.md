@@ -41,7 +41,7 @@ The version shows at the bottom of More (`window.CREWDAY_VERSION`, set by build.
 - Roster codes: CODE_SUB/SUBK map airline codes to a kind plus their own name (e.sub, shown via kindName). Ryanair legend: AD airport duty, GD ground duty, SD special duty, DH dead head, GT ground transport (all timed duties, counted as duty), L leave, UL unpaid leave, OFF with availability, pending sick/VTO/unpaid leave. Jet2 codes to come from Tiago's partner.
 
 - Pay "Like my payslip" (slipBody): crew type their own lines and amounts (no airline rates built in; SLIP_RYR is names only). Flight hours = actual block in the pay period, rounded up; sick-day deductions (UNIMED) with the 3-occasions-in-12-months note; tax from the tax code, NI category A, pension on pay above £520/month (NEST) — 2026/27 GOV.UK figures.
-- Ryanair group ranks (Profile): JU, JU Adhoc, JUPU, CSS, LC CSS, SEPI, SEPE; base role on top: Deputy base supervisor (DS), Base supervisor (BS).
+- Ryanair group ranks (Profile): JU, JU Adhoc, JUPU, CSS, LC CSS, SEPI, SEPE. Base roles (Deputy base supervisor, Base supervisor) are on hold: don't add them until Tiago says.
 
 ## Issue reports
 Crew send problems and ideas from More › Report an issue. They queue offline and go to Tiago's Google Form "Crew Day Reports" (responses in a linked Google Sheet). Columns: Timestamp, Type, Area, Report, Version, Airline.

@@ -1648,16 +1648,13 @@ async function makeFitNotePdf(btn){
 const SC_CONTRACTS=["FR","CWK","WFI","BRK","STM","SKY"];
 // Ryanair group cabin crew ranks (the code goes on forms such as the self-certificate)
 const RYR_RANKS=[["JU","JU · Cabin crew"],["JU Adhoc","JU Adhoc · Cabin crew with CSS training (paid as JU)"],["JUPU","JUPU · Cabin crew on the newer contract"],["CSS","CSS · Cabin service supervisor"],["LC CSS","LC CSS · Line checker"],["SEPI","SEPI · Safety and emergency procedures instructor"],["SEPE","SEPE · Safety and emergency procedures examiner"]];
-const RYR_ROLES=[["","None"],["DS","Deputy base supervisor"],["BS","Base supervisor"]];
 function rankField(m){if(!isRyr())return `<div class="field"><label for="sc-rank">Rank</label><input id="sc-rank" type="text" maxlength="12" value="${esc(m.rank||"")}" data-k="me.rank" placeholder="e.g. PU, JU"></div>`;
   const known=RYR_RANKS.some(r=>r[0]===m.rank);
   return `<div class="field"><label for="sc-rank">Rank</label><select id="sc-rank" data-k="me.rank"><option value="" ${m.rank?"":"selected"}>Choose…</option>${RYR_RANKS.map(r=>`<option value="${esc(r[0])}" ${m.rank===r[0]?"selected":""}>${esc(r[1])}</option>`).join("")}${m.rank&&!known?`<option value="${esc(m.rank)}" selected>${esc(m.rank)}</option>`:""}</select></div>`}
-function roleField(m){if(!isRyr())return "";return `<div class="field"><label for="sc-role">Base role (on top of your rank)</label><select id="sc-role" data-k="me.role">${RYR_ROLES.map(r=>`<option value="${r[0]}" ${(m.role||"")===r[0]?"selected":""}>${r[1]}</option>`).join("")}</select></div>`}
 function pfSC(){const m=S.me;return `<p class="note" style="margin:0">Used to fill in your self-certificate when you're off sick. Everything stays on this phone.</p>
     <div class="field"><label for="sc-emp">Staff number</label><input id="sc-emp" type="text" inputmode="numeric" maxlength="12" value="${esc(m.empNo||"")}" data-k="me.empNo" placeholder="From your payslip or crew ID"><span class="note" style="margin:0">Your crew code is the one at the top of Profile.</span></div>
     <div class="row"><div class="field"><label for="sc-dept">Department</label><input id="sc-dept" type="text" maxlength="30" value="${esc(m.dept||"")}" data-k="me.dept" placeholder="e.g. Inflight"></div>
     ${rankField(m)}</div>
-    ${roleField(m)}
     <div class="row"><div class="field"><label for="sc-entry">Date of entry</label><input id="sc-entry" type="date" value="${esc(m.entry||"")}" data-k="me.entry"></div>
     <div class="field"><label for="sc-con">Contract</label><select id="sc-con" data-k="me.contract"><option value="">Choose</option>${SC_CONTRACTS.map(c=>`<option ${m.contract===c?"selected":""}>${c}</option>`).join("")}</select></div></div>
     <div class="field"><label for="sc-med">Company medical email</label><input id="sc-med" type="email" autocomplete="off" value="${esc(m.medEmail||"")}" data-k="me.medEmail" placeholder="Where self-certificates are sent"></div>
@@ -4110,8 +4107,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.cal){exportCal(b.dataset.cal,b);return}
   if(b.dataset.gender!==undefined){applyGender(b.dataset.gender);render();save();return}
   if(b.dataset.role){const r=b.dataset.role;if(S.profile.role!==r){S.profile.role=r;if(r==="pilot"){S.hide.m_sales=true}else{delete S.hide.m_sales}}render();save();return}
-  if(b.dataset.sltpl){const sl=slipOf();if(!sl.lines.length){sl.lines=SLIP_RYR.map(x=>({id:uid(),name:x[0],type:x[1],code:x[2]||"",amt:0}));
-    const role=S.me.role;if(role==="DS")sl.lines.push({id:uid(),name:"Deputy Base Super",type:"month",code:"",amt:0});if(role==="BS")sl.lines.push({id:uid(),name:"Base Supervisor Allowance",type:"month",code:"",amt:0})}render();save();return}
+  if(b.dataset.sltpl){const sl=slipOf();if(!sl.lines.length)sl.lines=SLIP_RYR.map(x=>({id:uid(),name:x[0],type:x[1],code:x[2]||"",amt:0}));render();save();return}
   if(b.dataset.sladd){slipOf().lines.push({id:uid(),name:"",type:"month",code:"",amt:0});render();save();const i=slipOf().lines.length-1,el=$("#sl-n-"+i);if(el)el.focus();return}
   if(b.dataset.sldel!=null&&b.dataset.sldel!==""){slipOf().lines.splice(+b.dataset.sldel,1);render();save();return}
   if(b.dataset.sdadd){const sl=slipOf();(sl.ded=sl.ded||[]).push({id:uid(),name:"Car park",amt:0});render();save();return}

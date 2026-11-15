@@ -23,7 +23,7 @@ with sync_playwright() as p:
     f=pg.locator('[data-fold="pf_sc"]')
     if f.get_attribute("aria-expanded")=="false": f.click()
     def F(sel,v): pg.fill(sel,v); pg.locator(sel).dispatch_event("change"); pg.wait_for_timeout(60)
-    F("#sc-emp","12345"); F("#sc-dept","Inflight"); pg.select_option("#sc-rank","JU"); pg.wait_for_timeout(60); assert pg.locator("#sc-role").count()==1; F("#sc-entry","2020-03-01"); pg.select_option("#sc-con","FR"); F("#sc-med","medical@example.com")
+    F("#sc-emp","12345"); F("#sc-dept","Inflight"); pg.select_option("#sc-rank","JU"); pg.wait_for_timeout(60); F("#sc-entry","2020-03-01"); pg.select_option("#sc-con","FR"); F("#sc-med","medical@example.com")
     f=pg.locator('[data-fold="pf_sc"]')
     if f.get_attribute("aria-expanded")=="false": f.click()
     pg.wait_for_timeout(400); c=pg.locator("#sigpad"); c.scroll_into_view_if_needed(timeout=10000); pg.wait_for_timeout(200); bb=c.bounding_box(); print("box",bb); pg.mouse.move(bb["x"]+30,bb["y"]+80); pg.mouse.down()
